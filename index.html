@@ -174,6 +174,13 @@ function autoPlanMatches(showNotice=true){
   for(let i=0;i<fixtures.length;i++){
    const m=fixtures[i],existing=old[m.id],desired=days[Math.min(days.length-1,Math.floor((i+0.5)*days.length/fixtures.length))];
    const choices=days.filter(date=>possibleDate(m,date,next,existing));
+   // Never silently move an already confirmed date (including a mutual agreement).
+   // Keep it visible for the administrator to resolve if it becomes inconsistent.
+   if(existing?.date&&existing.provisional===false&&!choices.includes(existing.date)){
+    next[m.id]={...existing,time:existing.time||DEFAULT_MATCH_TIME};
+    missing.push(m.id);
+    continue;
+   }
    if(!choices.length){missing.push(m.id);continue}
    const selected=existing?.date&&choices.includes(existing.date)?existing.date:
      choices.slice().sort((a,b)=>Math.abs(dateDifference(a,desired))-Math.abs(dateDifference(b,desired))||a.localeCompare(b))[0];
@@ -186,7 +193,7 @@ function autoPlanMatches(showNotice=true){
  }
  data.schedule=next;
  const result={total:rounds.flat().filter(m=>!m.isBye).length,assigned:Object.keys(next).length,missing};
- if(showNotice)notify(missing.length?result.assigned+' duels verdeeld. '+missing.length+' duels zonder geschikte datum: controleer verhinderingen.':result.assigned+' duels verdeeld over de vijf rondeperiodes. Nog te bevestigen in Beheer.');
+ if(showNotice)notify(missing.length?result.assigned+' duels ingedeeld. '+missing.length+' duels vereisen controle of nieuwe afspraken.':result.assigned+' duels verdeeld over de vijf rondeperiodes. Nog te bevestigen in Beheer.');
  return result;
 }
 
@@ -688,7 +695,7 @@ function saveMatchDate(r,i){
  const plan=autoPlanMatches(false);
  save();render();
  notify('Speeldag vastgelegd'+(mutualAgreement?' in onderling overleg':'')+' · '+tm+' uur.'+
-  (plan.missing.length?' Controleer '+plan.missing.length+' nog niet planbare duels.':''));
+  (plan.missing.length?' Controleer '+plan.missing.length+' duels waarvoor een planning of afspraak moet worden herzien.':''));
 }
 function clearDate(r,i){delete data.schedule[matchKey(r,i)];save();render();notify('Speeldatum verwijderd.')}
 function updateStatus(v){data.settings.status=v;save();render()}
