@@ -127,15 +127,35 @@ function blockedInfo(r){
 }
 function roundCalendar(){
  return '<section class="panel">'+heading('Vaste speelperiodes','<span class="pill ok">Vastgesteld</span>')+
- '<p class="muted smalltext">De finale en bronsfinale vallen beide in ronde 5. De periodes van ronde 3, 4 en 5 overlappen; beide finalewedstrijden moeten na de twee halve finales worden gespeeld.</p>'+
+ '<p class="muted smalltext">De officiële speelperiodes van ronde 3, 4 en 5 overlappen, maar de wedstrijden van de rondes nooit: de volgende ronde begint pas nadat álle duels van de vorige ronde klaar zijn. Finale en bronsfinale vallen samen in ronde 5.</p>'+
  '<div class="roundperiods">'+ROUND_WINDOWS.map((w,i)=>'<div class="periodrow"><div><strong>Ronde '+(i+1)+'</strong><span class="tag"> WEEK '+w.weeks+'</span></div><div><div class="smalltext">'+esc(w.label)+'</div><div class="muted smalltext">'+esc(blockedInfo(i))+'</div></div></div>').join('')+'</div></section>';
 }
 function dateDifference(a,b){return Math.round((new Date(a+'T12:00:00')-new Date(b+'T12:00:00'))/86400000)}
+function roundDates(r,planned){
+ return Object.entries(planned||{}).filter(([id,item])=>
+  id.startsWith(r+':')&&item?.date).map(([,item])=>item.date);
+}
+function lastRoundDate(r,planned){
+ const dates=roundDates(r,planned);
+ return dates.length?dates.sort().at(-1):'';
+}
+function firstRoundDate(r,planned){
+ const dates=roundDates(r,planned);
+ return dates.length?dates.sort()[0]:'';
+}
 function parentLatestDate(r,index,planned){
  if(r===0)return'';
- const rounds=bracket(),m=rounds[r]?.[index];
- const dates=feederMatches(m,rounds).map(x=>planned[x.id]?.date).filter(Boolean);
- return dates.length?dates.sort().at(-1):'';
+ // The WHOLE preceding round must finish before any next-round game.
+ return lastRoundDate(r-1,planned);
+}
+function roundSchedulingConflicts(schedule){
+ const violations=[];
+ for(let r=1;r<5;r++){
+  const last=lastRoundDate(r-1,schedule),first=firstRoundDate(r,schedule);
+  if(last&&first&&first<=last)
+   violations.push('Ronde '+(r+1)+' begint '+first+' vóór of op de laatste speeldag ('+last+') van ronde '+r+'.');
+ }
+ return violations;
 }
 const DEFAULT_MATCH_TIME='20:00';
 function preferredDayIds(playerId){
@@ -216,38 +236,36 @@ function fixtureAvailability(m,date,possible){
 }
 function autoPlanMatches(showNotice=true){
  const rounds=bracket();
- if(!rounds.length)return{total:0,assigned:0,missing:[],agreementNeeded:[],conditional:[]};
- const old=structuredClone(data.schedule),next={},missing=[],agreementNeeded=[],conditional=[];
+ if(!rounds.length)return{total:0,assigned:0,missing:[],agreementNeeded:[],conditional:[],conflicts:[]};
+ const old=structuredClone(data.schedule),next={},missing=[],agreementNeeded=[],conditional=[],conflicts=[];
  const potentialMemo=new Map();
- // Plan all rounds from their bracket paths, even when winners are unknown.
- // Date coverage is assessed over ALL possible home/away winners.
  for(const [r,matches] of rounds.entries()){
   const fixtures=matches.filter(m=>!m.isBye&&(!m.resolved||!!(m.a&&m.b)));
   const days=roundDays(r),loads=new Map();
   const register=day=>loads.set(day,(loads.get(day)||0)+1);
+  const prevRound=rounds[r-1]||[];
+  const previousRoundReady=r===0||prevRound.filter(m=>!m.isBye).every(m=>
+    next[m.id]?.date&&next[m.id].provisional===false);
   for(let i=0;i<fixtures.length;i++){
    const m=fixtures[i],existing=old[m.id],possible=possibleFixturePlayers(m,rounds,potentialMemo);
    const desired=days[Math.min(days.length-1,Math.floor((i+0.5)*days.length/fixtures.length))];
    const eligible=days.filter(date=>possibleDate(m,date,next,existing));
    const evaluated=eligible.map(date=>({date,...fixtureAvailability(m,date,possible)}));
-   // Favor a date where EVERY possible participant could play. If none exists,
-   // maximize the share of possible pairings the suggested day accommodates.
-   // If the two sides never overlap, use the paper home player's days.
-   const full=evaluated.filter(d=>d.universal);
-   const anyOverlap=evaluated.filter(d=>d.supported>0);
-   const options=full.length?full:anyOverlap.length?anyOverlap:
-     evaluated.filter(d=>d.homeAvailable>0);
+   // Confirmed dates are binding, even after another match changes. If a
+   // confirmed date no longer fits, alert administrators rather than move it.
    if(existing?.date&&existing.provisional===false){
     next[m.id]={...existing,time:existing.time||DEFAULT_MATCH_TIME};
     register(existing.date);
     if(!eligible.includes(existing.date)||
        (m.a&&m.b&&!availableOnDate(m,existing.date)&&!matchHasAgreement(m,existing)))
-     missing.push(m.id);
+     conflicts.push(m.id);
     continue;
    }
+   const full=evaluated.filter(d=>d.universal);
+   const anyOverlap=evaluated.filter(d=>d.supported>0);
+   const options=full.length?full:anyOverlap.length?anyOverlap:
+     evaluated.filter(d=>d.homeAvailable>0);
    if(!options.length){missing.push(m.id);continue}
-   // Never replace a useful proposal just because a different day is less
-   // crowded; however, a newly identified actual player can invalidate it.
    const maxSupport=Math.max(...options.map(d=>d.supported));
    const optimal=options.filter(d=>d.supported===maxSupport);
    const maxHome=Math.max(...optimal.map(d=>d.homeAvailable));
@@ -261,8 +279,14 @@ function autoPlanMatches(showNotice=true){
    const complete=!!(m.a&&m.b);
    const requiresAgreement=complete&&!availableOnDate(m,date)&&!agreed;
    const conditionalOnWinners=!complete&&!selected.universal;
-   next[m.id]={date,time:existing?.date===date?(existing.time||DEFAULT_MATCH_TIME):DEFAULT_MATCH_TIME,
-    provisional:true,auto:true,
+   // No availability conflict => automatically FIXED, provided all
+   // preceding-round dates are also fixed and the whole-round order holds.
+   // Otherwise this is genuinely only a proposal.
+   const established=selected.universal&&!requiresAgreement&&
+     previousRoundReady&&!conditionalOnWinners;
+   next[m.id]={date,
+    time:existing?.date===date?(existing.time||DEFAULT_MATCH_TIME):DEFAULT_MATCH_TIME,
+    provisional:!established,auto:true,
     ...(agreed?{mutualAgreement:true,agreedPlayers:[m.a,m.b]}:{}),
     ...(requiresAgreement?{requiresAgreement:true}:{}),
     ...(conditionalOnWinners?{conditionalOnWinners:true}:{})};
@@ -271,13 +295,16 @@ function autoPlanMatches(showNotice=true){
    register(date);
   }
  }
+ const overlap=roundSchedulingConflicts(next);
+ if(overlap.length)conflicts.push(...overlap);
  data.schedule=next;
  const result={total:rounds.flat().filter(m=>!m.isBye).length,
-  assigned:Object.keys(next).length,missing,agreementNeeded,conditional};
- if(showNotice)notify(result.assigned+' duels voorlopig ingedeeld.'+
-  (conditional.length?' '+conditional.length+' voorstellen zijn afhankelijk van de winnaars.':'')+
-  (agreementNeeded.length?' '+agreementNeeded.length+' duels vragen onderling overleg.':'')+
-  (missing.length?' '+missing.length+' duels vragen handmatige planning.':''));
+  assigned:Object.keys(next).length,missing,agreementNeeded,conditional,conflicts};
+ if(showNotice)notify(result.assigned+' duels ingepland.'+
+  (conditional.length?' '+conditional.length+' voorstellen hangen van de winnaars af.':'')+
+  (agreementNeeded.length?' '+agreementNeeded.length+' afspraken moeten worden overlegd.':'')+
+  (missing.length?' '+missing.length+' duels vragen handmatige planning.':'')+
+  (conflicts.length?' '+conflicts.length+' vastgestelde datums hebben een conflict.':''));
  return result;
 }
 const REGISTRATION_DEADLINE='2026-11-21T00:00:00+01:00';
@@ -368,19 +395,17 @@ function scheduleConflict(m,s){
  if(w?.exclusions.includes(s.date))alerts.push('Deze datum is uitgesloten van het speelschema.');
  if(m.a&&m.b&&!availableOnDate(m,s.date)&&!matchHasAgreement(m,s))alerts.push('Deze datum past niet voor beide spelers. Registreer hun onderlinge akkoord voordat je de wedstrijd bevestigt.');
  const b=bracket();
- if(m.round>0){
-  for(const feeder of feederMatches(m,b)){
-   const d=data.schedule[feeder.id]?.date;
-   if(d&&s.date<=d)alerts.push('Het duel moet na de voorgaande ronde plaatsvinden.');
-  }
- }
- const follow=b[m.round+1]?.[Math.floor(m.index/2)];
- if(follow&&data.schedule[follow.id]?.date&&data.schedule[follow.id].provisional===false&&s.date>=data.schedule[follow.id].date)
-  alerts.push('Een reeds bevestigde vervolgronde staat op of vóór deze datum.');
- if(m.round===b.length-2){
-  const bronze=b[b.length-1]?.find(x=>x.isBronze),scheduled=bronze&&data.schedule[bronze.id];
+ // Round windows can overlap, but ACTUAL PLAYED ROUNDS cannot.
+ const lastPrevious=lastRoundDate(m.round-1,data.schedule);
+ if(m.round>0&&lastPrevious&&s.date<=lastPrevious)
+  alerts.push('Deze ronde kan pas beginnen ná de laatste wedstrijd van ronde '+m.round+' ('+lastPrevious+').');
+ const nextRound=b[m.round+1]||[];
+ for(const later of nextRound){
+  const scheduled=data.schedule[later.id];
+  // A provisional next-round date will be recalculated after saving this
+  // change. A confirmed one is fixed and must be respected.
   if(scheduled?.date&&scheduled.provisional===false&&s.date>=scheduled.date)
-   alerts.push('Een halve finale moet vóór de bevestigde bronsfinale worden gespeeld.');
+   alerts.push('De volgende ronde heeft al een vastgestelde speeldag op '+scheduled.date+'.');
  }
  for(const other of allMatches()){
   if(other.id===m.id||!data.schedule[other.id]?.date||data.schedule[other.id].date!==s.date)continue;
