@@ -28,6 +28,14 @@ Open `index.html` in een browser via een HTTP-server of gebruik GitHub Pages. De
 
 De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestand in de OHC-database gezet. De **loting is niet uitgevoerd**.
 
+## Inschrijven en CSV-verwerking
+
+- **Inschrijven voor spelers:** tot en met **20 november 2026 om 23:59 uur Nederlandse tijd**.
+- **21 november 2026:** de beheerder uploadt het Google Forms-CSV-bestand met alle tijdig ontvangen inschrijvingen.
+- De datum waarop de beheerder het CSV-bestand verwerkt staat los van de inschrijfdeadline voor spelers. De import mag daarom ook ná het sluiten van de inschrijving nieuwe deelnemers uit de ontvangen CSV aanmaken.
+- De CSV-import is uitsluitend beschikbaar achter de bestaande Ranking-beheerlogin. Rechtstreeks nieuwe spelers handmatig toevoegen wordt vanaf 21 november in de interface geblokkeerd; bestaande gegevens kunnen nog worden gecorrigeerd.
+- Na de officiële loting slaat de import nieuwe deelnemers over om de toernooiboom intact te houden.
+
 ## Officieel speelschema 2026–2027
 
 | Ronde | ISO-weken | Toegestane periode | Niet spelen |
