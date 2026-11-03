@@ -49,6 +49,8 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 ### Planning en de op papier thuisspelende speler
 
 - De **eerstgenoemde speler in een duel** is de op papier thuisspelende speler.
+- In de openbare deelnemerslijst en bracket staat alleen de afgekorte naam. Als die afkorting bij meerdere verschillende spelers gelijk is, wordt **een uniek deelnemersnummer** getoond, bijvoorbeeld `Deelnemer 1. (#12)`. Zo worden afzonderlijke deelnemers niet als één speler weergegeven, zonder volledige achternamen openbaar te maken.
+- Een speler die een duel wint, komt ook in de volgende ronde voor. Dit is **doorschuiven**, geen dubbele loting. De eerste-rondebracket bevat altijd iedere speler precies één keer.
 - De beschikbare weekdagen en verhinderingen van spelers worden **niet getoond in het publieke speelschema**. De beheerder kan ze gebruiken om de planning op te stellen.
 - Per ronde worden wedstrijden automatisch **gespreid over geschikte speeldagen** binnen de vastgestelde rondeperiode, met uitsluiting van de geblokkeerde feestdagen en met inachtneming van voorafgaande rondes.
 - **Harde rondevolgorde:** de speelperiodes mogen elkaar overlappen, maar ingeplande rondes nooit. Elke wedstrijd van ronde 3 moet bijvoorbeeld zijn gespeeld vóór de eerste wedstrijd van ronde 4; hetzelfde geldt voor alle andere opeenvolgende rondes. De hele vorige ronde is leidend, niet slechts de twee voedende duels van een bepaalde wedstrijd. Zowel de browser als de database blokkeren overlappingen.
