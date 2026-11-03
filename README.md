@@ -36,23 +36,22 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - De CSV-import is uitsluitend beschikbaar achter de bestaande Ranking-beheerlogin. Rechtstreeks nieuwe spelers handmatig toevoegen wordt vanaf 21 november in de interface geblokkeerd; bestaande gegevens kunnen nog worden gecorrigeerd.
 - Na de officiële loting slaat de import nieuwe deelnemers over om de toernooiboom intact te houden.
 
-## Vaste knock-outbracket
+## Vaste knock-outbracket en beschikbaarheid
 
-- De beheerder voert **één beschikbaarheidsgestuurde willekeurige loting** uit: spelers worden binnen de speelbare beperkingen willekeurig verdeeld over de eerste ronde en eventuele vrijlotingen.
-- Vanaf dat moment zijn alle routes vastgelegd. De winnaars van duels 1 en 2 komen bij elkaar in het eerste duel van de volgende ronde, de winnaars van duels 3 en 4 in het tweede duel, enzovoort.
-- De toernooiboom toont de routes met verbindingslijnen, ook voordat winnaars bekend zijn. Onbekende deelnemers worden weergegeven als `Winnaar R1 · duel 1` enzovoort.
+- De beheerder voert **één loting** uit voor de eerste ronde. Alle volgende ontmoetingen volgen daarna de vaste knock-outroutes: winnaar van duel 1 speelt tegen winnaar van duel 2, enzovoort. Er wordt **niet opnieuw geloot**.
+- De loting houdt rekening met de opgegeven beschikbare weekdagen. **Spelers zonder gezamenlijke speeldag worden zo laat mogelijk tegenover elkaar geplaatst**: eerst probeert de loting alle zulke combinaties in verschillende brackethelften onder te brengen. Als dat niet volledig mogelijk is, minimaliseert de loting ontmoetingen in ronde 1, vervolgens ronde 2, enzovoort.
+- Als er drie spelers zijn die elk alleen op een andere dag kunnen, gaat de loting dus **wel door**. Een onvermijdelijke ontmoeting wordt zo laat mogelijk in de bracket geplaatst; wanneer deze spelers elkaar uiteindelijk treffen, spreken zij **onderling een andere datum af binnen de officiële rondeperiode**.
+- Optimalisatie gebeurt met meerdere willekeurige indelingen en verbeterstappen. Er is geen vaste plaatsingslijst. Bij ingewikkelde verhinderingen is de uitkomst een best mogelijke **benadering**, geen mathematisch gegarandeerd globaal optimum.
+- Bij onvermijdelijke onverenigbaarheid is er **geen afwijzing van de loting**. Er blijven uitsluitend structurele controles over: maximaal 32 deelnemers, elke deelnemer één keer en geen volledig lege eerste-ronde-duels.
+- De originele verhinderingen van deelnemers kunnen na de loting door de beheerder worden bijgewerkt. Dit verandert de vaste route in de bracket niet. De website en database controleren de identiteit en structuur van de bracket.
+- Een bestaande bracket kan alleen opnieuw worden geloot na een expliciete volledige herstart door de beheerder.
 
-### Beschikbaarheid in de volledige bracket
+### Op papier thuisspeler en voorkeursdagen
 
-- Het systeem controleert alle **mogelijke** ontmoetingen vanaf ronde 1 tot en met de halve finale. Spelers die geen enkele gezamenlijke speeldag hebben, mogen niet in dezelfde brackethelft terechtkomen.
-- In de **finale en bronsfinale** kunnen spelers zonder gezamenlijke opgegeven beschikbare speeldag tegenover elkaar komen te staan. De spelers spreken dan onderling een toegestane speeldag af binnen de finaleperiode.
-- De verdeling van deelnemers over de twee brackethelften wordt berekend voordat de loting definitief wordt vastgelegd. Andere combinaties en de plaatsing van vrijloten worden vervolgens willekeurig bepaald binnen de geldige mogelijkheden.
-- Als de verhinderingen onmogelijk over de twee brackethelften te verdelen zijn, **wordt er niet geloot**. Een melding geeft aan dat beschikbaarheid of afspraken moeten worden aangepast; het systeem forceert nooit een ongeldige bracket.
-- De website controleert ook veranderingen achteraf (handmatige wijziging van verhinderingen, CSV-import en back-upherstel). Een extra database-trigger weigert ongeldige wijzigingen zelfs als een client de gebruikersinterface omzeilt.
-- **Belangrijk:** een niet als verhinderd opgegeven dag geldt als beschikbaar, ook zaterdag en zondag. Controleer daarom alle zeven dagen voor de loting, vooral wanneer een speler aangeeft uitsluitend op één dag te kunnen.
-
-- Na een ingevoerde uitslag schuift de winnaar automatisch door naar het vooraf vastliggende vak. **Geen nieuwe loting per ronde.**
-- Een bestaande bracket kan niet onbedoeld opnieuw geloot worden; uitsluitend een expliciete volledige herstart door de beheerder wist de loting.
+- De **eerstgenoemde speler in een duel** is de op papier thuisspelende speler.
+- Zijn of haar **voorkeursdagen** in het openbare speelschema zijn de weekdagen die niet als verhinderd zijn opgegeven. De volledige persoonlijke verhinderingenlijst blijft afgeschermd.
+- De automatische speeldagindeling gebruikt de beschikbaarheid van beide spelers. Zolang een tegenstander nog niet bekend is, wordt de speeldag gekozen uit de voorkeursdagen van de op papier thuisspeler. Zodra de tegenstander bekend wordt, wordt de planning opnieuw gecontroleerd.
+- Als spelers geen gezamenlijke beschikbare speeldag hebben, blijft de wedstrijd in de bracket staan en verschijnt geen geforceerd ongeschikt datumvoorstel. De twee spelers kiezen zelf in overleg een toegestane dag, die de beheerder vastlegt.
 
 ## Bronsfinale en plaats 3/4
 
@@ -91,7 +90,7 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 | 4 | 2/3 2027 | 11 t/m 24 januari 2027 | geen aanvullende uitzonderingen |
 | 5 | 3/4 2027 | 18 t/m 31 januari 2027 | geen aanvullende uitzonderingen |
 
-De planning verdeelt de speeldagen vooraf zo gelijkmatig mogelijk binnen hun rondeperiode, rekening houdend met de verhinderingen en de vaste bracket. Elke wedstrijd in een vervolgronde moet **na** zijn voorgaande duels plaatsvinden. Dat geldt ook voor de overlappende periodes van ronde 3, 4 en 5. Speeldatums buiten de rondeperiodes of op uitgesloten dagen blijven verboden.
+De planning verdeelt de speeldagen vooraf binnen hun rondeperiode, rekening houdend met de verhinderingen, de vaste bracket en waar bekend de voorkeursdagen van de op papier thuisspeler. Elke wedstrijd in een vervolgronde moet **na** zijn voorgaande duels plaatsvinden. Dat geldt ook voor de overlappende periodes van ronde 3, 4 en 5. Speeldatums buiten de rondeperiodes of op uitgesloten dagen blijven verboden.
 
 ### Speeldag en starttijd (vastgesteld)
 
