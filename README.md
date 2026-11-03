@@ -56,19 +56,20 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 
 ## Buy-in en prijzenverdeling
 
-- Eenmalige buy-in: **€12,50 per speler** voor de volledige competitie (maximaal **32 deelnemers**).
-- Vaste organisatiekosten: **€56,50**; deze worden éénmaal van de bruto inleg afgetrokken. Het restant is de **netto prijzenpot**.
-- De acht prijzen vormen samen **100% van de netto prijzenpot**:
-  - 1e: **35%**
-  - 2e: **25%**
-  - 3e: **15,5%**
-  - 4e: **12,5%**
-  - Vier verliezers van ronde 3 (gedeelde 5e plaats): **ieder 3%**
-- **Geen minimumbedrag** voor de vier verliezers van ronde 3: hun prijs is uitsluitend gebaseerd op 3% van de netto pot.
-- **Afronding op €0,50**: alle prijzen worden in stappen van €0,50 vastgesteld. De gedeelde vijfde plaatsen ontvangen elk hetzelfde afgeronde bedrag (3% van de netto pot, afgerond op het dichtstbijzijnde halve eurobedrag). Eventuele resterende halve euro's worden bij de eerste vier plaatsen verdeeld op basis van het kleinste verschil met hun exacte procentuele aanspraak. Zo blijft de totale uitbetaling gelijk aan de netto pot.
-- Bij **32 deelnemers**: bruto inleg **€400,00**, kosten **€56,50**, netto pot **€343,50**. Uitbetalingen: **€120,00 / €85,50 / €53,00 / €43,00**, plus viermaal **€10,50**.
-- Het schema van acht prijzen hoort bij **17 tot en met 32 deelnemers** (vijf rondes). Bij minder deelnemers is nog geen aparte prijzenverdeling vastgesteld. De website toont dan een expliciet gelabeld rekenvoorbeeld voor 32 deelnemers.
-- De twee verliezers van de halve finale moeten afzonderlijk als 3e en 4e worden gerangschikt. Het criterium hiervoor is nog niet vastgesteld.
+- Eenmalige buy-in: **€12,50 per speler** voor de volledige competitie, maximaal **32 deelnemers**.
+- Vaste organisatiekosten: **€56,50**. Deze worden éénmaal van de bruto inleg afgehaald. Het restant is de **netto prijzenpot**.
+- Richtpercentages over de netto prijzenpot: **1e 35%**, **2e 25%**, **3e 15,5%**, **4e 12,5%**, **vier verliezers van ronde 3 elk 3%**.
+- Er is **geen minimumbedrag van €12,50** voor de verliezers van ronde 3.
+- **Afronden volgens de spreadsheet**:
+  1. Bereken de oorspronkelijke bedragen volgens hun percentage van de netto prijzenpot.
+  2. Rond plaats **1 en 2 naar beneden af op hele euro's**.
+  3. Rond plaats **4 af op de dichtstbijzijnde €0,50**.
+  4. Rond de vier **gedeelde vijfde plaatsen elk gelijk naar beneden af op hele euro's**.
+  5. Geef het **volledige overgebleven bedrag aan plaats 3**.
+- Alle prijzen blijven veelvouden van **€0,50** en de netto prijzenpot wordt volledig uitgekeerd; doordat plaats 3 het restant krijgt, kan het werkelijke aandeel van plaats 3 afwijken van 15,5%.
+- Voorbeeld bij **32 deelnemers**: bruto inleg **€400,00**, vaste kosten **€56,50**, netto prijzenpot **€343,50**. Prijzen: **€120,00 / €85,00 / €55,50 / €43,00**, plus viermaal **€10,00**.
+- De acht prijzen gelden voor de vijf rondes bij **17 t/m 32 deelnemers**. Bij minder dan 17 deelnemers is een aparte prijsverdeling nog niet vastgesteld; de website toont dan alleen het voorbeeld van 32 deelnemers.
+- Voor de 3e en 4e plaats moeten de twee verliezers van de halve finale nog afzonderlijk worden gerangschikt. De methode daarvoor is nog niet vastgesteld.
 
 ## Officieel speelschema 2026–2027
 
