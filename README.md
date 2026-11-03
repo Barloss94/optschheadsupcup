@@ -38,9 +38,19 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 
 ## Vaste knock-outbracket
 
-- De beheerder voert **één willekeurige loting** uit: spelers worden over de eerste ronde en eventuele vrijlotingen verdeeld.
+- De beheerder voert **één beschikbaarheidsgestuurde willekeurige loting** uit: spelers worden binnen de speelbare beperkingen willekeurig verdeeld over de eerste ronde en eventuele vrijlotingen.
 - Vanaf dat moment zijn alle routes vastgelegd. De winnaars van duels 1 en 2 komen bij elkaar in het eerste duel van de volgende ronde, de winnaars van duels 3 en 4 in het tweede duel, enzovoort.
 - De toernooiboom toont de routes met verbindingslijnen, ook voordat winnaars bekend zijn. Onbekende deelnemers worden weergegeven als `Winnaar R1 · duel 1` enzovoort.
+
+### Beschikbaarheid in de volledige bracket
+
+- Het systeem controleert alle **mogelijke** ontmoetingen vanaf ronde 1 tot en met de halve finale. Spelers die geen enkele gezamenlijke speeldag hebben, mogen niet in dezelfde brackethelft terechtkomen.
+- Alleen in de **finale** mag een ontmoeting zonder gemeenschappelijke speeldag mogelijk zijn. In dat geval maakt de automatische planning geen ongeldige afspraak: de organisatie moet een aparte oplossing vinden.
+- De verdeling van deelnemers over de twee brackethelften wordt berekend voordat de loting definitief wordt vastgelegd. Andere combinaties en de plaatsing van vrijloten worden vervolgens willekeurig bepaald binnen de geldige mogelijkheden.
+- Als de verhinderingen onmogelijk over de twee brackethelften te verdelen zijn, **wordt er niet geloot**. Een melding geeft aan dat beschikbaarheid of afspraken moeten worden aangepast; het systeem forceert nooit een ongeldige bracket.
+- De website controleert ook veranderingen achteraf (handmatige wijziging van verhinderingen, CSV-import en back-upherstel). Een extra database-trigger weigert ongeldige wijzigingen zelfs als een client de gebruikersinterface omzeilt.
+- **Belangrijk:** een niet als verhinderd opgegeven dag geldt als beschikbaar, ook zaterdag en zondag. Controleer daarom alle zeven dagen voor de loting, vooral wanneer een speler aangeeft uitsluitend op één dag te kunnen.
+
 - Na een ingevoerde uitslag schuift de winnaar automatisch door naar het vooraf vastliggende vak. **Geen nieuwe loting per ronde.**
 - Een bestaande bracket kan niet onbedoeld opnieuw geloot worden; uitsluitend een expliciete volledige herstart door de beheerder wist de loting.
 
