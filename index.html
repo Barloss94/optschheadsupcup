@@ -99,7 +99,7 @@ async function logout(){
 
 const SHORT_DAYS=['Zo','Ma','Di','Wo','Do','Vr','Za'];
 const DAYS=[{id:1,name:'Maandag',search:'maandagen'},{id:2,name:'Dinsdag',search:'dinsdagen'},{id:3,name:'Woensdag',search:'woensdagen'},{id:4,name:'Donderdag',search:'donderdagen'},{id:5,name:'Vrijdag',search:'vrijdagen'},{id:6,name:'Zaterdag',search:'zaterdagen'},{id:0,name:'Zondag',search:'zondagen'}];
-const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":"2026-11-21T00:00:00+01:00","buyInCents":1250,"fixedCostsCents":5650,"maxPlayers":32,"prizes":{"firstPercent":35,"secondPercent":25,"thirdPercent":15.5,"fourthPercent":12.5,"round3LosersPercent":3,"round3LosersCount":4,"roundingCents":50,"method":"equal_shared_places_largest_remainder"},"roundDeadlines":{},"resultText":{}}};
+const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":"2026-11-21T00:00:00+01:00","buyInCents":1250,"fixedCostsCents":5650,"maxPlayers":32,"prizes":{"firstPercent":35,"secondPercent":25,"thirdPercent":15.5,"fourthPercent":12.5,"round3LosersPercent":3,"round3LosersCount":4,"firstRoundingCents":100,"secondRoundingCents":100,"fourthRoundingCents":50,"round3LosersRoundingCents":100,"thirdGetsRemainder":true,"method":"spreadsheet_third_place_remainder"},"roundDeadlines":{},"resultText":{}}};
 
 const ROUND_WINDOWS=[
  {weeks:'49/50',start:'2026-11-30',end:'2026-12-13',exclusions:['2026-12-04','2026-12-05','2026-12-06'],label:'30 november t/m 13 december 2026'},
@@ -242,27 +242,24 @@ function projectedPrizes(participants){
  if(!Number.isInteger(participants)||participants<17||participants>MAX_PLAYERS)return null;
  const totalCents=participants*BUY_IN_CENTS;
  const netPrizeCents=totalCents-FIXED_COSTS_CENTS;
- // All eight positions receive their original percentage of the NET pool.
- // Quarterfinal losers share fifth place, so their amounts must remain identical.
- const eachFifth=Math.round(netPrizeCents*PRIZE_PERCENTAGES[4]/100/PRIZE_ROUNDING_CENTS)*PRIZE_ROUNDING_CENTS;
- const remainingCents=netPrizeCents-4*eachFifth;
- const exact=PRIZE_PERCENTAGES.slice(0,4).map(percent=>netPrizeCents*percent/100);
- const top=exact.map(value=>Math.floor(value/PRIZE_ROUNDING_CENTS)*PRIZE_ROUNDING_CENTS);
- const units=(remainingCents-top.reduce((a,b)=>a+b,0))/PRIZE_ROUNDING_CENTS;
- if(!Number.isInteger(units))throw Error('Afrondingsverschil is geen veelvoud van €0,50.');
- // Give leftover half euros to the biggest deficit relative to the exact share.
- // If fifth-place rounding causes a shortfall, subtract from the smallest deficit.
- for(let step=0;step<Math.abs(units);step++){
-  const order=[0,1,2,3].sort((a,b)=>units>0?
-   (exact[b]-top[b])-(exact[a]-top[a]) || a-b:
-   (top[b]-exact[b])-(top[a]-exact[a]) || b-a);
-  top[order[0]]+=units>0?PRIZE_ROUNDING_CENTS:-PRIZE_ROUNDING_CENTS;
- }
- const payouts=[...top,...Array(4).fill(eachFifth)];
+ const raw=PRIZE_PERCENTAGES.map(percent=>netPrizeCents*percent/100);
+ // Spreadsheet method:
+ // - 1st and 2nd: round DOWN to whole euros.
+ // - 4th: round to the NEAREST half euro.
+ // - All four shared 5th places: identical, round DOWN to whole euros.
+ // - 3rd: receives the EXACT remainder of the net prize pool.
+ // All resulting amounts remain multiples of €0.50.
+ const first=Math.floor(raw[0]/100)*100;
+ const second=Math.floor(raw[1]/100)*100;
+ const fourth=Math.round(raw[3]/PRIZE_ROUNDING_CENTS)*PRIZE_ROUNDING_CENTS;
+ const eachFifth=Math.floor(raw[4]/100)*100;
+ const third=netPrizeCents-first-second-fourth-4*eachFifth;
+ const payouts=[first,second,third,fourth,...Array(4).fill(eachFifth)];
  if(payouts.reduce((a,b)=>a+b,0)!==netPrizeCents ||
-    payouts.some(amount=>amount<0||amount%PRIZE_ROUNDING_CENTS!==0))
+    payouts.some(value=>value<0||value%PRIZE_ROUNDING_CENTS!==0))
   throw Error('Prijzen komen niet overeen met de netto prijzenpot.');
- return {participants,totalCents,fixedCostsCents:FIXED_COSTS_CENTS,netPrizeCents,remainingCents,payouts};
+ return {participants,totalCents,fixedCostsCents:FIXED_COSTS_CENTS,netPrizeCents,
+  remainingCents:netPrizeCents-4*eachFifth,payouts};
 }
 function prizePanel(){
  const current=data.players.length,exact=current>=17&&current<=MAX_PLAYERS;
@@ -276,7 +273,7 @@ function prizePanel(){
  '<div class="infoitem"><div class="tag">NETTO PRIJZENPOT</div><strong style="font-size:23px">'+euros(example.netPrizeCents)+'</strong><div class="smalltext muted">'+euros(example.totalCents)+' inleg − '+euros(example.fixedCostsCents)+' vaste kosten</div></div></div>'+
  '<div class="tablewrap"><table class="table"><thead><tr><th>Eindpositie</th><th>Percentage</th><th>Prijs</th></tr></thead><tbody>'+
  rows.join('')+'<tr><td><strong>Totaal prijzen</strong></td><td><strong>100%</strong></td><td><strong>'+euros(example.netPrizeCents)+'</strong></td></tr></tbody></table></div>'+
- '<p class="muted smalltext">De prijzen zijn 35%, 25%, 15,5%, 12,5% en viermaal 3% van de netto prijzenpot. Er geldt geen minimumprijs van €12,50 voor de vier verliezers van ronde 3. Alle bedragen worden op €0,50 afgerond, de gedeelde vijfde plaatsen blijven gelijk en afrondingsverschillen worden volledig binnen plaats 1 t/m 4 verdeeld.</p>'+
+ '<p class="muted smalltext">De richtpercentages zijn 35%, 25%, 15,5%, 12,5% en viermaal 3% van de netto prijzenpot. Er geldt geen minimumprijs van €12,50 voor de vier verliezers van ronde 3. Volgens de spreadsheet worden plaats 1 en 2 naar beneden afgerond op hele euro’s, plaats 4 op de dichtstbijzijnde €0,50 en alle vier gedeelde vijfde plaatsen gelijk naar beneden op hele euro’s. Het resterende bedrag gaat volledig naar de derde plaats. Alle prijzen blijven veelvouden van €0,50.</p>'+
  (!exact?'<div class="notice orange">Deze acht prijzen zijn bedoeld voor vijf rondes (17 t/m 32 spelers). Bij minder dan 17 deelnemers moet de organisatie nog een aangepaste verdeling bepalen; de bedragen hierboven zijn een voorbeeld bij 32 spelers.</div>':'')+
  '<div class="notice">De twee verliezers van de halve finale moeten nog onderling worden gerangschikt voor de 3e en 4e plaats. Hoe dit gebeurt, moet de organisatie nog vaststellen.</div>'+
  '</section>';
