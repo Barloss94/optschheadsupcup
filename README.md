@@ -36,6 +36,14 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - De CSV-import is uitsluitend beschikbaar achter de bestaande Ranking-beheerlogin. Rechtstreeks nieuwe spelers handmatig toevoegen wordt vanaf 21 november in de interface geblokkeerd; bestaande gegevens kunnen nog worden gecorrigeerd.
 - Na de officiële loting slaat de import nieuwe deelnemers over om de toernooiboom intact te houden.
 
+## Vaste knock-outbracket
+
+- De beheerder voert **één willekeurige loting** uit: spelers worden over de eerste ronde en eventuele vrijlotingen verdeeld.
+- Vanaf dat moment zijn alle routes vastgelegd. De winnaars van duels 1 en 2 komen bij elkaar in het eerste duel van de volgende ronde, de winnaars van duels 3 en 4 in het tweede duel, enzovoort.
+- De toernooiboom toont de routes met verbindingslijnen, ook voordat winnaars bekend zijn. Onbekende deelnemers worden weergegeven als `Winnaar R1 · duel 1` enzovoort.
+- Na een ingevoerde uitslag schuift de winnaar automatisch door naar het vooraf vastliggende vak. **Geen nieuwe loting per ronde.**
+- Een bestaande bracket kan niet onbedoeld opnieuw geloot worden; uitsluitend een expliciete volledige herstart door de beheerder wist de loting.
+
 ## Officieel speelschema 2026–2027
 
 | Ronde | ISO-weken | Toegestane periode | Niet spelen |
