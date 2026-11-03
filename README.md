@@ -46,12 +46,15 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - De originele verhinderingen van deelnemers kunnen na de loting door de beheerder worden bijgewerkt. Dit verandert de vaste route in de bracket niet. De website en database controleren de identiteit en structuur van de bracket.
 - Een bestaande bracket kan alleen opnieuw worden geloot na een expliciete volledige herstart door de beheerder.
 
-### Op papier thuisspeler en voorkeursdagen
+### Planning en de op papier thuisspelende speler
 
 - De **eerstgenoemde speler in een duel** is de op papier thuisspelende speler.
-- Zijn of haar **voorkeursdagen** in het openbare speelschema zijn de weekdagen die niet als verhinderd zijn opgegeven. De volledige persoonlijke verhinderingenlijst blijft afgeschermd.
-- De automatische speeldagindeling gebruikt de beschikbaarheid van beide spelers. Zolang een tegenstander nog niet bekend is, wordt de speeldag gekozen uit de voorkeursdagen van de op papier thuisspeler. Zodra de tegenstander bekend wordt, wordt de planning opnieuw gecontroleerd.
-- Als spelers geen gezamenlijke beschikbare speeldag hebben, blijft de wedstrijd in de bracket staan en verschijnt geen geforceerd ongeschikt datumvoorstel. De twee spelers kiezen zelf in overleg een toegestane dag, die de beheerder vastlegt.
+- De beschikbare weekdagen en verhinderingen van spelers worden **niet getoond in het publieke speelschema**. De beheerder kan ze gebruiken om de planning op te stellen.
+- Per ronde worden wedstrijden automatisch **gespreid over geschikte speeldagen** binnen de vastgestelde rondeperiode, met uitsluiting van de geblokkeerde feestdagen en met inachtneming van voorafgaande rondes.
+- Wanneer beide spelers een dag kunnen, heeft een **gezamenlijk beschikbare dag** voorrang.
+- Wanneer de twee spelers **geen passende gezamenlijke dag** hebben, wordt voor het voorlopige schema een dag gekozen waarop de **op papier thuisspelende speler** kan. Deze datum is nadrukkelijk **nog geen definitieve afspraak**.
+- De spelers moeten daarna **onderling overeenkomen** welke toegestane dag zij spelen. De beheerder bevestigt het akkoord. De geplande dag en **20:00 uur** blijven standaard; andere speeldagen binnen de rondeperiode of starttijden zijn met wederzijds akkoord toegestaan.
+- Bevestigde afspraken worden bij herplannen niet stilzwijgend gewijzigd. Als een volgende ronde niet meer past, vraagt de planning om handmatige beoordeling in plaats van een verboden datum te forceren.
 
 ## Bronsfinale en plaats 3/4
 
