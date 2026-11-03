@@ -209,7 +209,7 @@ function scheduleConflict(m,s){
   }
  }
  const follow=b[m.round+1]?.[Math.floor(m.index/2)];
- if(follow&&data.schedule[follow.id]?.date&&s.date>=data.schedule[follow.id].date)alerts.push('Een vervolgronde staat op of vóór deze datum.');
+ if(follow&&data.schedule[follow.id]?.date&&data.schedule[follow.id].provisional===false&&s.date>=data.schedule[follow.id].date)alerts.push('Een reeds bevestigde vervolgronde staat op of vóór deze datum.');
  for(const other of allMatches()){
   if(other.id===m.id||!data.schedule[other.id]?.date||data.schedule[other.id].date!==s.date)continue;
   if([m.a,m.b].filter(Boolean).some(id=>[other.a,other.b].includes(id)))alerts.push('Een van de spelers heeft al een andere wedstrijd op deze dag.');
