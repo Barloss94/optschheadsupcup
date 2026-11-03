@@ -23,6 +23,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Validate website JavaScript
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          scripts = [s.strip() for s in re.findall(r'<script[^>]*>(.*?)</script>', html, flags=re.S) if s.strip()]
+          if len(scripts) != 1:
+              raise SystemExit('Expected exactly one inline JavaScript block')
+          Path('/tmp/ohc-inline.js').write_text(scripts[0], encoding='utf-8')
+          PY
+          node --check /tmp/ohc-inline.js
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload static site
