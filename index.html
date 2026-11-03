@@ -661,7 +661,14 @@ function setWinner(r,i,w){
    if(old.a!==now.a||old.b!==now.b){
     delete data.results[old.id];
     delete data.settings.resultText[old.id];
-    if(data.schedule[old.id])data.schedule[old.id].provisional=true;
+    if(data.schedule[old.id]){
+     // A replacement opponent has not agreed to the former arrangement.
+     data.schedule[old.id].provisional=true;
+     data.schedule[old.id].auto=true;
+     data.schedule[old.id].time=DEFAULT_MATCH_TIME;
+     delete data.schedule[old.id].mutualAgreement;
+     delete data.schedule[old.id].agreedPlayers;
+    }
    }
   }
  }
