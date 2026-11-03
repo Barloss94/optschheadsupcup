@@ -99,7 +99,7 @@ async function logout(){
 
 const SHORT_DAYS=['Zo','Ma','Di','Wo','Do','Vr','Za'];
 const DAYS=[{id:1,name:'Maandag',search:'maandagen'},{id:2,name:'Dinsdag',search:'dinsdagen'},{id:3,name:'Woensdag',search:'woensdagen'},{id:4,name:'Donderdag',search:'donderdagen'},{id:5,name:'Vrijdag',search:'vrijdagen'},{id:6,name:'Zaterdag',search:'zaterdagen'},{id:0,name:'Zondag',search:'zondagen'}];
-const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":"2026-11-21T00:00:00+01:00","buyInCents":1250,"maxPlayers":32,"prizes":{"firstWeight":35,"secondWeight":25,"thirdWeight":15.5,"fourthWeight":12.5,"round3LosersCents":1250,"round3LosersCount":4,"roundingCents":50,"method":"largest_remainders"},"roundDeadlines":{},"resultText":{}}};
+const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":"2026-11-21T00:00:00+01:00","buyInCents":1250,"fixedCostsCents":5650,"maxPlayers":32,"prizes":{"firstWeight":35,"secondWeight":25,"thirdWeight":15.5,"fourthWeight":12.5,"round3LosersCents":1250,"round3LosersCount":4,"roundingCents":50,"method":"largest_remainders"},"roundDeadlines":{},"resultText":{}}};
 
 const ROUND_WINDOWS=[
  {weeks:'49/50',start:'2026-11-30',end:'2026-12-13',exclusions:['2026-12-04','2026-12-05','2026-12-06'],label:'30 november t/m 13 december 2026'},
@@ -233,7 +233,7 @@ function nav(){const tabs=[['overzicht','Overzicht'],['deelnemers','Deelnemers']
 function heading(title,aside=''){return `<div class="sectiontitle"><h2>${title}</h2>${aside}</div>`}
 function hero(){return `<section class="hero"><div class="heroinner"><span class="eyebrow"><i class="dot"></i> OPTSCH • Nieuw toernooi</span><h1>HEADS-UP<br><em>CUP</em></h1><p>Geen volle tafels, geen teamgenoten. Slechts twee spelers tegenover elkaar. Win je duel, dan ga je door. Wie bereikt de finale?</p><div class="btnbar">${button('Bekijk deelnemers →',"setTab('deelnemers')",'')}${button('Toernooiboom bekijken',"setTab('boom')",'ghost')}</div></div></section>`}
 
-const BUY_IN_CENTS=1250,MAX_PLAYERS=32;
+const BUY_IN_CENTS=1250,FIXED_COSTS_CENTS=5650,MAX_PLAYERS=32;
 const PRIZE_WEIGHTS=[35,25,15.5,12.5];
 const PRIZE_NAMES=['1e plaats','2e plaats','3e plaats','4e plaats','Gedeelde 5e plaats','Gedeelde 5e plaats','Gedeelde 5e plaats','Gedeelde 5e plaats'];
 const QUARTERFINAL_LOSER_CENTS=1250,PRIZE_ROUNDING_CENTS=50;
@@ -241,7 +241,8 @@ function euros(cents){return new Intl.NumberFormat('nl-NL',{style:'currency',cur
 function projectedPrizes(participants){
  if(!Number.isInteger(participants)||participants<17||participants>MAX_PLAYERS)return null;
  const totalCents=participants*BUY_IN_CENTS;
- const remainingCents=totalCents-4*QUARTERFINAL_LOSER_CENTS;
+ const netPrizeCents=totalCents-FIXED_COSTS_CENTS;
+ const remainingCents=netPrizeCents-4*QUARTERFINAL_LOSER_CENTS;
  const weightTotal=PRIZE_WEIGHTS.reduce((a,b)=>a+b,0);
  const exact=PRIZE_WEIGHTS.map(weight=>remainingCents*weight/weightTotal);
  // Largest remainder rounding: first round down to multiples of €0.50,
@@ -253,9 +254,9 @@ function projectedPrizes(participants){
   (exact[b]-top[b])-(exact[a]-top[a]) || a-b);
  for(let i=0;i<units;i++)top[order[i]]+=PRIZE_ROUNDING_CENTS;
  const payouts=[...top,...Array(4).fill(QUARTERFINAL_LOSER_CENTS)];
- if(payouts.reduce((a,b)=>a+b,0)!==totalCents)
-  throw Error('Prijzen komen niet overeen met de totale pot.');
- return {participants,totalCents,remainingCents,payouts};
+ if(payouts.reduce((a,b)=>a+b,0)!==netPrizeCents)
+  throw Error('Prijzen komen niet overeen met de netto prijzenpot.');
+ return {participants,totalCents,fixedCostsCents:FIXED_COSTS_CENTS,netPrizeCents,remainingCents,payouts};
 }
 function prizePanel(){
  const current=data.players.length,exact=current>=17&&current<=MAX_PLAYERS;
@@ -264,13 +265,13 @@ function prizePanel(){
   (i<4?String(PRIZE_WEIGHTS[i]).replace('.',','):'Vast')+
   '</td><td><strong>'+euros(example.payouts[i])+'</strong></td></tr>');
  return '<section class="panel">'+heading('Buy-in en prijzenpot','<span class="pill blue">'+euros(BUY_IN_CENTS)+' per deelnemer</span>')+
- '<p class="smalltext muted">Eenmalige buy-in voor de volledige OHC-competitie. Maximaal 32 spelers. De volledige ingelegde pot wordt verdeeld over acht prijzen.</p>'+
- '<div class="formgrid"><div class="infoitem"><div class="tag">PRIJZENPOT</div><strong style="font-size:23px">'+euros(example.totalCents)+'</strong><div class="smalltext muted">'+
+ '<p class="smalltext muted">Eenmalige buy-in voor de volledige OHC-competitie. Maximaal 32 spelers. Eerst wordt €56,50 vaste organisatiekosten van de totale inleg afgetrokken; daarna wordt de netto prijzenpot volledig over acht prijzen verdeeld.</p>'+
+ '<div class="formgrid"><div class="infoitem"><div class="tag">BRUTO INLEG</div><strong style="font-size:23px">'+euros(example.totalCents)+'</strong><div class="smalltext muted">'+
  (exact?'Voorlopig bij '+current+' geregistreerde spelers':'Rekenvoorbeeld bij 32 deelnemers')+'</div></div>'+
- '<div class="infoitem"><div class="tag">DEELNEMERSLIMIET</div><strong style="font-size:23px">'+current+' / 32</strong><div class="smalltext muted">'+Math.max(0,32-current)+' plaatsen nog niet geregistreerd</div></div></div>'+
+ '<div class="infoitem"><div class="tag">NETTO PRIJZENPOT</div><strong style="font-size:23px">'+euros(example.netPrizeCents)+'</strong><div class="smalltext muted">'+euros(example.totalCents)+' inleg − '+euros(example.fixedCostsCents)+' vaste kosten</div></div></div>'+
  '<div class="tablewrap"><table class="table"><thead><tr><th>Eindpositie</th><th>Verdeelsleutel</th><th>Prijs</th></tr></thead><tbody>'+
- rows.join('')+'<tr><td><strong>Totaal</strong></td><td>Volledige pot</td><td><strong>'+euros(example.totalCents)+'</strong></td></tr></tbody></table></div>'+
- '<p class="muted smalltext">De vier verliezers van ronde 3 (kwartfinales) ontvangen ieder vast €12,50: precies hun buy-in terug. Het restant wordt verdeeld over plaats 1 t/m 4 volgens de onderlinge verhouding 35 : 25 : 15,5 : 12,5. Alle prijzen worden op €0,50 afgerond; afrondingsverschillen worden volledig verdeeld.</p>'+
+ rows.join('')+'<tr><td><strong>Totaal prijzen</strong></td><td>Netto prijzenpot</td><td><strong>'+euros(example.netPrizeCents)+'</strong></td></tr></tbody></table></div>'+
+ '<p class="muted smalltext">Van de totale inleg wordt eerst €56,50 vaste kosten afgehaald. De vier verliezers van ronde 3 (kwartfinales) ontvangen daarna ieder vast €12,50: precies hun buy-in terug. Het restant van de netto prijzenpot wordt verdeeld over plaats 1 t/m 4 volgens de onderlinge verhouding 35 : 25 : 15,5 : 12,5. Alle prijzen worden op €0,50 afgerond; afrondingsverschillen worden volledig verdeeld.</p>'+
  (!exact?'<div class="notice orange">Deze acht prijzen zijn bedoeld voor vijf rondes (17 t/m 32 spelers). Bij minder dan 17 deelnemers moet de organisatie nog een aangepaste verdeling bepalen; de bedragen hierboven zijn een voorbeeld bij 32 spelers.</div>':'')+
  '<div class="notice">De twee verliezers van de halve finale moeten nog onderling worden gerangschikt voor de 3e en 4e plaats. Hoe dit gebeurt, moet de organisatie nog vaststellen.</div>'+
  '</section>';
