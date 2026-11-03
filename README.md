@@ -45,7 +45,7 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 ### Beschikbaarheid in de volledige bracket
 
 - Het systeem controleert alle **mogelijke** ontmoetingen vanaf ronde 1 tot en met de halve finale. Spelers die geen enkele gezamenlijke speeldag hebben, mogen niet in dezelfde brackethelft terechtkomen.
-- Alleen in de **finale** mag een ontmoeting zonder gemeenschappelijke speeldag mogelijk zijn. In dat geval maakt de automatische planning geen ongeldige afspraak: de organisatie moet een aparte oplossing vinden.
+- In de **finale en bronsfinale** kunnen spelers zonder gezamenlijke opgegeven beschikbare speeldag tegenover elkaar komen te staan. De spelers spreken dan onderling een toegestane speeldag af binnen de finaleperiode.
 - De verdeling van deelnemers over de twee brackethelften wordt berekend voordat de loting definitief wordt vastgelegd. Andere combinaties en de plaatsing van vrijloten worden vervolgens willekeurig bepaald binnen de geldige mogelijkheden.
 - Als de verhinderingen onmogelijk over de twee brackethelften te verdelen zijn, **wordt er niet geloot**. Een melding geeft aan dat beschikbaarheid of afspraken moeten worden aangepast; het systeem forceert nooit een ongeldige bracket.
 - De website controleert ook veranderingen achteraf (handmatige wijziging van verhinderingen, CSV-import en back-upherstel). Een extra database-trigger weigert ongeldige wijzigingen zelfs als een client de gebruikersinterface omzeilt.
@@ -61,7 +61,7 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - De twee deelnemers worden automatisch bepaald zodra beide halve finales zijn beslist. Er is geen extra loting.
 - De bronsfinale heeft een eigen uitslag, wedstrijddatum, planning en vermelding in de toernooiboom en CSV/PNG-exports. Bij een veranderde halvefinale-uitslag vervalt de bronzuitslag automatisch, zodat nooit de verkeerde spelers de derde en vierde prijs krijgen.
 - Het toernooi wordt pas als afgerond aangemerkt als zowel de gewone finale als de bronsfinale een winnaar heeft.
-- De bronsfinale verbindt, net als de gewone finale, spelers uit **verschillende brackethelften**. Daardoor kan het voorkomen dat zij geen gezamenlijke beschikbare speeldag hebben; de organisatie moet dan alsnog een afspraak maken en de geregistreerde beschikbaarheid bijwerken om het duel te kunnen bevestigen.
+- De bronsfinale verbindt, net als de gewone finale, spelers uit **verschillende brackethelften**. Als zij geen gezamenlijke opgegeven speeldag hebben, mogen zij in onderling overleg een andere toegestane datum kiezen. De beheerder legt dit vast zonder de oorspronkelijke verhinderingen aan te passen.
 - Bij **32 spelers** zijn er **32 aparte knock-outduels** (31 voor de titel plus één om het brons). De aantallen *heads-ups* bij eventueel meerdere games per duel kunnen hiervan afwijken.
 
 ## Buy-in en prijzenverdeling
@@ -91,7 +91,15 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 | 4 | 2/3 2027 | 11 t/m 24 januari 2027 | geen aanvullende uitzonderingen |
 | 5 | 3/4 2027 | 18 t/m 31 januari 2027 | geen aanvullende uitzonderingen |
 
-De loting verdeelt de wedstrijden automatisch zo gelijkmatig mogelijk over de toegestane dagen binnen de eigen ronde. Elke wedstrijd in een vervolgronde moet **na** zijn voorgaande duels vallen; dat geldt ook voor de overlappende periodes van ronde 3, 4 en 5. Automatische datums zijn voorlopig totdat de organisatie ze bevestigt. Speeldatums buiten de rondes of op uitgesloten dagen worden door de browser **en de database** geweigerd.
+De planning verdeelt de speeldagen vooraf zo gelijkmatig mogelijk binnen hun rondeperiode, rekening houdend met de verhinderingen en de vaste bracket. Elke wedstrijd in een vervolgronde moet **na** zijn voorgaande duels plaatsvinden. Dat geldt ook voor de overlappende periodes van ronde 3, 4 en 5. Speeldatums buiten de rondeperiodes of op uitgesloten dagen blijven verboden.
+
+### Speeldag en starttijd (vastgesteld)
+
+- **Standaard:** de vooraf geplande speeldag met een starttijd van **20:00 uur**.
+- **In onderling overleg:** beide spelers mogen de **speeldag en/of starttijd** wijzigen, mits de nieuwe speeldag binnen de officiële rondeperiode ligt en de rondevolgorde en uitgesloten dagen worden gerespecteerd.
+- **Administratie:** de beheerder legt de afspraak vast en vinkt aan dat **beide spelers akkoord** zijn. Zonder dit akkoord kan een datum- of tijdwijziging niet worden bevestigd.
+- **Automatisch opnieuw plannen:** bevestigde afspraken worden niet stilzwijgend overschreven; eventuele conflicten komen ter beoordeling bij de beheerder.
+- Deze afspraken gelden **ook voor de finale en de bronsfinale**.
 
 De kalender biedt vijf rondes, dus maximaal **32 deelnemers** bij directe knock-out. De beheerder kan verhinderingen van deelnemers instellen, ook op zaterdag en zondag. Als geen gezamenlijke dag in de betreffende ronde mogelijk is, blijft het duel ongepland en krijgt het beheer hiervan een melding. Vrijloten zijn geen duels en worden niet ingepland. De officiële loting wordt niet automatisch uitgevoerd door deze wijziging.
 
@@ -112,5 +120,5 @@ Als de URL nog niet bereikbaar is, is GitHub Pages nog niet geactiveerd of is de
 - Wijzigingen worden online opgeslagen. Er is geen lokale opslag van persoonsgegevens.
 - De beheerders zien volledige namen en beschikbaarheid; de publieke tabellen tonen alleen de eerste voornaam en de eerste letter van de laatste achternaam.
 - De website biedt momenteel één OHC-evenement (`2026`). Meerdere seizoenen zijn een toekomstige uitbreiding.
-- Blindstructuur, de manier om plaats 3 en 4 te bepalen, en forfaitregels zijn nog niet definitief vastgesteld.
+- Blindstructuur en forfaitregels zijn nog niet definitief vastgesteld. De derde en vierde plaats worden door de bronsfinale bepaald.
 - Gebruik het bestaande Ranking-adminaccount. Nieuwe OHC-beheeraccounts worden niet automatisch aangemaakt.
