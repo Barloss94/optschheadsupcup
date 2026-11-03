@@ -28,6 +28,20 @@ Open `index.html` in een browser via een HTTP-server of gebruik GitHub Pages. De
 
 De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestand in de OHC-database gezet. De **loting is niet uitgevoerd**.
 
+## Officieel speelschema 2026–2027
+
+| Ronde | ISO-weken | Toegestane periode | Niet spelen |
+|---|---|---|---|
+| 1 | 49/50 2026 | 30 november t/m 13 december 2026 | 4, 5 en 6 december |
+| 2 | 51/52 2026 | 14 t/m 27 december 2026 | 24, 25 en 26 december |
+| 3 | 1/2 2027 | 4 t/m 17 januari 2027 | geen aanvullende uitzonderingen |
+| 4 | 2/3 2027 | 11 t/m 24 januari 2027 | geen aanvullende uitzonderingen |
+| 5 | 3/4 2027 | 18 t/m 31 januari 2027 | geen aanvullende uitzonderingen |
+
+De loting verdeelt de wedstrijden automatisch zo gelijkmatig mogelijk over de toegestane dagen binnen de eigen ronde. Elke wedstrijd in een vervolgronde moet **na** zijn voorgaande duels vallen; dat geldt ook voor de overlappende periodes van ronde 3, 4 en 5. Automatische datums zijn voorlopig totdat de organisatie ze bevestigt. Speeldatums buiten de rondes of op uitgesloten dagen worden door de browser **en de database** geweigerd.
+
+De kalender biedt vijf rondes, dus maximaal **32 deelnemers** bij directe knock-out. De beheerder kan verhinderingen van deelnemers instellen, ook op zaterdag en zondag. Als geen gezamenlijke dag in de betreffende ronde mogelijk is, blijft het duel ongepland en krijgt het beheer hiervan een melding. Vrijloten zijn geen duels en worden niet ingepland. De officiële loting wordt niet automatisch uitgevoerd door deze wijziging.
+
 ## Publiceren op GitHub Pages
 
 De repository heeft een GitHub Pages-workflow op `.github/workflows/pages.yml`.
