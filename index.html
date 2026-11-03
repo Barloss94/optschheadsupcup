@@ -453,14 +453,14 @@ function adminDrawView(){const b=bracket();return `<section class="panel">${head
 function adminScheduleView(){
  const b=bracket();if(!b.length)return'';
  return '<section class="panel">'+heading('Wedstrijden plannen')+
- '<p class="smalltext muted">De automatische planning verdeelt alle duels over hun eigen speelperiode en plant vervolgrondes na de voorgaande wedstrijden. Bij bekende spelers tellen hun verhinderingen mee. Voorlopige duels worden opnieuw gecontroleerd zodra beide spelers bekend zijn.</p>'+
+ '<p class="smalltext muted">De website deelt de speeldagen vooraf in op basis van de opgegeven beschikbaarheid en de bracket. Het tijdstip bepalen de spelers zelf; standaard is 20:00 uur. Binnen de officiële rondeperiode mogen zij onderling een andere speeldag afspreken. De beheerder bevestigt die afspraak.</p>'+
  '<div class="btnbar" style="margin-bottom:16px">'+button('Alle duels automatisch verdelen','runAutoPlanning()','',true)+'</div>'+
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
  rr.map(m=>{
  const s=data.schedule[m.id]||{},opt=suggestions(m);
  return '<div class="infoitem matchadmin"><div class="line"><div><strong>'+esc(m.isBronze&&!m.a?'Verliezer halve finale 1':name(m.a,true))+'</strong><span class="vs">VS</span><strong>'+esc(m.isBronze&&!m.b?'Verliezer halve finale 2':name(m.b,true))+'</strong></div><span class="tag">'+(m.isBronze?'BRONSFINALE':r===b.length-1?'FINALE':'#'+m.id)+'</span></div>'+
  (m.isBye?'<p class="muted smalltext">Vrijloting: geen datum nodig.</p>':
- '<div class="formgrid" style="margin-top:12px"><div class="field"><label for="date_'+r+'_'+m.index+'">Datum binnen '+esc(periodInfo(r))+'</label><input id="date_'+r+'_'+m.index+'" type="date" min="'+ROUND_WINDOWS[r].start+'" max="'+ROUND_WINDOWS[r].end+'" value="'+esc(s.date||'')+'" '+(!m.a||!m.b?'disabled':'')+'></div><div class="field"><label for="time_'+r+'_'+m.index+'">Tijd (optioneel)</label><input id="time_'+r+'_'+m.index+'" type="time" value="'+esc(s.time||'')+'" '+(!m.a||!m.b?'disabled':'')+'></div></div>'+
+ '<div class="formgrid" style="margin-top:12px"><div class="field"><label for="date_'+r+'_'+m.index+'">Datum binnen '+esc(periodInfo(r))+'</label><input id="date_'+r+'_'+m.index+'" type="date" min="'+ROUND_WINDOWS[r].start+'" max="'+ROUND_WINDOWS[r].end+'" value="'+esc(s.date||'')+'" '+(!m.a||!m.b?'disabled':'')+'></div><div class="field"><label for="time_'+r+'_'+m.index+'">Tijdstip (door spelers af te spreken; standaard 20:00)</label><input id="time_'+r+'_'+m.index+'" type="time" value="'+esc(s.time||DEFAULT_MATCH_TIME)+'" '+(!m.a||!m.b?'disabled':'')+'></div></div>'+
  (!m.a||!m.b?'<p class="hint">Voorlopige datum voor dit duel. Bevestigen kan zodra beide spelers bekend zijn.</p>':
  '<div class="chips">'+(opt.length?opt.slice(0,4).map(x=>'<button class="chip" onclick="pickDate('+r+','+m.index+',\''+x+'\')" type="button">'+esc(prettyDate(x))+'</button>').join(''):'<span class="chip busy">Geen geschikte gemeenschappelijke speeldag in deze ronde</span>')+'</div>'+
  '<div class="btnbar" style="margin-top:11px">'+button('Datum bevestigen','saveMatchDate('+r+','+m.index+')','alt',true)+(s.date?button('Planning opnieuw berekenen','replanMatch('+r+','+m.index+')','ghost',true):'')+'</div>'))+
@@ -663,13 +663,29 @@ function setWinner(r,i,w){
 }
 function pickDate(r,i,value){const input=$(`date_${r}_${i}`);if(input)input.value=value}
 function saveMatchDate(r,i){
+ if(!isAdmin)return;
  const m=bracket()[r]?.[i];if(!m||!m.a||!m.b||m.isBye)return;
- const dt=$('date_'+r+'_'+i).value,tm=$('time_'+r+'_'+i).value;
- if(!dt){notify('Kies eerst een speeldatum.');return}
- const conflict=scheduleConflict(m,{date:dt,time:tm});
- if(conflict){notify('Niet toegestaan: '+conflict);return}
- data.schedule[m.id]={date:dt,time:tm,provisional:false,auto:false};
- autoPlanMatches(false);save();render();notify('Datum bevestigd en planning van vervolgrondes gecontroleerd.');
+ const dt=$('date_'+r+'_'+i)?.value;
+ const tm=$('time_'+r+'_'+i)?.value||DEFAULT_MATCH_TIME;
+ if(!dt){notify('Kies eerst de speeldag.');return}
+ const previous=data.schedule[m.id]||{};
+ const agreed=$('agreed_'+r+'_'+i)?.checked===true;
+ const moved=!!previous.date&&previous.date!==dt;
+ const outsideAvailability=!availableOnDate(m,dt);
+ if((moved||outsideAvailability)&&!agreed){
+  notify('Voor een andere speeldag of een afwijking van de verhinderingen moeten beide spelers akkoord zijn. Vink Onderling akkoord aan.');
+  return;
+ }
+ const mutualAgreement=agreed||(previous.date===dt&&matchHasAgreement(m,previous));
+ const proposed={date:dt,time:tm,provisional:false,auto:false,
+  ...(mutualAgreement?{mutualAgreement:true,agreedPlayers:[m.a,m.b]}:{})};
+ const err=scheduleConflict(m,proposed);
+ if(err){notify('Speeldag niet toegestaan: '+err);return}
+ data.schedule[m.id]=proposed;
+ const plan=autoPlanMatches(false);
+ save();render();
+ notify('Speeldag vastgelegd'+(mutualAgreement?' in onderling overleg':'')+' · '+tm+' uur.'+
+  (plan.missing.length?' Controleer '+plan.missing.length+' nog niet planbare duels.':''));
 }
 function clearDate(r,i){delete data.schedule[matchKey(r,i)];save();render();notify('Speeldatum verwijderd.')}
 function updateStatus(v){data.settings.status=v;save();render()}
