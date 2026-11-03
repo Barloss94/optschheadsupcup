@@ -54,6 +54,16 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - Na een ingevoerde uitslag schuift de winnaar automatisch door naar het vooraf vastliggende vak. **Geen nieuwe loting per ronde.**
 - Een bestaande bracket kan niet onbedoeld opnieuw geloot worden; uitsluitend een expliciete volledige herstart door de beheerder wist de loting.
 
+## Bronsfinale en plaats 3/4
+
+- De **twee verliezers van de halve finales** spelen een extra wedstrijd om het brons. De winnaar wordt **3e**, de verliezer **4e**.
+- Dit is **geen extra knock-outronde**: de bronsfinale wordt tegelijk met de gewone finale in de vijfde speelperiode gehouden (**18 t/m 31 januari 2027** bij vijf ronden).
+- De twee deelnemers worden automatisch bepaald zodra beide halve finales zijn beslist. Er is geen extra loting.
+- De bronsfinale heeft een eigen uitslag, wedstrijddatum, planning en vermelding in de toernooiboom en CSV/PNG-exports. Bij een veranderde halvefinale-uitslag vervalt de bronzuitslag automatisch, zodat nooit de verkeerde spelers de derde en vierde prijs krijgen.
+- Het toernooi wordt pas als afgerond aangemerkt als zowel de gewone finale als de bronsfinale een winnaar heeft.
+- De bronsfinale verbindt, net als de gewone finale, spelers uit **verschillende brackethelften**. Daardoor kan het voorkomen dat zij geen gezamenlijke beschikbare speeldag hebben; de organisatie moet dan alsnog een afspraak maken en de geregistreerde beschikbaarheid bijwerken om het duel te kunnen bevestigen.
+- Bij **32 spelers** zijn er **32 aparte knock-outduels** (31 voor de titel plus één om het brons). De aantallen *heads-ups* bij eventueel meerdere games per duel kunnen hiervan afwijken.
+
 ## Buy-in en prijzenverdeling
 
 - Eenmalige buy-in: **€12,50 per speler** voor de volledige competitie, maximaal **32 deelnemers**.
@@ -69,7 +79,7 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - Alle prijzen blijven veelvouden van **€0,50** en de netto prijzenpot wordt volledig uitgekeerd; doordat plaats 3 het restant krijgt, kan het werkelijke aandeel van plaats 3 afwijken van 15,5%.
 - Voorbeeld bij **32 deelnemers**: bruto inleg **€400,00**, vaste kosten **€56,50**, netto prijzenpot **€343,50**. Prijzen: **€120,00 / €85,00 / €55,50 / €43,00**, plus viermaal **€10,00**.
 - De acht prijzen gelden voor de vijf rondes bij **17 t/m 32 deelnemers**. Bij minder dan 17 deelnemers is een aparte prijsverdeling nog niet vastgesteld; de website toont dan alleen het voorbeeld van 32 deelnemers.
-- Voor de 3e en 4e plaats moeten de twee verliezers van de halve finale nog afzonderlijk worden gerangschikt. De methode daarvoor is nog niet vastgesteld.
+- De **winnaar van de bronsfinale** krijgt de derde prijs; de verliezer krijgt de vierde prijs.
 
 ## Officieel speelschema 2026–2027
 
