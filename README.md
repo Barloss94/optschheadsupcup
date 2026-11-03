@@ -51,6 +51,10 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - De **eerstgenoemde speler in een duel** is de op papier thuisspelende speler.
 - De beschikbare weekdagen en verhinderingen van spelers worden **niet getoond in het publieke speelschema**. De beheerder kan ze gebruiken om de planning op te stellen.
 - Per ronde worden wedstrijden automatisch **gespreid over geschikte speeldagen** binnen de vastgestelde rondeperiode, met uitsluiting van de geblokkeerde feestdagen en met inachtneming van voorafgaande rondes.
+- **De volledige vaste bracket wordt vooruit doorgerekend**: voor ronde 2 staan de mogelijke winnaars uit beide eerste-ronde-duels al vast; voor ronde 3 en verder volgt hetzelfde principe. Ook de finale en bronsfinale worden berekend.
+- Per toekomstige wedstrijd worden de beschikbare dagen van **alle mogelijke deelnemers** vergeleken. Een datum die voor alle uitkomsten past, krijgt voorrang. Als die niet bestaat, wordt een voorlopige datum gekozen die voor zoveel mogelijk mogelijke deelnemers werkt. Die datum wordt opnieuw gecontroleerd zodra de werkelijke winnaars bekend zijn.
+- In het publieke speelschema staat niet 'Nog niet bekend', maar de **precieze bracketherkomst** van een nog onbekende speler, bijvoorbeeld `Winnaar ronde 1 duel 1`, en voor de bronsfinale `Verliezer halve finale 1`.
+- Als een datum nog afhankelijk is van toekomstige uitslagen, vermeldt het schema **'Voorlopige datum afhankelijk van winnaars'**. Ook een datum die bij alle mogelijke deelnemers past, blijft een voorstel totdat hij is bevestigd.
 - Wanneer beide spelers een dag kunnen, heeft een **gezamenlijk beschikbare dag** voorrang.
 - Wanneer de twee spelers **geen passende gezamenlijke dag** hebben, wordt voor het voorlopige schema een dag gekozen waarop de **op papier thuisspelende speler** kan. Deze datum is nadrukkelijk **nog geen definitieve afspraak**.
 - De spelers moeten daarna **onderling overeenkomen** welke toegestane dag zij spelen. De beheerder bevestigt het akkoord. De geplande dag en **20:00 uur** blijven standaard; andere speeldagen binnen de rondeperiode of starttijden zijn met wederzijds akkoord toegestaan.
@@ -103,7 +107,7 @@ De planning verdeelt de speeldagen vooraf binnen hun rondeperiode, rekening houd
 - **Automatisch opnieuw plannen:** bevestigde afspraken worden niet stilzwijgend overschreven; eventuele conflicten komen ter beoordeling bij de beheerder.
 - Deze afspraken gelden **ook voor de finale en de bronsfinale**.
 
-De kalender biedt vijf rondes, dus maximaal **32 deelnemers** bij directe knock-out. De beheerder kan verhinderingen van deelnemers instellen, ook op zaterdag en zondag. Als geen gezamenlijke dag in de betreffende ronde mogelijk is, blijft het duel ongepland en krijgt het beheer hiervan een melding. Vrijloten zijn geen duels en worden niet ingepland. De officiële loting wordt niet automatisch uitgevoerd door deze wijziging.
+De kalender biedt vijf rondes, dus maximaal **32 deelnemers** bij directe knock-out. De beheerder kan verhinderingen van deelnemers instellen, ook op zaterdag en zondag. Zonder gezamenlijke speeldag stelt de planning een beschikbare dag van de thuisspeler voor; beide spelers moeten daarna gezamenlijk een dag afspreken. Vrijloten zijn geen duels en worden niet ingepland. De officiële loting wordt niet automatisch opnieuw uitgevoerd door een planningswijziging.
 
 ## Publiceren op GitHub Pages
 
