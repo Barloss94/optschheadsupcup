@@ -255,11 +255,11 @@ function adminScheduleView(){
  '<div class="formgrid" style="margin-top:12px"><div class="field"><label for="date_'+r+'_'+m.index+'">Datum binnen '+esc(periodInfo(r))+'</label><input id="date_'+r+'_'+m.index+'" type="date" min="'+ROUND_WINDOWS[r].start+'" max="'+ROUND_WINDOWS[r].end+'" value="'+esc(s.date||'')+'" '+(!m.a||!m.b?'disabled':'')+'></div><div class="field"><label for="time_'+r+'_'+m.index+'">Tijd (optioneel)</label><input id="time_'+r+'_'+m.index+'" type="time" value="'+esc(s.time||'')+'" '+(!m.a||!m.b?'disabled':'')+'></div></div>'+
  (!m.a||!m.b?'<p class="hint">Voorlopige datum voor dit duel. Bevestigen kan zodra beide spelers bekend zijn.</p>':
  '<div class="chips">'+(opt.length?opt.slice(0,4).map(x=>'<button class="chip" onclick="pickDate('+r+','+m.index+',\''+x+'\')" type="button">'+esc(prettyDate(x))+'</button>').join(''):'<span class="chip busy">Geen geschikte gemeenschappelijke speeldag in deze ronde</span>')+'</div>'+
- '<div class="btnbar" style="margin-top:11px">'+button('Datum bevestigen','saveMatchDate('+r+','+m.index+')','alt',true)+(s.date?button('Planning opnieuw berekenen','replanMatch('+r+','+m.index+')','ghost',true):'')+'</div>')+
+ '<div class="btnbar" style="margin-top:11px">'+button('Datum bevestigen','saveMatchDate('+r+','+m.index+')','alt',true)+(s.date?button('Planning opnieuw berekenen','replanMatch('+r+','+m.index+')','ghost',true):'')+'</div>'))+
  (s.date?'<p class="muted smalltext">'+(s.provisional?'Automatisch voorstel':'Datum bevestigd')+'</p>':'<p class="muted smalltext">Nog niet ingepland</p>')+
  (scheduleConflict(m,s)?'<div class="notice orange">'+esc(scheduleConflict(m,s))+'</div>':'')+
- '</div>')
- .join('')+'</div>').join('')+'</section>';
+ '</div>';
+ }).join('')+'</div>').join('')+'</section>';
 }
 function runAutoPlanning(){if(!isAdmin)return;const result=autoPlanMatches();save();render();if(result.missing.length)notify(result.assigned+' duels verdeeld; '+result.missing.length+' duels vereisen handmatige oplossing.')}
 function replanMatch(r,i){if(!isAdmin)return;delete data.schedule[matchKey(r,i)];autoPlanMatches(false);save();render();notify('Voorstel opnieuw berekend binnen de rondeperiode.')}
