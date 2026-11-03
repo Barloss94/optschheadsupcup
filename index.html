@@ -137,11 +137,25 @@ function parentLatestDate(r,index,planned){
  const dates=feederMatches(m,rounds).map(x=>planned[x.id]?.date).filter(Boolean);
  return dates.length?dates.sort().at(-1):'';
 }
-function possibleDate(m,date,planned){
- const w=ROUND_WINDOWS[m.round];if(!w||date<w.start||date>w.end||w.exclusions.includes(date))return false;
+const DEFAULT_MATCH_TIME='20:00';
+function availableOnDate(m,date){
+ if(!m.a||!m.b)return true;
+ const day=new Date(date+'T12:00:00').getDay();
+ return weekdayOptions(m.a,m.b).some(d=>d.id===day);
+}
+function matchHasAgreement(m,s){
+ return !!(m?.a&&m?.b&&s?.mutualAgreement===true&&
+   Array.isArray(s.agreedPlayers)&&s.agreedPlayers.length===2&&
+   s.agreedPlayers[0]===m.a&&s.agreedPlayers[1]===m.b);
+}
+function possibleDate(m,date,planned,existing=null){
+ const w=ROUND_WINDOWS[m.round];
+ if(!w||date<w.start||date>w.end||w.exclusions.includes(date))return false;
  const prior=parentLatestDate(m.round,m.index,planned);
  if(prior&&date<=prior)return false;
- if(m.a&&m.b&&!weekdayOptions(m.a,m.b).some(d=>d.id===new Date(date+'T12:00:00').getDay()))return false;
+ // New proposed days must match the reported availability. An already agreed
+ // exception is retained only if both opponents and its exact date still match.
+ if(!availableOnDate(m,date)&&!(existing?.date===date&&matchHasAgreement(m,existing)))return false;
  if(m.a||m.b){
   for(const other of allMatches()){
    if(other.id===m.id||planned[other.id]?.date!==date)continue;
@@ -159,12 +173,15 @@ function autoPlanMatches(showNotice=true){
   const days=roundDays(r);
   for(let i=0;i<fixtures.length;i++){
    const m=fixtures[i],existing=old[m.id],desired=days[Math.min(days.length-1,Math.floor((i+0.5)*days.length/fixtures.length))];
-   const choices=days.filter(date=>possibleDate(m,date,next));
+   const choices=days.filter(date=>possibleDate(m,date,next,existing));
    if(!choices.length){missing.push(m.id);continue}
    const selected=existing?.date&&choices.includes(existing.date)?existing.date:
      choices.slice().sort((a,b)=>Math.abs(dateDifference(a,desired))-Math.abs(dateDifference(b,desired))||a.localeCompare(b))[0];
    const confirmed=existing?.date===selected&&existing.provisional===false;
-   next[m.id]={date:selected,time:existing?.date===selected?(existing.time||''):'',provisional:!confirmed,auto:!confirmed};
+   const agreementKept=existing?.date===selected&&matchHasAgreement(m,existing);
+   next[m.id]={date:selected,time:existing?.date===selected?(existing.time||DEFAULT_MATCH_TIME):DEFAULT_MATCH_TIME,
+     provisional:!confirmed,auto:!confirmed,
+     ...(agreementKept?{mutualAgreement:true,agreedPlayers:[m.a,m.b]}:{})};
   }
  }
  data.schedule=next;
@@ -251,7 +268,7 @@ function scheduleConflict(m,s){
  const w=ROUND_WINDOWS[m.round],alerts=[];
  if(!w||s.date<w.start||s.date>w.end)alerts.push('De datum valt buiten de verplichte speelperiode van ronde '+(m.round+1)+'.');
  if(w?.exclusions.includes(s.date))alerts.push('Deze datum is uitgesloten van het speelschema.');
- if(m.a&&m.b&&!weekdayOptions(m.a,m.b).some(x=>x.id===new Date(s.date+'T12:00:00').getDay()))alerts.push('Beide spelers zijn niet gezamenlijk beschikbaar op deze dag.');
+ if(m.a&&m.b&&!availableOnDate(m,s.date)&&!matchHasAgreement(m,s))alerts.push('Deze datum wijkt af van de opgegeven beschikbaarheid. Bevestig een onderlinge afspraak tussen beide spelers.');
  const b=bracket();
  if(m.round>0){
   for(const feeder of feederMatches(m,b)){
