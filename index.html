@@ -249,12 +249,18 @@ function autoPlanMatches(showNotice=true){
   for(let i=0;i<fixtures.length;i++){
    const m=fixtures[i],existing=old[m.id],possible=possibleFixturePlayers(m,rounds,potentialMemo);
    const desired=days[Math.min(days.length-1,Math.floor((i+0.5)*days.length/fixtures.length))];
-   const eligible=days.filter(date=>possibleDate(m,date,next,existing));
+   const nextLockedDates=Object.entries(old)
+    .filter(([id,s])=>id.startsWith((r+1)+':')&&s?.date&&s.provisional===false)
+    .map(([,s])=>s.date);
+   const lockedNext=nextLockedDates.length?nextLockedDates.sort()[0]:'';
+   const eligible=days.filter(date=>possibleDate(m,date,next,existing)&&
+      (!lockedNext||date<lockedNext));
    const evaluated=eligible.map(date=>({date,...fixtureAvailability(m,date,possible)}));
    // Confirmed dates are binding, even after another match changes. If a
    // confirmed date no longer fits, alert administrators rather than move it.
-   if(existing?.date&&existing.provisional===false){
-    next[m.id]={...existing,time:existing.time||DEFAULT_MATCH_TIME};
+   if(existing?.date&&(existing.provisional===false||(m.resolved&&!!m.winner))){
+    next[m.id]={...existing,time:existing.time||DEFAULT_MATCH_TIME,
+      provisional:false,...(m.resolved?{auto:false}:{})};
     register(existing.date);
     if(!eligible.includes(existing.date)||
        (m.a&&m.b&&!availableOnDate(m,existing.date)&&!matchHasAgreement(m,existing)))
@@ -473,7 +479,7 @@ function scheduleView(){
  const calendar=roundCalendar();
  if(!b.length)return calendar+'<div class="panel">'+heading('Wedstrijden')+'<div class="empty"><div class="bigicon">📅</div><strong>De loting is nog niet uitgevoerd</strong><p>De officiële speelperiodes liggen vast. Zodra de loting is uitgevoerd, worden alle duels automatisch over de beschikbare dagen verspreid.</p></div></div>';
  return calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
- '<p class="muted smalltext">Ook toekomstige rondes worden vooraf doorgerekend met alle mogelijke winnaars. Datums die voor alle mogelijke deelnemers passen krijgen voorrang. Anders is het datumvoorstel afhankelijk van de werkelijke uitslagen. Bij geen gezamenlijke speeldag geeft de thuisspeler het voorlopige uitgangspunt. Standaard 20:00 uur; wijzigingen binnen de rondeperiode in onderling overleg.</p>'+
+ '<p class="muted smalltext">Alle duels van een ronde moeten gespeeld zijn voordat de volgende ronde begint. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur, mits alle eerdere speeldagen vaststaan. Bij een conflict staat er een voorlopig voorstel. Verplaatsen kan alleen in onderling overleg, binnen de rondeperiode.</p>'+
  '<div class="btnbar" style="margin-bottom:18px">'+button('Wedstrijden exporteren (CSV)','exportMatchesCsv()','ghost',true)+'</div>'+
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
  rr.map(m=>{
@@ -589,15 +595,41 @@ function adminScheduleView(){
  (!m.a||!m.b?'<p class="hint">Voorlopige datum voor dit duel. Bevestigen kan zodra beide spelers bekend zijn.</p>':
  '<div class="chips">'+(opt.length?opt.slice(0,4).map(x=>'<button class="chip" onclick="pickDate('+r+','+m.index+',\''+x+'\')" type="button">'+esc(prettyDate(x))+'</button>').join(''):'<span class="chip busy">Geen passende dag binnen de rondeperiode gevonden</span>')+'</div>'+
  '<label class="day" style="margin-top:12px;display:flex;align-items:center;gap:9px"><input type="checkbox" id="agreed_'+r+'_'+m.index+'"> Beide spelers zijn akkoord met de gewijzigde speeldag en/of starttijd</label>'+
- '<p class="hint">Standaard geldt de geplande speeldag om 20:00 uur. Voor elke wijziging van speeldag of starttijd bevestigt de beheerder opnieuw dat beide spelers akkoord zijn. Een speeldag moet binnen de rondeperiode vallen.</p>'+
+ '<p class="hint">Speeldagen zonder conflict zijn automatisch vastgesteld om 20:00 uur. Voor een wijziging van dag of tijd moeten beide spelers akkoord zijn. De volgende ronde kan pas beginnen nadat alle duels van de vorige ronde zijn afgerond.</p>'+
  '<div class="btnbar" style="margin-top:11px">'+button('Datum bevestigen','saveMatchDate('+r+','+m.index+')','alt',true)+(s.date?button('Planning opnieuw berekenen','replanMatch('+r+','+m.index+')','ghost',true):'')+'</div>'))+
- (s.date?'<p class="muted smalltext">'+(s.provisional?s.requiresAgreement?'Voorstel volgens thuisspeler · onderling akkoord nodig':s.conditionalOnWinners?'Voorlopig · afhankelijk van de winnaars':'Automatisch voorgestelde speeldag':matchHasAgreement(m,s)?'Speeldag bevestigd in onderling overleg':'Speeldag bevestigd')+'</p>':'<p class="muted smalltext">Nog niet ingepland</p>')+
+ (s.date?'<p class="muted smalltext">'+(s.provisional?s.requiresAgreement?'Voorstel volgens thuisspeler · onderling akkoord nodig':s.conditionalOnWinners?'Voorlopig · afhankelijk van de winnaars':'Voorlopige speeldag':matchHasAgreement(m,s)?'Speeldag bevestigd in onderling overleg':s.auto?'Automatisch vastgesteld':'Speeldag vastgesteld')+'</p>':'<p class="muted smalltext">Nog niet ingepland</p>')+
  (scheduleConflict(m,s)?'<div class="notice orange">'+esc(scheduleConflict(m,s))+'</div>':'')+
  '</div>';
  }).join('')+'</div>').join('')+'</section>';
 }
-function runAutoPlanning(){if(!isAdmin)return;const result=autoPlanMatches();save();render();if(result.missing.length)notify(result.assigned+' duels verdeeld; '+result.missing.length+' duels vereisen handmatige oplossing.')}
-function replanMatch(r,i){if(!isAdmin)return;delete data.schedule[matchKey(r,i)];autoPlanMatches(false);save();render();notify('Voorstel opnieuw berekend binnen de rondeperiode.')}
+function runAutoPlanning(){
+ if(!isAdmin)return;
+ const snapshot=structuredClone(data.schedule),result=autoPlanMatches(false);
+ if(result.conflicts.length){
+  data.schedule=snapshot;render();
+  notify('Niet opgeslagen: een vastgestelde datum blokkeert de opeenvolging van volledige rondes. Pas die afspraak eerst in onderling overleg aan.');
+  return;
+ }
+ save();render();
+ notify(result.assigned+' duels ingedeeld.'+
+  (result.missing.length?' '+result.missing.length+' vereisen handmatige planning.':'')+
+  (result.agreementNeeded.length?' '+result.agreementNeeded.length+' vragen onderling overleg.':''));
+}
+function replanMatch(r,i){
+ if(!isAdmin)return;
+ const id=matchKey(r,i),old=data.schedule[id];
+ if(old?.date&&old.provisional===false){
+  notify('Deze speeldag is vastgesteld. Wijzig alleen na onderling akkoord via de datumvelden.');
+  return;
+ }
+ const snapshot=structuredClone(data.schedule);
+ delete data.schedule[id];
+ const plan=autoPlanMatches(false);
+ if(plan.conflicts.length){
+  data.schedule=snapshot;render();notify('Niet herpland: de rondevolgorde zou conflicteren met een vastgestelde datum.');return;
+ }
+ save();render();notify('Voorstel opnieuw berekend binnen de rondeperiode.');
+}
 
 function adminSettingsView(){
  return '<section class="panel">'+heading('Vaste speelperiodes en instellingen')+
@@ -911,8 +943,14 @@ function saveMatchDate(r,i){
   ...(mutualAgreement?{mutualAgreement:true,agreedPlayers:[m.a,m.b]}:{})};
  const err=scheduleConflict(m,proposed);
  if(err){notify('Speeldag niet toegestaan: '+err);return}
+ const snapshot=structuredClone(data.schedule);
  data.schedule[m.id]=proposed;
  const plan=autoPlanMatches(false);
+ if(plan.conflicts.length){
+  data.schedule=snapshot;render();
+  notify('Speeldag niet toegestaan: een volgende ronde zou beginnen terwijl de voorgaande ronde nog loopt.');
+  return;
+ }
  save();render();
  notify('Speeldag vastgelegd'+(mutualAgreement?' in onderling overleg':'')+' · '+tm+' uur.'+
   (plan.missing.length?' Controleer '+plan.missing.length+' duels waarvoor een planning of afspraak moet worden herzien.':''));
