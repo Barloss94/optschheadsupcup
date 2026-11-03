@@ -51,6 +51,9 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - De **eerstgenoemde speler in een duel** is de op papier thuisspelende speler.
 - De beschikbare weekdagen en verhinderingen van spelers worden **niet getoond in het publieke speelschema**. De beheerder kan ze gebruiken om de planning op te stellen.
 - Per ronde worden wedstrijden automatisch **gespreid over geschikte speeldagen** binnen de vastgestelde rondeperiode, met uitsluiting van de geblokkeerde feestdagen en met inachtneming van voorafgaande rondes.
+- **Harde rondevolgorde:** de speelperiodes mogen elkaar overlappen, maar ingeplande rondes nooit. Elke wedstrijd van ronde 3 moet bijvoorbeeld zijn gespeeld vóór de eerste wedstrijd van ronde 4; hetzelfde geldt voor alle andere opeenvolgende rondes. De hele vorige ronde is leidend, niet slechts de twee voedende duels van een bepaalde wedstrijd. Zowel de browser als de database blokkeren overlappingen.
+- **Vastgestelde datum:** wanneer de berekening voor alle mogelijke deelnemers een conflictvrije speeldag vindt en alle voorafgaande rondes zelf vaststaan, wordt de dag automatisch **definitief vastgesteld om 20:00 uur**. De beheerder hoeft dit niet nogmaals te bevestigen. Verplaatsen of de tijd aanpassen kan uitsluitend nadat beide spelers akkoord zijn.
+- **Voorlopig:** bij ontbrekende gezamenlijke beschikbaarheid, bij uitkomsten die nog bepalend zijn voor de juiste speeldag of als een voorafgaande ronde nog niet vaststaat, blijft het een voorstel totdat een geldige afspraak kan worden bevestigd.
 - **De volledige vaste bracket wordt vooruit doorgerekend**: voor ronde 2 staan de mogelijke winnaars uit beide eerste-ronde-duels al vast; voor ronde 3 en verder volgt hetzelfde principe. Ook de finale en bronsfinale worden berekend.
 - Per toekomstige wedstrijd worden de beschikbare dagen van **alle mogelijke deelnemers** vergeleken. Een datum die voor alle uitkomsten past, krijgt voorrang. Als die niet bestaat, wordt een voorlopige datum gekozen die voor zoveel mogelijk mogelijke deelnemers werkt. Die datum wordt opnieuw gecontroleerd zodra de werkelijke winnaars bekend zijn.
 - In het publieke speelschema staat niet 'Nog niet bekend', maar de **precieze bracketherkomst** van een nog onbekende speler, bijvoorbeeld `Winnaar ronde 1 duel 1`, en voor de bronsfinale `Verliezer halve finale 1`.
@@ -97,17 +100,25 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 | 4 | 2/3 2027 | 11 t/m 24 januari 2027 | geen aanvullende uitzonderingen |
 | 5 | 3/4 2027 | 18 t/m 31 januari 2027 | geen aanvullende uitzonderingen |
 
-De planning verdeelt de speeldagen vooraf binnen hun rondeperiode, rekening houdend met de verhinderingen, de vaste bracket en waar bekend de voorkeursdagen van de op papier thuisspeler. Elke wedstrijd in een vervolgronde moet **na** zijn voorgaande duels plaatsvinden. Dat geldt ook voor de overlappende periodes van ronde 3, 4 en 5. Speeldatums buiten de rondeperiodes of op uitgesloten dagen blijven verboden.
+De planning verdeelt de speeldagen vooraf binnen hun rondeperiode, rekening houdend met verhinderingen, de vaste bracket en waar bekend de beschikbaarheid van de op papier thuisspelende speler. De **volledige vorige ronde** moet zijn afgerond voordat de volgende begint, ook waar de toegestane speelperiodes elkaar overlappen. Speeldatums buiten de rondeperiodes of op uitgesloten dagen blijven verboden.
 
 ### Speeldag en starttijd (vastgesteld)
 
-- **Standaard:** de vooraf geplande speeldag met een starttijd van **20:00 uur**.
+- **Standaard:** de automatisch vastgestelde speeldag met een starttijd van **20:00 uur** zodra de datum voor alle mogelijke deelnemers én de rondevolgorde conflictvrij is. Wanneer dat niet aantoonbaar is, blijft de datum expliciet voorlopig.
 - **In onderling overleg:** beide spelers mogen de **speeldag en/of starttijd** wijzigen, mits de nieuwe speeldag binnen de officiële rondeperiode ligt en de rondevolgorde en uitgesloten dagen worden gerespecteerd.
 - **Administratie:** de beheerder legt de afspraak vast en vinkt aan dat **beide spelers akkoord** zijn. Zonder dit akkoord kan een datum- of tijdwijziging niet worden bevestigd.
 - **Automatisch opnieuw plannen:** bevestigde afspraken worden niet stilzwijgend overschreven; eventuele conflicten komen ter beoordeling bij de beheerder.
 - Deze afspraken gelden **ook voor de finale en de bronsfinale**.
 
 De kalender biedt vijf rondes, dus maximaal **32 deelnemers** bij directe knock-out. De beheerder kan verhinderingen van deelnemers instellen, ook op zaterdag en zondag. Zonder gezamenlijke speeldag stelt de planning een beschikbare dag van de thuisspeler voor; beide spelers moeten daarna gezamenlijk een dag afspreken. Vrijloten zijn geen duels en worden niet ingepland. De officiële loting wordt niet automatisch opnieuw uitgevoerd door een planningswijziging.
+
+## Wedstrijduitslagen invoeren
+
+- Meld je met je bestaande Ranking-beheerdersaccount aan in de OHC-website.
+- Open **Beheer** en klik op de knop **Uitslagen invoeren** bovenaan de beheerpagina. De sectie **Loting en resultaten → Uitslagen invoeren** wordt dan in beeld gebracht.
+- Zoek het duel, vul desgewenst de score in en klik op de **knop van de winnende speler**. Zijn of haar naam schuift automatisch door naar de volgende ronde; die wedstrijd wordt opnieuw op beschikbaarheid beoordeeld.
+- De uitslag kan door de beheerder worden gecorrigeerd of gewist; afhankelijke uitslagen en afspraken worden daarbij opnieuw gecontroleerd.
+- De bronsfinale heeft een eigen uitslag: de winnaar wordt derde en de verliezer vierde.
 
 ## Publiceren op GitHub Pages
 
