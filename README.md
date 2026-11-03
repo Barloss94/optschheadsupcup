@@ -54,6 +54,17 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - Na een ingevoerde uitslag schuift de winnaar automatisch door naar het vooraf vastliggende vak. **Geen nieuwe loting per ronde.**
 - Een bestaande bracket kan niet onbedoeld opnieuw geloot worden; uitsluitend een expliciete volledige herstart door de beheerder wist de loting.
 
+## Buy-in en prijzenverdeling
+
+- Eenmalige buy-in: **€12,50 per speler** voor de volledige competitie.
+- Maximaal **32 deelnemers**; alle buy-ins vormen samen de prijzenpot.
+- De **vier verliezers van ronde 3** (kwartfinale) krijgen ieder **€12,50** terug.
+- De overige prijzen worden uit het restant berekend, volgens de verhouding **35 : 25 : 15,5 : 12,5** voor plaats 1, 2, 3 en 4.
+- **Afronding op €0,50:** reken eerst iedere prijs naar beneden af op het dichtstbijzijnde veelvoud van €0,50; verdeel de resterende blokjes van €0,50 op volgorde van de grootste decimale rest, bij gelijke resten naar de hogere eindpositie. Zo wordt de hele pot uitgekeerd en is elke prijs een veelvoud van €0,50.
+- Bij 32 deelnemers is de pot €400,00. Uitbetalingen: **€139,00 / €99,50 / €61,50 / €50,00**, plus viermaal **€12,50**.
+- Het schema van acht prijzen hoort bij **17 tot en met 32 deelnemers** (vijf rondes). Bij minder deelnemers is nog geen aparte prijzenverdeling vastgesteld. De website toont dan een expliciet gelabeld rekenvoorbeeld voor 32 deelnemers.
+- De twee verliezers van de halve finale moeten afzonderlijk als 3e en 4e worden gerangschikt. Het criterium hiervoor is nog niet vastgesteld.
+
 ## Officieel speelschema 2026–2027
 
 | Ronde | ISO-weken | Toegestane periode | Niet spelen |
@@ -85,5 +96,5 @@ Als de URL nog niet bereikbaar is, is GitHub Pages nog niet geactiveerd of is de
 - Wijzigingen worden online opgeslagen. Er is geen lokale opslag van persoonsgegevens.
 - De beheerders zien volledige namen en beschikbaarheid; de publieke tabellen tonen alleen de eerste voornaam en de eerste letter van de laatste achternaam.
 - De website biedt momenteel één OHC-evenement (`2026`). Meerdere seizoenen zijn een toekomstige uitbreiding.
-- Blindstructuur, buy-in, prijzen en forfaitregels zijn nog niet definitief vastgesteld.
+- Blindstructuur, de manier om plaats 3 en 4 te bepalen, en forfaitregels zijn nog niet definitief vastgesteld.
 - Gebruik het bestaande Ranking-adminaccount. Nieuwe OHC-beheeraccounts worden niet automatisch aangemaakt.
