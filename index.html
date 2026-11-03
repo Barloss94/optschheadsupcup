@@ -518,7 +518,7 @@ function bracketView(){
  const rounds=bracket();
  return '<section class="panel">'+
  heading('Vaste knock-outbracket',rounds.length?'<span class="pill blue">'+data.players.length+' spelers · '+rounds.length+' rondes</span>':'')+
- '<p class="smalltext muted">De loting gebruikt de beschikbaarheid om lastige ontmoetingen zo laat mogelijk in de bracket te plaatsen. Als spelers zonder gezamenlijke speeldag elkaar toch ontmoeten, regelen ze onderling een datum binnen hun rondeperiode. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Er wordt niet opnieuw geloot.</p>'+
+ '<p class="smalltext muted">De loting gebruikt de beschikbaarheid om lastige ontmoetingen zo laat mogelijk in de bracket te plaatsen. Als spelers zonder gezamenlijke speeldag elkaar toch ontmoeten, regelen ze onderling een datum binnen hun rondeperiode. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Daardoor verschijnt een winnende speler in meerdere opeenvolgende rondes, maar in de loting zelf staat iedereen slechts eenmaal. Bij identieke verkorte namen staat een uniek deelnemersnummer (#). Er wordt niet opnieuw geloot.</p>'+
  (rounds.length?
   '<div class="bracketscroll"><div class="bracket" id="ohcBracket"><svg id="ohcBracketLines" class="bracketwires" aria-hidden="true"></svg>'+
   rounds.map((matches,r)=>'<div class="bracketcolumn" data-round="'+r+'"><div class="bracketround">'+esc(roundLabel(r,rounds.length))+'</div><div class="bracketcards">'+
