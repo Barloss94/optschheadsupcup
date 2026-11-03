@@ -99,7 +99,7 @@ async function logout(){
 
 const SHORT_DAYS=['Zo','Ma','Di','Wo','Do','Vr','Za'];
 const DAYS=[{id:1,name:'Maandag',search:'maandagen'},{id:2,name:'Dinsdag',search:'dinsdagen'},{id:3,name:'Woensdag',search:'woensdagen'},{id:4,name:'Donderdag',search:'donderdagen'},{id:5,name:'Vrijdag',search:'vrijdagen'},{id:6,name:'Zaterdag',search:'zaterdagen'},{id:0,name:'Zondag',search:'zondagen'}];
-const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"homePreferences":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":"2026-11-21T00:00:00+01:00","buyInCents":1250,"fixedCostsCents":5650,"maxPlayers":32,"prizes":{"firstPercent":35,"secondPercent":25,"thirdPercent":15.5,"fourthPercent":12.5,"round3LosersPercent":3,"round3LosersCount":4,"firstRoundingCents":100,"secondRoundingCents":100,"fourthRoundingCents":50,"round3LosersRoundingCents":100,"thirdGetsRemainder":true,"method":"spreadsheet_third_place_remainder"},"roundDeadlines":{},"resultText":{}}};
+const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":"2026-11-21T00:00:00+01:00","buyInCents":1250,"fixedCostsCents":5650,"maxPlayers":32,"prizes":{"firstPercent":35,"secondPercent":25,"thirdPercent":15.5,"fourthPercent":12.5,"round3LosersPercent":3,"round3LosersCount":4,"firstRoundingCents":100,"secondRoundingCents":100,"fourthRoundingCents":50,"round3LosersRoundingCents":100,"thirdGetsRemainder":true,"method":"spreadsheet_third_place_remainder"},"roundDeadlines":{},"resultText":{}}};
 
 const ROUND_WINDOWS=[
  {weeks:'49/50',start:'2026-11-30',end:'2026-12-13',exclusions:['2026-12-04','2026-12-05','2026-12-06'],label:'30 november t/m 13 december 2026'},
@@ -143,18 +143,10 @@ function preferredDayIds(playerId){
  if(!p)return [];
  return DAYS.filter(d=>!(p.blocked||[]).includes(d.id)).map(d=>d.id);
 }
-function homeDaysForMatch(m){
- if(!m?.a)return [];
- const entry=data.homePreferences?.[m.id];
- if(entry?.homeId===m.a&&Array.isArray(entry.days))
-  return entry.days.filter(d=>DAYS.some(day=>day.id===d));
- // Public player objects have redacted availability: use only published days.
- return isAdmin?preferredDayIds(m.a):[];
-}
-function homeDaysLabel(m){
- if(!m?.a)return 'Bekend zodra de thuisspeler vaststaat';
- const days=homeDaysForMatch(m);
- return days.length?DAYS.filter(d=>days.includes(d.id)).map(d=>d.name).join(', '):'Nog niet bekend';
+
+function homeAvailableOnDate(m,date){
+ const home=m.a||m.b;
+ return !home||preferredDayIds(home).includes(new Date(date+'T12:00:00').getDay());
 }
 function availableOnDate(m,date){
  const day=new Date(date+'T12:00:00').getDay();
@@ -171,9 +163,9 @@ function possibleDate(m,date,planned,existing=null){
  if(!w||date<w.start||date>w.end||w.exclusions.includes(date))return false;
  const prior=parentLatestDate(m.round,m.index,planned);
  if(prior&&date<=prior)return false;
- // New proposed days must match the reported availability. An already agreed
- // exception is retained only if both opponents and its exact date still match.
- if(!availableOnDate(m,date)&&!(existing?.date===date&&matchHasAgreement(m,existing)))return false;
+ // Proposals follow the paper home player's available weekdays.
+ // Confirmed mutual agreements remain valid even on another weekday.
+ if(!homeAvailableOnDate(m,date)&&!(existing?.date===date&&matchHasAgreement(m,existing)))return false;
  if(m.a||m.b){
   for(const other of allMatches()){
    if(other.id===m.id||planned[other.id]?.date!==date)continue;
@@ -184,42 +176,53 @@ function possibleDate(m,date,planned,existing=null){
 }
 function autoPlanMatches(showNotice=true){
  const rounds=bracket();
- if(!rounds.length){data.homePreferences={};return{total:0,assigned:0,missing:[]}}
- // Publish only the home player's weekly choices per fixture, not all blocked days.
- data.homePreferences=Object.fromEntries(rounds.flat()
-  .filter(m=>m.a&&!m.isBye)
-  .map(m=>[m.id,{homeId:m.a,days:preferredDayIds(m.a)}]));
- const old=structuredClone(data.schedule);const next={};const missing=[];
- // First fix earlier-round fixtures, then place each dependent knockout fixture after its feeders.
+ if(!rounds.length)return {total:0,assigned:0,missing:[],agreementNeeded:[]};
+ const old=structuredClone(data.schedule),next={},missing=[],agreementNeeded=[];
+ // Plan each round over all suitable days, balancing the number of games per day.
  for(const [r,matches] of rounds.entries()){
-  const fixtures=matches.filter(m=>!m.isBye&&!m.resolved || (!m.isBye&&m.a&&m.b));
-  const days=roundDays(r);
+  const fixtures=matches.filter(m=>!m.isBye&&(!m.resolved||!!(m.a&&m.b)));
+  const days=roundDays(r),loads=new Map();
+  const register=day=>loads.set(day,(loads.get(day)||0)+1);
   for(let i=0;i<fixtures.length;i++){
-   const m=fixtures[i],existing=old[m.id],desired=days[Math.min(days.length-1,Math.floor((i+0.5)*days.length/fixtures.length))];
-   const choices=days.filter(date=>possibleDate(m,date,next,existing));
-   // Never silently move an already confirmed date (including a mutual agreement).
-   // Keep it visible for the administrator to resolve if it becomes inconsistent.
-   if(existing?.date&&existing.provisional===false&&!choices.includes(existing.date)){
+   const m=fixtures[i],existing=old[m.id];
+   const desired=days[Math.min(days.length-1,Math.floor((i+0.5)*days.length/fixtures.length))];
+   const eligible=days.filter(date=>possibleDate(m,date,next,existing));
+   // If both players have an actual day in common within the round use it.
+   // If not, propose one of the paper home player's eligible dates.
+   const shared=eligible.filter(date=>availableOnDate(m,date));
+   const candidates=shared.length?shared:eligible;
+   if(existing?.date&&existing.provisional===false){
     next[m.id]={...existing,time:existing.time||DEFAULT_MATCH_TIME};
-    missing.push(m.id);
+    register(existing.date);
+    if(!eligible.includes(existing.date)||
+       (!availableOnDate(m,existing.date)&&!matchHasAgreement(m,existing)))missing.push(m.id);
     continue;
    }
-   if(!choices.length){missing.push(m.id);continue}
-   const selected=existing?.date&&choices.includes(existing.date)?existing.date:
-     choices.slice().sort((a,b)=>Math.abs(dateDifference(a,desired))-Math.abs(dateDifference(b,desired))||a.localeCompare(b))[0];
-   const confirmed=existing?.date===selected&&existing.provisional===false;
-   const agreementKept=existing?.date===selected&&matchHasAgreement(m,existing);
-   next[m.id]={date:selected,time:existing?.date===selected?(existing.time||DEFAULT_MATCH_TIME):DEFAULT_MATCH_TIME,
-     provisional:!confirmed,auto:!confirmed,
-     ...(agreementKept?{mutualAgreement:true,agreedPlayers:[m.a,m.b]}:{})};
+   if(!candidates.length){missing.push(m.id);continue}
+   const selected=existing?.date&&candidates.includes(existing.date)?existing.date:
+     candidates.slice().sort((a,b)=>
+      (loads.get(a)||0)-(loads.get(b)||0) ||
+      Math.abs(dateDifference(a,desired))-Math.abs(dateDifference(b,desired)) ||
+      a.localeCompare(b))[0];
+   const agreed=existing?.date===selected&&matchHasAgreement(m,existing);
+   const requiresAgreement=!!(m.a&&m.b&&!availableOnDate(m,selected)&&!agreed);
+   next[m.id]={date:selected,
+    time:existing?.date===selected?(existing.time||DEFAULT_MATCH_TIME):DEFAULT_MATCH_TIME,
+    provisional:true,auto:true,
+    ...(agreed?{mutualAgreement:true,agreedPlayers:[m.a,m.b]}:{}),
+    ...(requiresAgreement?{requiresAgreement:true}:{})};
+   if(requiresAgreement)agreementNeeded.push(m.id);
+   register(selected);
   }
  }
  data.schedule=next;
- const result={total:rounds.flat().filter(m=>!m.isBye).length,assigned:Object.keys(next).length,missing};
- if(showNotice)notify(missing.length?result.assigned+' duels ingedeeld. '+missing.length+' duels vereisen controle of nieuwe afspraken.':result.assigned+' duels verdeeld over de vijf rondeperiodes. Nog te bevestigen in Beheer.');
+ const result={total:rounds.flat().filter(m=>!m.isBye).length,
+  assigned:Object.keys(next).length,missing,agreementNeeded};
+ if(showNotice)notify(result.assigned+' duels voorlopig ingedeeld.'+
+  (agreementNeeded.length?' '+agreementNeeded.length+' duels vragen onderling overleg.':'')+
+  (missing.length?' '+missing.length+' duels vragen handmatige planning.':''));
  return result;
 }
-
 const REGISTRATION_DEADLINE='2026-11-21T00:00:00+01:00';
 function registrationClosed(){return Date.now()>=Date.parse(data.settings?.registrationClosesAt||REGISTRATION_DEADLINE)}
 function effectiveStatus(){const status=data.settings?.status||'Inschrijving open';return status==='Inschrijving open'&&registrationClosed()?'Inschrijving gesloten':status}
@@ -290,7 +293,15 @@ function feederMatches(m,rounds=bracket()){
 function howManyRounds(){return data.draw.length?Math.log2(data.draw.length):0}
 function weekdayOptions(a,b){if(!a||!b)return[];const x=player(a),y=player(b);if(!x||!y)return[];return DAYS.filter(d=>!x.blocked.includes(d.id)&&!y.blocked.includes(d.id))}
 function toLocalISO(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
-function suggestions(m,limit=5){if(!m.a||!m.b)return[];return roundDays(m.round).filter(date=>!scheduleConflict(m,{date,time:''})).slice(0,limit)}
+function suggestions(m,limit=5){
+ if(!m.a||!m.b)return[];
+ const eligible=roundDays(m.round).filter(d=>possibleDate(m,d,data.schedule,data.schedule[m.id]));
+ const shared=eligible.filter(d=>availableOnDate(m,d));
+ const choices=shared.length?shared:eligible;
+ return choices.filter(date=>!scheduleConflict(m,{
+  date,time:DEFAULT_MATCH_TIME,mutualAgreement:true,agreedPlayers:[m.a,m.b]
+ })).slice(0,limit);
+}
 function prettyDate(v){if(!v)return'Nog niet gepland';const d=new Date(`${v}T12:00:00`);return Number.isNaN(+d)?'Onbekend':new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'}).format(d)}
 function scheduleConflict(m,s){
  if(!s?.date)return'';
