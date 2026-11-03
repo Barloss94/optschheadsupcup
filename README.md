@@ -56,13 +56,17 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 
 ## Buy-in en prijzenverdeling
 
-- Eenmalige buy-in: **€12,50 per speler** voor de volledige competitie.
-- Maximaal **32 deelnemers**; de totale bruto inleg wordt berekend als het aantal deelnemers × €12,50.
-- Er wordt **éénmaal €56,50 vaste organisatiekosten** van de bruto inleg afgetrokken. Het restant vormt de **netto prijzenpot**.
-- Uit de netto prijzenpot krijgen de **vier verliezers van ronde 3** (kwartfinale) ieder **€12,50** terug.
-- De overige prijzen worden uit het restant berekend, volgens de verhouding **35 : 25 : 15,5 : 12,5** voor plaats 1, 2, 3 en 4.
-- **Afronding op €0,50:** reken eerst iedere prijs naar beneden af op het dichtstbijzijnde veelvoud van €0,50; verdeel de resterende blokjes van €0,50 op volgorde van de grootste decimale rest, bij gelijke resten naar de hogere eindpositie. Zo wordt de volledige **netto prijzenpot** uitgekeerd en is elke prijs een veelvoud van €0,50.
-- Bij **32 deelnemers**: bruto inleg **€400,00**, kosten **€56,50**, netto prijzenpot **€343,50**. Uitbetalingen: **€117,00 / €83,50 / €51,50 / €41,50**, plus viermaal **€12,50**.
+- Eenmalige buy-in: **€12,50 per speler** voor de volledige competitie (maximaal **32 deelnemers**).
+- Vaste organisatiekosten: **€56,50**; deze worden éénmaal van de bruto inleg afgetrokken. Het restant is de **netto prijzenpot**.
+- De acht prijzen vormen samen **100% van de netto prijzenpot**:
+  - 1e: **35%**
+  - 2e: **25%**
+  - 3e: **15,5%**
+  - 4e: **12,5%**
+  - Vier verliezers van ronde 3 (gedeelde 5e plaats): **ieder 3%**
+- **Geen minimumbedrag** voor de vier verliezers van ronde 3: hun prijs is uitsluitend gebaseerd op 3% van de netto pot.
+- **Afronding op €0,50**: alle prijzen worden in stappen van €0,50 vastgesteld. De gedeelde vijfde plaatsen ontvangen elk hetzelfde afgeronde bedrag (3% van de netto pot, afgerond op het dichtstbijzijnde halve eurobedrag). Eventuele resterende halve euro's worden bij de eerste vier plaatsen verdeeld op basis van het kleinste verschil met hun exacte procentuele aanspraak. Zo blijft de totale uitbetaling gelijk aan de netto pot.
+- Bij **32 deelnemers**: bruto inleg **€400,00**, kosten **€56,50**, netto pot **€343,50**. Uitbetalingen: **€120,00 / €85,50 / €53,00 / €43,00**, plus viermaal **€10,50**.
 - Het schema van acht prijzen hoort bij **17 tot en met 32 deelnemers** (vijf rondes). Bij minder deelnemers is nog geen aparte prijzenverdeling vastgesteld. De website toont dan een expliciet gelabeld rekenvoorbeeld voor 32 deelnemers.
 - De twee verliezers van de halve finale moeten afzonderlijk als 3e en 4e worden gerangschikt. Het criterium hiervoor is nog niet vastgesteld.
 
