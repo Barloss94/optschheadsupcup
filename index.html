@@ -28,7 +28,7 @@ const STORAGE='ohc.online.v1';
 const PROJECT_URL='https://lnlaqrljtwrxtfsyotnn.supabase.co';
 const PUBLISHABLE_KEY='sb_publishable_wXilWOoEC4fEBswRNtnWAw_MRQ0AooI';
 let sb=null,authUser=null,isAdmin=false,eventId=null,currentVersion=1;
-let publicState=structuredClone(DEFAULT),loading=true,loadError=null,mutationToken=0,saveQueue=Promise.resolve();
+let publicState=null,loading=true,loadError=null,mutationToken=0,saveQueue=Promise.resolve();
 async function fetchPublic(){
  const response=await sb.from('ohc_public_events').select('event_id,state').eq('slug','2026').single();
  if(response.error)throw new Error('Publieke toernooidata ophalen: '+response.error.message);
