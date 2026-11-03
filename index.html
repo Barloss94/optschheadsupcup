@@ -322,7 +322,7 @@ function bracket(){
   }
   out.push(next);current=next;r++;
  }
- if(data.draw.length>=4&&out.length>=2){
+ if(data.players.length>=4&&data.draw.length>=4&&out.length>=2){
   const semis=out[out.length-2];
   if(semis.length===2){
    const loser=m=>m.resolved&&m.a&&m.b?(m.winner===m.a?m.b:m.a):null;
