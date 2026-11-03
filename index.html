@@ -382,7 +382,7 @@ function bracketView(){
  const rounds=bracket();
  return '<section class="panel">'+
  heading('Vaste knock-outbracket',rounds.length?'<span class="pill blue">'+data.players.length+' spelers · '+rounds.length+' rondes</span>':'')+
- '<p class="smalltext muted">Bij de eerste loting wordt ook de beschikbaarheid voor iedere mogelijke ontmoeting vóór de finale gecontroleerd; de finale en de bronsfinale vormen de uitzonderingen voor spelers uit verschillende brackethelften. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Er wordt niet opnieuw geloot.</p>'+
+ '<p class="smalltext muted">De loting gebruikt de beschikbaarheid om lastige ontmoetingen zo laat mogelijk in de bracket te plaatsen. Als spelers zonder gezamenlijke speeldag elkaar toch ontmoeten, regelen ze onderling een datum binnen hun rondeperiode. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Er wordt niet opnieuw geloot.</p>'+
  (rounds.length?
   '<div class="bracketscroll"><div class="bracket" id="ohcBracket"><svg id="ohcBracketLines" class="bracketwires" aria-hidden="true"></svg>'+
   rounds.map((matches,r)=>'<div class="bracketcolumn" data-round="'+r+'"><div class="bracketround">'+esc(roundLabel(r,rounds.length))+'</div><div class="bracketcards">'+
@@ -447,17 +447,13 @@ function drawBracketConnections(){
 }
 function adminPlayerView(){return `<section class="panel">${heading('Deelnemers beheren',`<span class="pill blue">${data.players.length} spelers</span>`)}<div class="notice">Volledige namen en beschikbaarheid zijn alleen zichtbaar voor ingelogde Ranking-beheerders.</div><div class="notice ${registrationClosed()?'orange':''}">Inschrijven t/m 20 november 2026. ${registrationClosed()?'Nieuwe inschrijvingen zijn gesloten; de beheerder kan op 21 november de reeds ontvangen CSV importeren.':'Nieuwe deelnemers kunnen tot en met 20 november worden toegevoegd.'} Bestaande gegevens blijven corrigeerbaar.</div>${data.draw.length?'<div class="notice orange">Het deelnemersveld is geloot. Namen en beschikbaarheid kunnen worden aangepast; spelers toevoegen of verwijderen is geblokkeerd totdat de loting opnieuw wordt ingesteld.</div>':''}<div class="tablewrap"><table class="table"><thead><tr><th>Naam</th><th>Niet beschikbaar</th><th></th></tr></thead><tbody>${data.players.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td class="muted">${p.blocked.length?p.blocked.map(d=>DAYS.find(x=>x.id===d)?.name||'').join(', '):'Geen verhinderingen opgegeven'}</td><td><div class="btnbar">${button('Bewerk',`selectEdit('${p.id}')`,'alt',true)}${!data.draw.length?button('Verwijder',`removePlayer('${p.id}')`,'danger',true):''}</div></td></tr>`).join('')||'<tr><td colspan="3">Nog geen deelnemers</td></tr>'}</tbody></table></div><hr class="divider"><h3 id="personformtitle">${editPlayer?'Deelnemer bewerken':'Deelnemer toevoegen'}</h3><div class="field"><label for="playerName">Volledige naam (alleen beheer)</label><input id="playerName" type="text" placeholder="Voornaam Achternaam" value="${esc(editPlayer?player(editPlayer)?.name||'':'')}" maxlength="100" ${(data.draw.length||registrationClosed())&&!editPlayer?'disabled':''}></div><div class="field"><label>Op welke dagen is deze speler verhinderd?</label><div class="checkdays">${DAYS.map(d=>`<label class="day"><input type="checkbox" class="blockday" value="${d.id}" ${editPlayer&&player(editPlayer)?.blocked.includes(d.id)?'checked':''}> ${d.name}</label>`).join('')}</div></div><div class="btnbar">${(editPlayer||!registrationClosed())?button(editPlayer?'Wijzigingen opslaan':'Deelnemer toevoegen','savePlayer()',''):''}${editPlayer?button('Annuleren','selectEdit(null)','ghost'):''}</div><hr class="divider"><h3>Inschrijvingen verwerken (21 november)</h3><div class="notice">Alleen voor de beheerder. De inschrijftermijn sluit op 20 november; importeer vanaf 21 november de CSV met de tijdig ontvangen inschrijvingen.</div><p class="smalltext muted">Ondersteunt het Google Forms CSV-bestand met kolommen <span class="kbd">Naam</span> en <span class="kbd">Welke weekdagen kan jij echt niet spelen?</span>. Bestaande spelers kunnen worden bijgewerkt. De uiterste inschrijfdatum voor spelers is 20 november 2026. De beheerder importeert de tijdig ontvangen aanmeldingen op 21 november. Na de officiële loting worden nieuwe regels overgeslagen.</p><input type="file" id="csvfile" accept=".csv,text/csv" aria-label="Inschrijvingen CSV" onchange="importCsv(event)"></section>`}
 function drawAvailabilityNotice(){
- if(data.draw.length){
-  const check=checkDrawCompatibility(data.draw,data.players);
-  return check.valid?
-   '<div class="notice">De bracketroutes liggen vast. Alle mogelijke tegenstanders binnen dezelfde brackethelft hebben minimaal één gezamenlijke speeldag. De finale en bronsfinale verbinden beide helften en kunnen daarom een handmatige speelafspraak vereisen.</div>':
-   '<div class="notice orange">Let op: de huidige bracket voldoet niet meer aan de beschikbaarheidsregels. '+esc(check.message)+'</div>';
- }
- const result=compatibleDraw(data.players);
- if(result.error)return '<div class="notice orange">Loting nog niet mogelijk: '+esc(result.error)+'</div>';
- return '<div class="notice">Beschikbaarheidscontrole geslaagd: '+result.conflicts+' mogelijke combinaties zonder gezamenlijke speeldag worden in verschillende brackethelften geplaatst. Alleen de finale is uitgezonderd.</div>';
+ if(data.draw.length)
+  return '<div class="notice">De bracket ligt vast. De loting heeft mogelijke ontmoetingen zonder gezamenlijke speeldag zo laat mogelijk geplaatst. Komen zulke spelers toch tegen elkaar uit, dan spreken zij zelf een dag af binnen de rondeperiode.</div>';
+ if(data.players.length<2)
+  return '<div class="notice">Minimaal twee deelnemers nodig voor de loting.</div>';
+ return '<div class="notice">De loting optimaliseert de bracket: spelers zonder gezamenlijke speeldag kunnen elkaar zo laat mogelijk tegenkomen. Als volledige scheiding niet haalbaar is, gaat de loting gewoon door.</div>';
 }
-function adminDrawView(){const b=bracket();return `<section class="panel">${heading('Loting en resultaten',b.length?'<span class="pill ok">Loting uitgevoerd</span>':'<span class="pill warn">Nog niet geloot</span>')}<p class="smalltext muted">De eerste ronde wordt één keer willekeurig geloot, met inachtneming van alle mogelijke ontmoetingen in de hele bracket. De buy-in is €12,50 voor de volledige competitie en maximaal 32 spelers kunnen deelnemen. Spelers zonder gezamenlijke speeldag mogen alleen in verschillende brackethelften staan, zodat ze elkaar uitsluitend in de finale of bronsfinale kunnen treffen. Alle volgende duels volgen vaste routes; er wordt niet opnieuw geloot. Het aantal eerste-rondevrijloten is ${data.players.length>1?2**Math.ceil(Math.log2(data.players.length))-data.players.length:0}. Iedere winnaar gaat door naar het volgende duel. De loting is pas officieel wanneer de beheerder deze vaststelt.</p><div class="btnbar">${!b.length?button('Eerste ronde loten','createDraw()',''): '<span class="pill ok">Routes vastgelegd · geen nieuwe loting</span>'}${b.length?button('Toernooiboom bekijken',"setTab('boom')",'alt'):''}</div>${drawAvailabilityNotice()}<p class="smalltext muted">Let op: een dag die niet als verhinderd is geregistreerd, telt als beschikbaar, ook zaterdag en zondag. Controleer alle zeven dagen vóór de loting.</p>${b.length?`<div class="adminonly"><h3>Wedstrijduitslagen</h3>${b.map((rr,r)=>`<div class="roundgroup"><div class="headingline">${roundLabel(r,b.length)}</div>${rr.map(m=>`<div class="infoitem matchadmin"><div class="line"><div><div class="tag">${m.isBronze?'🥉 BRONSFINALE':r===b.length-1?'🏆 FINALE':'DUEL '+(m.index+1)}</div><strong>${esc(m.isBronze&&!m.a?'Verliezer halve finale 1':name(m.a,true))}</strong><span class="vs">VS</span><strong>${esc(m.isBronze&&!m.b?'Verliezer halve finale 2':name(m.b,true))}</strong></div>${badge(matchStatus(m))}</div>${m.a&&m.b?`<div class="field" style="margin-top:12px;margin-bottom:8px;max-width:320px"><label for="result_${r}_${m.index}">Uitslag / score (optioneel, publiek zichtbaar)</label><input type="text" id="result_${r}_${m.index}" maxlength="30" placeholder="Bijvoorbeeld 2-1 of geen" value="${esc(data.settings.resultText[m.id]||'')}"></div><div class="selectwinner">${button(`${esc(name(m.a,true))} wint`, `setWinner(${r},${m.index},'${m.a}')`,m.winner===m.a?'':'alt',true)}${button(`${esc(name(m.b,true))} wint`, `setWinner(${r},${m.index},'${m.b}')`,m.winner===m.b?'':'alt',true)}${m.winner?button('Uitslag wissen',`setWinner(${r},${m.index},null)`,'ghost',true):''}</div>`:m.isBye?'<p class="hint">Automatisch doorgeschoven wegens vrijloting.</p>':'<p class="hint">Wacht op de winnaar(s) uit de voorgaande ronde.</p>'}</div>`).join('')}</div>`).join('')}</div>`:''}</section>`}
+function adminDrawView(){const b=bracket();return `<section class="panel">${heading('Loting en resultaten',b.length?'<span class="pill ok">Loting uitgevoerd</span>':'<span class="pill warn">Nog niet geloot</span>')}<p class="smalltext muted">De eerste ronde wordt één keer geloot. De indeling houdt rekening met beschikbaarheid en stelt ontmoetingen tussen spelers zonder gezamenlijke speeldag zoveel mogelijk uit. De buy-in is €12,50 voor de volledige competitie en maximaal 32 spelers kunnen deelnemen. Als zulke spelers elkaar alsnog treffen, spreken zij samen een toegestane speeldag af. Alle volgende duels volgen vaste routes; er wordt niet opnieuw geloot. Het aantal eerste-rondevrijloten is ${data.players.length>1?2**Math.ceil(Math.log2(data.players.length))-data.players.length:0}. Iedere winnaar gaat door naar het volgende duel. De loting is pas officieel wanneer de beheerder deze vaststelt.</p><div class="btnbar">${!b.length?button('Eerste ronde loten','createDraw()',''): '<span class="pill ok">Routes vastgelegd · geen nieuwe loting</span>'}${b.length?button('Toernooiboom bekijken',"setTab('boom')",'alt'):''}</div>${drawAvailabilityNotice()}<p class="smalltext muted">Let op: een dag die niet als verhinderd is geregistreerd, telt als beschikbaar, ook zaterdag en zondag. Controleer alle zeven dagen vóór de loting.</p>${b.length?`<div class="adminonly"><h3>Wedstrijduitslagen</h3>${b.map((rr,r)=>`<div class="roundgroup"><div class="headingline">${roundLabel(r,b.length)}</div>${rr.map(m=>`<div class="infoitem matchadmin"><div class="line"><div><div class="tag">${m.isBronze?'🥉 BRONSFINALE':r===b.length-1?'🏆 FINALE':'DUEL '+(m.index+1)}</div><strong>${esc(m.isBronze&&!m.a?'Verliezer halve finale 1':name(m.a,true))}</strong><span class="vs">VS</span><strong>${esc(m.isBronze&&!m.b?'Verliezer halve finale 2':name(m.b,true))}</strong></div>${badge(matchStatus(m))}</div>${m.a&&m.b?`<div class="field" style="margin-top:12px;margin-bottom:8px;max-width:320px"><label for="result_${r}_${m.index}">Uitslag / score (optioneel, publiek zichtbaar)</label><input type="text" id="result_${r}_${m.index}" maxlength="30" placeholder="Bijvoorbeeld 2-1 of geen" value="${esc(data.settings.resultText[m.id]||'')}"></div><div class="selectwinner">${button(`${esc(name(m.a,true))} wint`, `setWinner(${r},${m.index},'${m.a}')`,m.winner===m.a?'':'alt',true)}${button(`${esc(name(m.b,true))} wint`, `setWinner(${r},${m.index},'${m.b}')`,m.winner===m.b?'':'alt',true)}${m.winner?button('Uitslag wissen',`setWinner(${r},${m.index},null)`,'ghost',true):''}</div>`:m.isBye?'<p class="hint">Automatisch doorgeschoven wegens vrijloting.</p>':'<p class="hint">Wacht op de winnaar(s) uit de voorgaande ronde.</p>'}</div>`).join('')}</div>`).join('')}</div>`:''}</section>`}
 function adminScheduleView(){
  const b=bracket();if(!b.length)return'';
  return '<section class="panel">'+heading('Wedstrijden plannen')+
@@ -536,25 +532,22 @@ function hasCommonPlayday(a,b){
 }
 function checkDrawCompatibility(slots,players=data.players){
  if(!slots.length)return {valid:true};
- if(slots.length<2||slots.length>32||(slots.length&(slots.length-1))!==0)return {valid:false,message:'Ongeldige bracketgrootte.'};
- const half=slots.length/2,byId=new Map(players.map(p=>[p.id,p])),used=new Set();
+ if(slots.length<2||slots.length>32||(slots.length&(slots.length-1))!==0)
+  return {valid:false,message:'Ongeldige bracketgrootte.'};
+ const ids=new Set(players.map(p=>p.id)),used=new Set();
+ if(ids.size!==players.length)return {valid:false,message:'De deelnemerslijst bevat dubbele ID’s.'};
  for(const id of slots){
   if(id===null)continue;
-  if(!byId.has(id)||used.has(id))return {valid:false,message:'De bracket bevat een onbekende of dubbele speler.'};
+  if(!ids.has(id)||used.has(id))return {valid:false,message:'De bracket bevat een onbekende of dubbele speler.'};
   used.add(id);
  }
  if(used.size!==players.length)return {valid:false,message:'Niet alle spelers staan in de bracket.'};
- for(let i=0;i<slots.length;i+=2)if(!slots[i]&&!slots[i+1])
-  return {valid:false,message:'Er is een volledig leeg duel in de eerste ronde.'};
- for(let side=0;side<2;side++){
-  const halfPlayers=slots.slice(side*half,(side+1)*half).filter(Boolean).map(id=>byId.get(id));
-  for(let i=0;i<halfPlayers.length;i++)for(let j=i+1;j<halfPlayers.length;j++)
-   if(!hasCommonPlayday(halfPlayers[i],halfPlayers[j]))
-    return {valid:false,message:'Geen gezamenlijke speeldag vóór de finale: '+halfPlayers[i].name+' en '+halfPlayers[j].name+'.'};
- }
+ for(let i=0;i<slots.length;i+=2)
+  if(!slots[i]&&!slots[i+1])
+   return {valid:false,message:'Er is een volledig leeg duel in de eerste ronde.'};
  return {valid:true};
 }
-function compatibleDraw(players=data.players){
+function perfectCompatibleDraw(players=data.players){
  const roster=shuffle(players),n=roster.length;
  if(n<2)return {error:'Minimaal twee deelnemers nodig.'};
  if(n>32)return {error:'De vijf vaste rondes ondersteunen maximaal 32 spelers.'};
@@ -634,6 +627,99 @@ function compatibleDraw(players=data.players){
  return {slots,conflicts,byes:size-n};
 }
 
+function compatibleDraw(players=data.players){
+ const n=players.length;
+ if(n<2)return {error:'Minimaal twee deelnemers nodig.'};
+ if(n>MAX_PLAYERS)return {error:'Maximaal 32 deelnemers toegestaan.'};
+ for(const p of players)
+  if(!DAYS.some(d=>!(p.blocked||[]).includes(d.id)))
+   return {error:p.name+' heeft geen enkele beschikbare weekdag opgegeven.'};
+ // An exact separation is optimal: every incompatible pair is on opposite
+ // sides and therefore cannot meet before the final or bronze final.
+ const perfect=perfectCompatibleDraw(players);
+ if(!perfect.error)return {...perfect,optimal:true};
+ // When exact separation cannot work, prefer the latest possible encounters.
+ // Lexicographic penalties (base 1000 > max 496 player pairs) make a
+ // first-round conflict always cost more than ALL later-round conflicts.
+ const roster=shuffle(players),size=2**Math.ceil(Math.log2(n)),rounds=Math.log2(size);
+ const incompatible=Array.from({length:n},()=>Array(n).fill(false)),edges=[];
+ for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)
+  if(!hasCommonPlayday(roster[i],roster[j])){
+   incompatible[i][j]=incompatible[j][i]=true;edges.push([i,j]);
+  }
+ const costAt=Array.from({length:size},(_,i)=>
+  Array.from({length:size},(_,j)=>i===j?0:
+   1000**(rounds-1-(31-Math.clz32(i^j)))));
+ const pairs=size/2;
+ function randomizedSlots(){
+  const shuffled=shuffle(Array.from({length:n},(_,i)=>i));
+  const matchOrder=shuffle(Array.from({length:pairs},(_,i)=>i));
+  const secondOrder=shuffle(matchOrder),slots=Array(size).fill(null);
+  for(let k=0;k<pairs;k++)slots[2*matchOrder[k]]=shuffled[k];
+  for(let k=pairs;k<n;k++)slots[2*secondOrder[k-pairs]+1]=shuffled[k];
+  for(let i=0;i<size;i+=2)
+   if(Math.random()<0.5)[slots[i],slots[i+1]]=[slots[i+1],slots[i]];
+  return slots;
+ }
+ function totalCost(slots){
+  let total=0;
+  for(let i=0;i<size;i++){
+   if(slots[i]===null)continue;
+   for(let j=i+1;j<size;j++)
+    if(slots[j]!==null&&incompatible[slots[i]][slots[j]])
+     total+=costAt[i][j];
+  }
+  return total;
+ }
+ function validSwap(slots,i,j){
+  if(slots[i]===slots[j])return false;
+  if(slots[i]===null&&slots[j^1]===null)return false;
+  if(slots[j]===null&&slots[i^1]===null)return false;
+  return true;
+ }
+ function delta(slots,i,j){
+  const a=slots[i],b=slots[j];let value=0;
+  for(let k=0;k<size;k++){
+   if(k===i||k===j||slots[k]===null)continue;
+   const other=slots[k];
+   if(a!==null&&incompatible[a][other])
+    value+=costAt[j][k]-costAt[i][k];
+   if(b!==null&&incompatible[b][other])
+    value+=costAt[i][k]-costAt[j][k];
+  }
+  return value;
+ }
+ let best=null,bestCost=Infinity;
+ for(let start=0;start<18;start++){
+  const current=randomizedSlots();let score=totalCost(current);
+  for(let pass=0;pass<48;pass++){
+   let improvement=0,bi=-1,bj=-1;
+   for(let i=0;i<size;i++)for(let j=i+1;j<size;j++){
+    if(!validSwap(current,i,j))continue;
+    const change=delta(current,i,j);
+    if(change<improvement||(change===improvement&&change<0&&Math.random()<0.22)){
+     improvement=change;bi=i;bj=j;
+    }
+   }
+   if(bi<0)break;
+   [current[bi],current[bj]]=[current[bj],current[bi]];
+   score+=improvement;
+  }
+  if(score<bestCost||(score===bestCost&&Math.random()<0.5)){
+   bestCost=score;best=current.slice();
+  }
+ }
+ const slots=best.map(i=>i===null?null:roster[i].id);
+ const checked=checkDrawCompatibility(slots,players);
+ if(!checked.valid)throw Error(checked.message);
+ const encounterCounts=Array(rounds).fill(0);
+ for(const [i,j] of edges){
+  const a=best.indexOf(i),b=best.indexOf(j);
+  encounterCounts[31-Math.clz32(a^b)]++;
+ }
+ return {slots,conflicts:edges.length,byes:size-n,optimal:false,
+   encounterCounts,score:bestCost};
+}
 function createDraw(){
  if(!isAdmin){notify('Alleen beheerders kunnen loten.');return}
  if(data.draw.length){notify('De bracket is al geloot: alle routes staan vast. Voor een volledige herstart moet de beheerder eerst de loting wissen.');return}
@@ -643,9 +729,9 @@ function createDraw(){
  data.settings.status='Loting uitgevoerd';
  const planned=autoPlanMatches(false);
  save();render();
- notify('Loting gelukt: '+result.conflicts+' combinaties zonder gezamenlijke speeldag gescheiden tot de finale, '+
- result.byes+' vrijloten en '+planned.assigned+' voorlopig geplande wedstrijden'+
- (planned.missing.length?'. '+planned.missing.length+' duels hebben nog geen geschikte datum.':'.'));
+ notify('Loting uitgevoerd: '+result.conflicts+' mogelijke combinaties zonder gezamenlijke speeldag zo laat mogelijk geplaatst, '+
+ result.byes+' vrijloten en '+planned.assigned+' voorgestelde speeldagen.'+
+ (planned.missing.length?' Voor '+planned.missing.length+' duels is een onderlinge afspraak nodig.':''));
 }
 function setWinner(r,i,w){
  const before=bracket(),m=before[r]?.[i];if(!m||!m.a||!m.b||(w&&![m.a,m.b].includes(w)))return;
