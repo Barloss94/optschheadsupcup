@@ -396,7 +396,7 @@ function scheduleView(){
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
  rr.map(m=>{
  const s=data.schedule[m.id]||{},res=data.settings.resultText[m.id]||'';
- return '<div class="scheduleline"><div><div class="tag">'+(m.isBronze?'BRONSFINALE':r===b.length-1?'FINALE':'DUEL '+(m.index+1))+'</div><strong>'+esc(m.isBronze&&!m.a?'Verliezer halve finale 1':name(m.a))+'</strong><span class="vs">VS</span><strong>'+esc(m.isBronze&&!m.b?'Verliezer halve finale 2':name(m.b))+'</strong>'+
+ return '<div class="scheduleline"><div><div class="tag">'+(m.isBronze?'BRONSFINALE':r===b.length-1?'FINALE':'DUEL '+(m.index+1))+'</div><strong>'+esc(bracketSlotText(r,m.index,0,m.a))+'</strong><span class="vs">VS</span><strong>'+esc(bracketSlotText(r,m.index,1,m.b))+'</strong>'+
  (res&&m.resolved?'<div class="tag scoreline">Uitslag: '+esc(res)+'</div>':'')+
  (m.a&&!m.isBye?'<div class="tag">Op papier thuis: '+esc(name(m.a))+'</div>':'')+
  (s.requiresAgreement&&!matchHasAgreement(m,s)?'<div class="tag">Voorstel · onderling overleg nodig</div>':'')+
@@ -498,7 +498,7 @@ function adminScheduleView(){
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
  rr.map(m=>{
  const s=data.schedule[m.id]||{},opt=suggestions(m);
- return '<div class="infoitem matchadmin"><div class="line"><div><strong>'+esc(m.isBronze&&!m.a?'Verliezer halve finale 1':name(m.a,true))+'</strong><span class="vs">VS</span><strong>'+esc(m.isBronze&&!m.b?'Verliezer halve finale 2':name(m.b,true))+'</strong></div><span class="tag">'+(m.isBronze?'BRONSFINALE':r===b.length-1?'FINALE':'#'+m.id)+'</span></div>'+
+ return '<div class="infoitem matchadmin"><div class="line"><div><strong>'+esc(m.a?name(m.a,true):bracketSlotText(r,m.index,0,null))+'</strong><span class="vs">VS</span><strong>'+esc(m.b?name(m.b,true):bracketSlotText(r,m.index,1,null))+'</strong></div><span class="tag">'+(m.isBronze?'BRONSFINALE':r===b.length-1?'FINALE':'#'+m.id)+'</span></div>'+
  (m.isBye?'<p class="muted smalltext">Vrijloting: geen datum nodig.</p>':
  '<p class="hint">Op papier thuis: '+esc(m.a?name(m.a,true):'Nog niet bekend')+
  (s.requiresAgreement&&!matchHasAgreement(m,s)?' · Onderling overleg nodig over de voorgestelde speeldag':'')+'</p>'+
