@@ -12,7 +12,7 @@ const calendar=fs.readFileSync(path.join(__dirname,'..','calendar.js'),'utf8');
 assert.ok(inline,'De hoofdapp heeft een script');
 assert.match(html,/share\.js\?v=/);
 
-let drawn=[],gradients=[];
+let drawn=[],gradients=[],drawCalls=[];
 const makeGradient=()=>{
  const stops=[];gradients.push(stops);
  return {addColorStop(position,color){stops.push({position,color})}};
@@ -23,7 +23,7 @@ const makeContext=()=>({
  createRadialGradient:makeGradient,createLinearGradient:makeGradient,
  drawImage(){},scale(){},save(){},restore(){},
  measureText(s){return {width:String(s).length*13}},
- fillText(str){drawn.push(String(str))}
+ fillText(str,x,y){drawn.push(String(str));drawCalls.push({text:String(str),x,y})}
 });
 const context=vm.createContext({
   location:{hash:''},window:{},structuredClone,Date,Intl,Math,console,
@@ -42,7 +42,7 @@ vm.runInContext(inline.replace(/\ninitialize\(\);\s*$/,''),context,{filename:'in
 const run=s=>vm.runInContext('(()=>{'+s+'})()',context);
 
 function seed(count=32){
- drawn=[];gradients=[];
+ drawn=[];gradients=[];drawCalls=[];
  context.playersFixture=Array.from({length:count},(_,i)=>({
   id:'p'+i,name:'Deelnemer '+(i+1)+' Achternaam',blocked:[]
  }));
@@ -147,11 +147,25 @@ test('Alleen in de PNG zijn de duelkaarten compacter; de website behoudt zijn af
  const result=run("const g=bracketPosterGeometry(bracket()),web=bracketMirrorLayout(bracket());"+
   "return {pngW:g.cardW,pngH:g.cardH,webH:web.cardHeight,columns:g.layout.columns};");
  assert.equal(result.pngW,324);
- assert.equal(result.pngH,108);
+ assert.equal(result.pngH,100);
  assert.equal(result.webH,156);
  assert.equal(result.columns,9);
  const page=run("return bracketView()");
  assert.match(page,/height:156px/);
+});
+
+test('De datum staat onder de twee namen, links uitgelijnd in de compacte PNG-kaart',()=>{
+ seed(4);
+ run("data.schedule['0:0']={date:'2026-12-04',time:'20:00'};ohcShareType='boom';"+
+  "buildOhcSharePoster(shareActiveInfo(),null);");
+ const dateText=run("return prettyDate('2026-12-04')");
+ const first=drawCalls.find(c=>c.text==='Deelnemer 1 Achternaam');
+ const second=drawCalls.find(c=>c.text==='Deelnemer 2 Achternaam');
+ const date=drawCalls.find(c=>c.text===dateText);
+ assert.ok(first&&second&&date,'Namen of datum ontbreken op de poster');
+ assert.ok(first.y<second.y&&second.y<date.y,'Datum moet onder beide spelers staan');
+ assert.equal(date.x,first.x,'Datum moet links gelijkstaan met de spelersnamen');
+ assert.ok(date.y-second.y>=14,'Datum moet voldoende leesruimte krijgen');
 });
 
 test('De bracketconnectoren koppelen werkelijk op basis van vaste matchroutes',()=>{
