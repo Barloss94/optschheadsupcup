@@ -9,16 +9,18 @@ const vm=require('node:vm');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const poster=fs.readFileSync(path.join(root,'share.js'),'utf8');
+const calendar=fs.readFileSync(path.join(root,'calendar.js'),'utf8');
 const tags=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
 const loadOrder=tags.map(match=>({tag:match[0].slice(0,180),inline:match[1]}));
+const calendarIndex=loadOrder.findIndex(x=>x.tag.includes('src="./calendar.js?'));
 const shareIndex=loadOrder.findIndex(x=>x.tag.includes('src="./share.js?'));
 const mainIndex=loadOrder.findIndex(x=>x.inline.includes("function render(){"));
 assert.ok(shareIndex>=0,'Share script tag bestaat');
 assert.ok(mainIndex>=0,'Main script bestaat');
 
 test('De share-module laadt voordat de hoofdapp initialiseert',()=>{
- assert.ok(shareIndex<mainIndex,
-  'Eerst share.js laden, anders crasht render() bij de functie shareView.');
+ assert.ok(calendarIndex>=0&&calendarIndex<shareIndex&&shareIndex<mainIndex,
+  'Eerst calendar.js, dan share.js en daarna pas het hoofdscript laden.');
  assert.match(loadOrder[mainIndex].inline,/initialize\(\);\s*$/);
 });
 
@@ -45,6 +47,7 @@ test('Website toont het inlogformulier direct bij anonieme eerste opening',async
   }} }}
  };
  const ctx=vm.createContext(browser);
+ vm.runInContext(calendar,ctx,{filename:'calendar.js'});
  vm.runInContext(poster,ctx,{filename:'share.js'});
  const inline=loadOrder[mainIndex].inline.replace(/\ninitialize\(\);\s*$/,'');
  vm.runInContext(inline,ctx,{filename:'index-inline.js'});
