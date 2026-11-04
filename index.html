@@ -658,7 +658,7 @@ function overview(){
  const played=actualMatches().filter(x=>x.resolved).length;
  const total=expectedMatches(),ready=data.draw.length>0;
  const next=ready?'schema':'deelnemers';
- const tagline=champion()?'De kampioen is bekend. Bekijk de eindstand en toernooischema.':ready?
+ const tagline=champion()?'De kampioen is bekend. Bekijk de eindstand en het toernooischema.':ready?
    'Het toernooi is geloot. Bekijk je wedstrijden, speeldata en uitslagen.':
    'De deelnemers worden verzameld. Na de officiële loting verschijnt het speelschema.';
  const label=champion()?'Toernooi afgerond':esc(effectiveStatus());
@@ -674,7 +674,7 @@ function overview(){
  ];
  const intro='<div class="dashboard-status"><div><div class="dashboard-status-label">Huidige toernooistatus</div><div class="dashboard-status-title">'+label+'</div><div class="dashboard-status-description">'+tagline+'</div></div>'+
   button(ready?'Bekijk het speelschema':'Bekijk deelnemers',"setTab('"+next+"')",'')+'</div>';
- const progress=ready?'<section class="panel spotlight"><div class="sectiontitle"><h2>Voortgang van het toernooi</h2><span class="pill blue">'+played+' van '+total+' duels gespeeld</span></div><div class="progressbar"><div style="width:'+(total?Math.round(100*played/total):0)+'%"></div></div><div class="overview-foot" style="margin-top:15px">'+button('Open de toernooischema',"setTab('boom')",'alt',true)+button('Alle wedstrijden',"setTab('schema')",'ghost',true)+'</div></section>':'';
+ const progress=ready?'<section class="panel spotlight"><div class="sectiontitle"><h2>Voortgang van het toernooi</h2><span class="pill blue">'+played+' van '+total+' duels gespeeld</span></div><div class="progressbar"><div style="width:'+(total?Math.round(100*played/total):0)+'%"></div></div><div class="overview-foot" style="margin-top:15px">'+button('Open het toernooischema',"setTab('boom')",'alt',true)+button('Alle wedstrijden',"setTab('schema')",'ghost',true)+'</div></section>':'';
  const championBlock=champion()?'<section class="panel"><div class="sectiontitle"><h2>OHC-kampioen</h2><span class="pill ok">Uitslag definitief</span></div><div class="pair"><div class="circle">🏆</div><strong>'+esc(name(champion()))+'</strong></div></section>':'';
  return hero()+intro+(isAdmin?tournamentSetupChecklist():'')+stats()+
   '<section class="panel"><div class="dashboard-head"><h2>Waar wil je naartoe?</h2><span class="tag">KIES EEN ONDERDEEL</span></div>'+tileGrid(links,'launch-grid')+'</section>'+
@@ -802,11 +802,11 @@ function bracketView(){
    '</div><div class="bracketcards">'+matches.map(m=>card(m,m.round)).join('')+'</div></div>');
  }
  return (rounds.length&&!archiveReadonly?'<div class="btnbar share-shortcut">'+
-  button('🏆 Deel volledige toernooischema',"openShare('boom')",'alt')+
+  button('🏆 Deel het volledige toernooischema',"openShare('boom')",'alt')+
   button('📸 Deel ronde-indeling',"openShare('loting')",'ghost')+'</div>':'')+
   '<section class="panel">'+
   heading('Vaste knock-outbracket',rounds.length?'<span class="pill blue">'+data.players.length+' spelers · '+rounds.length+' rondes</span>':'')+
-  '<details class="help-details"><summary>Hoe lees ik de toernooischema?</summary>'+
+  '<details class="help-details"><summary>Hoe lees ik het toernooischema?</summary>'+
   '<p class="smalltext muted">De linker- en rechterhelft van de loting spelen naar het midden. De finale staat centraal, met de bronsfinale eronder. Volg de gouden lijnen om te zien welke winnaars naar elkaar doorschuiven; de gestippelde lijnen geven de route naar de bronsfinale aan. De oorspronkelijke loting en vaste routes blijven ongewijzigd.</p></details>'+
   (rounds.length?
    '<p class="muted smalltext bracket-guide">← Linkerhelft · Finale en bronsfinale in het midden · Rechterhelft →</p>'+
@@ -1656,7 +1656,7 @@ function archiveView(){
    return '<section class="panel"><div class="empty"><div class="bigicon">📁</div><strong>Het archief is nog leeg</strong>'+
    '<p>Wanneer de organisatie een toernooi archiveert, verschijnt de volledige afgesloten editie hier.</p></div></section>';
   return '<section class="panel"><div class="sectiontitle"><h2>Afgesloten toernooien</h2><span class="pill blue">'+archivesCache.length+' edities</span></div>'+
-   '<p class="panel-intro">Deze toernooien zijn bewaard voor de historie. De deelnemers, uitslagen, speeldata en toernooischema zijn alleen te lezen.</p>'+
+   '<p class="panel-intro">Deze toernooien zijn bewaard voor de historie. De deelnemers, uitslagen, speeldata en het toernooischema zijn alleen te lezen.</p>'+
    '<div class="archive-list">'+archivesCache.map(a=>
     '<div class="archive-item"><div><strong>'+esc(a.title)+'</strong><span class="tag">Gearchiveerd op '+esc(archiveDate(a.archived_at))+'</span></div>'+
     '<button type="button" class="btn alt small" onclick="openArchive(\''+esc(a.id)+'\')">Bekijk archief</button></div>'
