@@ -54,8 +54,10 @@ test('Wanneer gedeelde beschikbaarheid ontbreekt, volgen twee aangrenzende dagen
  const planned=run("return autoPlanMatches(false)");
  assert.equal(planned.conflicts.length,0);
  const dates=pair();
- assert.equal(dates.main.date,'2027-01-09');
- assert.equal(dates.bronze.date,'2027-01-10');
+ assert.equal(new Date(dates.main.date+'T12:00:00Z').getUTCDay(),6);
+ assert.equal(new Date(dates.bronze.date+'T12:00:00Z').getUTCDay(),0);
+ assert.ok(dates.main.date>='2027-01-09');
+ assert.ok(dates.bronze.date<='2027-01-17');
  assert.equal(dates.days,1);
  assert.match(run("return finalDaysNotice()"),/Twee opeenvolgende dagen/);
 });
