@@ -374,9 +374,9 @@ function shareCalendarAgenda(ctx,info){
    doorschuifkoppelingen blijven zoals vastgelegd bij de loting. */
 /* De PNG gebruikt dezelfde spiegeling en dezelfde match-ID's als de website. */
 function bracketPosterGeometry(rounds){
- const cardW=324,cardH=100,colGap=55,marginX=75;
+ const cardW=312,cardH=108,colGap=58,marginX=75;
  const layout=bracketMirrorLayout(rounds,{
-  cardHeight:cardH,pitch:121,top:355,bronzeGap:190
+  cardHeight:cardH,pitch:130,top:355,bronzeGap:196
  });
  const width=marginX*2+layout.columns*cardW+(layout.columns-1)*colGap;
  const bottom=Math.max(...layout.positions.flat().map(p=>p.y+cardH));
@@ -449,12 +449,15 @@ function bracketPosterCard(ctx,m,r,i,g,rounds){
   const str=id?name(id):m.isBye&&slot===1?'Vrijloting':
    bracketSlotText(r,m.index,slot,id);
   const winner=id&&id===m.winner;
-  shareText(ctx,(winner?'✓ ':'')+str,x+18,y+51+slot*23,w-36,
-   winner?C.green:id?C.white:C.muted,19,winner?900:700);
+  shareText(ctx,(winner?'✓ ':'')+str,x+15,y+51+slot*21,w-30,
+   winner?C.green:id?C.white:C.muted,17,winner?900:700);
  }
  const schedule=data.schedule[m.id];
  if(schedule?.date&&!m.isBye){
-  shareText(ctx,prettyDate(schedule.date),x+18,y+h-8,w-36,C.pale,12,650);
+  ctx.fillStyle='rgba(193,158,182,.35)';
+  ctx.fillRect(x+15,y+h-27,w-30,1);
+  const when=prettyDate(schedule.date)+(schedule.time?' · '+schedule.time+' uur':'');
+  shareText(ctx,when,x+15,y+h-9,w-30,C.pale,12,700);
  }
 }
 function buildOhcBracketPoster(logo,rounds){
