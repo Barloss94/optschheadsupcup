@@ -65,3 +65,14 @@ test('Linksboven wordt een echte OHC-logoafbeelding getoond, ook op mobiele sche
  assert.match(brand,/@media\(max-width:690px\)\s*\{[\s\S]*?\.identity img\.brand-emblem\s*\{[^}]*height:57px/);
  assert.doesNotMatch(brand,/\.mark\.brand-emblem\s*\{[^}]*background:none/);
 });
+
+test('Kleine goudgele labels gebruiken leesbare lettervormen zonder gloed',()=>{
+ const brand=fs.readFileSync(path.join(root,'brand.css'),'utf8');
+ const layout=fs.readFileSync(path.join(root,'layout.css'),'utf8');
+ assert.match(brand,/h1,h2,h3,\.stat \.number[^{}]*\{font-family:Inter/);
+ assert.match(layout,/\.launch-title\{[^}]*font-weight:700;[^}]*font-size:16px;[^}]*font-family:Inter/);
+ assert.match(layout,/\.dashboard-status-title\{[^}]*font-family:Inter/);
+ assert.match(layout,/\.stat \.status-number\{[^}]*color:#ffe8b5;[^}]*font-size:18px;[^}]*font-weight:700/);
+ assert.match(html,/<div class="number status-number">\$\{esc\(effectiveStatus\(\)\)\}/);
+ assert.doesNotMatch(html,/font-size:16px;margin-top:16px;color:var\(--orange\)/);
+});
