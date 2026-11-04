@@ -577,7 +577,7 @@ function overview(){
   button(ready?'Bekijk het speelschema':'Bekijk deelnemers',"setTab('"+next+"')",'')+'</div>';
  const progress=ready?'<section class="panel spotlight"><div class="sectiontitle"><h2>Voortgang van het toernooi</h2><span class="pill blue">'+played+' van '+total+' duels gespeeld</span></div><div class="progressbar"><div style="width:'+(total?Math.round(100*played/total):0)+'%"></div></div><div class="overview-foot" style="margin-top:15px">'+button('Open de toernooiboom',"setTab('boom')",'alt',true)+button('Alle wedstrijden',"setTab('schema')",'ghost',true)+'</div></section>':'';
  const championBlock=champion()?'<section class="panel"><div class="sectiontitle"><h2>OHC-kampioen</h2><span class="pill ok">Uitslag definitief</span></div><div class="pair"><div class="circle">🏆</div><strong>'+esc(name(champion()))+'</strong></div></section>':'';
- return hero()+intro+stats()+
+ return hero()+intro+(isAdmin?tournamentSetupChecklist():'')+stats()+
   '<section class="panel"><div class="dashboard-head"><h2>Waar wil je naartoe?</h2><span class="tag">KIES EEN ONDERDEEL</span></div>'+tileGrid(links,'launch-grid')+'</section>'+
   progress+championBlock;
 }
@@ -752,19 +752,37 @@ function adminSettingsView(){
  '<div class="notice orange">Wijzigingen worden opgeslagen in de Ranking-database. Ingelogde gebruikers zien de volledige namen, wedstrijden en speelperiodes. Alleen beheerders zien verhinderingen en kunnen gegevens wijzigen.</div></section>';
 }
 function jumpToResults(){if(!isAdmin)return;setTab('beheer-resultaten');requestAnimationFrame(()=>document.getElementById('ohcResults')?.scrollIntoView({behavior:'smooth',block:'start'}))}
+
+function tournamentSetupChecklist(){
+ if(!isAdmin)return '';
+ const deadlineReady=registrationDeadlineConfigured();
+ const windowsReady=getRoundWindows().length===5;
+ const newEdition=!data.players.length&&!data.draw.length;
+ if(deadlineReady&&windowsReady)return '';
+ const complete=Number(deadlineReady)+Number(windowsReady);
+ return '<section class="panel tournament-setup">'+
+  '<div class="sectiontitle"><h2>'+(newEdition?'Nieuwe OHC-editie voorbereiden':'Toernooi-instellingen afronden')+'</h2>'+
+  '<span class="pill warn">'+complete+' / 2 ingesteld</span></div>'+
+  '<p class="panel-intro">Een nieuwe editie begint zonder oude inschrijfdeadline of speeldata. Stel eerst de uiterste inschrijfdatum en de speelweken van alle rondes vast. Pas daarna kunnen nieuwe deelnemers worden toegevoegd en kan er worden geloot.</p>'+
+  '<div class="setup-steps">'+
+   '<div class="setup-step"><span class="setup-step-icon">'+(deadlineReady?'✓':'1')+'</span><div><strong>Inschrijfdeadline</strong><p>'+(deadlineReady?esc(registrationDeadlineLabel()):'Nog niet vastgesteld')+'</p></div></div>'+
+   '<div class="setup-step"><span class="setup-step-icon">'+(windowsReady?'✓':'2')+'</span><div><strong>Speelperiodes per ronde</strong><p>'+(windowsReady?'Alle vijf rondes zijn ingesteld.':'Vijf rondeperiodes met ISO-weeknummers invoeren')+'</p></div></div>'+
+  '</div><div class="btnbar">'+button('Stel nieuwe editie in',"setTab('beheer-instellingen')",'')+'</div></section>';
+}
 function adminView(){
  if(!isAdmin)return '<section class="panel"><h2>Geen toegang</h2><p class="muted">Beheerdersrechten zijn vereist.</p></section>';
  const drawn=data.draw.length>0,played=actualMatches().filter(x=>x.resolved).length;
  const cards=[
+  ['beheer-instellingen','sliders-horizontal','Inschrijving en speelweken','Stel de toernooinaam, inschrijfdeadline en rondeperiodes in.'],
   ['beheer-deelnemers','users','Deelnemers beheren','Spelers en verhinderingen bekijken of wijzigen.'],
   ['beheer-import','file-up','CSV inschrijvingen','Aanmeldingen importeren vanuit het formulier.'],
   ['beheer-loting','shuffle','Officiële loting',drawn?'De loting is uitgevoerd; bekijk de vaste indeling.':'Het deelnemersveld loten en vaststellen.'],
   ['beheer-resultaten','check-circle','Uitslagen invoeren','Winnaars en eventuele scores verwerken.'],
   ['beheer-planning','calendar-clock','Wedstrijden plannen','Speeldagen bevestigen en afspraken aanpassen.'],
-  ['beheer-instellingen','sliders-horizontal','Toernooi-instellingen','Status, vaste speelperiodes en toernooivorm.'],
   ['beheer-bestanden','folder-archive','Toernooi beheren','Back-ups, volledig resetten en archiveren.']
  ];
  return '<div class="admin-banner"><div><strong>Beheeromgeving</strong><p>Wijzigingen worden opgeslagen in de OPTSCH Ranking-database. Alleen beheerders zien deze functies.</p></div><span class="pill ok">Verbonden</span></div>'+
+  tournamentSetupChecklist()+
   '<div class="quick-metrics"><div class="quick-metric"><b>'+data.players.length+' / 32</b><span>Deelnemers</span></div><div class="quick-metric"><b>'+(drawn?'Uitgevoerd':'Nog niet')+'</b><span>Officiële loting</span></div><div class="quick-metric"><b>'+played+' / '+(expectedMatches()||'—')+'</b><span>Gespeelde duels</span></div></div>'+
   '<section class="panel"><h2 style="margin-bottom:17px">Beheeronderdelen</h2>'+tileGrid(cards,'management-grid')+'</section>';
 }
@@ -783,7 +801,7 @@ const infoNavigation=[
 const adminNavigation=[
  ['beheer','Overzicht'],['beheer-deelnemers','Deelnemers'],['beheer-import','CSV-import'],
  ['beheer-loting','Loting'],['beheer-resultaten','Uitslagen'],['beheer-planning','Planning'],
- ['beheer-instellingen','Instellingen'],['beheer-bestanden','Toernooi beheren']
+ ['beheer-instellingen','Instellingen en deadline'],['beheer-bestanden','Toernooi beheren']
 ];
 const pageInfo={
  deelnemers:['Deelnemers','Het complete deelnemersveld van de OHC.','TOERNOOI'],
@@ -798,7 +816,7 @@ const pageInfo={
  'beheer-loting':['Loting','Voer de officiële loting uit en bekijk de indeling.','ORGANISATIE'],
  'beheer-resultaten':['Uitslagen invoeren','Kies een ronde, noteer de score en selecteer de winnaar.','ORGANISATIE'],
  'beheer-planning':['Wedstrijden plannen','Bevestig speeldata, pas voorstellen aan en controleer conflicten.','ORGANISATIE'],
- 'beheer-instellingen':['Toernooi-instellingen','Status, spelvorm en vaste speelperiodes.','ORGANISATIE'],
+ 'beheer-instellingen':['Nieuwe editie instellen','Toernooinaam, inschrijfdeadline, status en speelperiodes per ronde.','ORGANISATIE'],
  'beheer-bestanden':['Toernooibeheer','Back-ups, volledige reset en archiveren van de huidige editie.','ORGANISATIE'],
  archief:['Toernooiarchief','Alle afgesloten OHC-edities, veilig bewaard.','HISTORIE'],
  delen:['Delen en exports','Maak ronde-indelingen, speelschema’s en uitslagen als deelbare afbeeldingen.','AFBEELDINGEN']
@@ -1281,8 +1299,8 @@ async function refreshCurrentAfterLifecycle(){
  await fetchPrivate();
  archiveRecord=null;
  archivesCache=null;
- tab='overzicht';
- location.hash='overzicht';
+ tab=isAdmin?'beheer-instellingen':'overzicht';
+ location.hash=tab;
  render();
 }
 async function resetCurrentTournament(){
