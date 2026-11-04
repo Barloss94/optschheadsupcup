@@ -427,9 +427,23 @@ function bracketPosterCard(ctx,m,r,i,g,rounds){
  const bronze=!!m.isBronze,final=r===rounds.length-1&&!bronze,decided=!!m.winner;
  shareFillRound(ctx,x,y,w,h,15,bronze?'#302436':final?'#35283b':'#211b2d',
   decided?'rgba(64,210,147,.9)':final?'#e9b970':bronze?'rgba(205,160,105,.9)':'rgba(160,122,190,.7)',final?3:2);
- shareFillRound(ctx,x+11,y+8,w-22,27,8,bronze?'#806240':final?'#765638':'#493449');
+ let headFill='#493449';
+ if(final||bronze){
+  headFill=ctx.createLinearGradient(x+11,y+8,x+w-11,y+8);
+  if(final){
+   headFill.addColorStop(0,'#e7b45f');
+   headFill.addColorStop(.43,'#dcbf87');
+   headFill.addColorStop(1,'#c3cbd8');
+  }else{
+   headFill.addColorStop(0,'#986037');
+   headFill.addColorStop(.43,'#785039');
+   headFill.addColorStop(1,'#493449');
+  }
+ }
+ shareFillRound(ctx,x+11,y+8,w-22,27,8,headFill);
  const label=displayDuelLabel(m,rounds).toUpperCase();
- shareText(ctx,label,x+20,y+28,w-39,bronze?C.lightGold:C.gold,17,900);
+ shareText(ctx,label,x+20,y+28,w-39,
+  final?'#24192a':bronze?'#fff0d9':C.gold,17,900);
  for(let slot=0;slot<2;slot++){
   const id=slot===0?m.a:m.b;
   const str=id?name(id):m.isBye&&slot===1?'Vrijloting':
