@@ -45,6 +45,10 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - Bij onvermijdelijke onverenigbaarheid is er **geen afwijzing van de loting**. Er blijven uitsluitend structurele controles over: maximaal 32 deelnemers, elke deelnemer één keer en geen volledig lege eerste-ronde-duels.
 - De originele verhinderingen van deelnemers kunnen na de loting door de beheerder worden bijgewerkt. Dit verandert de vaste route in de bracket niet. De website en database controleren de identiteit en structuur van de bracket.
 - Een bestaande bracket kan alleen opnieuw worden geloot na een expliciete volledige herstart door de beheerder.
+- **Handmatig wisselen in ronde 1:** via **Beheer → Loting → Eerste ronde aanpassen** kunnen beheerders twee eerste-rondeplaatsen (spelers of vrijlotingen) omwisselen zolang nog niet alle duels van ronde 1 zijn afgewerkt. De vaste routes van de latere rondes blijven behouden; er wordt niet opnieuw geloot.
+- Vóór bevestiging verschijnt een preview van de nieuwe ontmoetingen, het aantal duels zonder gezamenlijke toegestane speeldag, nieuwe conflicten en mogelijke probleemontmoetingen die eerder in de bracket kunnen ontstaan.
+- Een wissel die een al gespeelde wedstrijd van tegenstander verandert, wist uitsluitend de **ongeldig geworden uitslagen en afhankelijke vervolgresultaten**, niet de uitslagen van volledig onaangetaste duels. Herberekende speeldata en eventuele eerder definitief vastgestelde afspraken worden expliciet gewaarschuwd. Omkeren van de thuis/uit-volgorde bij dezelfde twee spelers behoudt de uitslag.
+- De beheerder bevestigt een wissel expliciet. Een wijziging die de vaste rondevolgorde of geldigheid van bevestigde data blokkeert kan niet worden opgeslagen. Zodra alle duels van ronde 1 zijn afgewerkt, sluit de wijzigingsmogelijkheid automatisch.
 
 ### Planning en de op papier thuisspelende speler
 
