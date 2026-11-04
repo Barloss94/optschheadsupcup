@@ -111,10 +111,10 @@ test('Zonder loting kan geen rondeposter worden opgebouwd',()=>{
  assert.equal(result,null);
 });
 
-test('De volledige toernooischema staat als afzonderlijke deeloptie op de website',()=>{
+test('Het volledige toernooischema staat als afzonderlijke deeloptie op de website',()=>{
  seed();
  const markup=run("ohcShareType='boom';return shareView()");
- assert.match(markup,/Volledige toernooischema/);
+ assert.match(markup,/Volledig toernooischema/);
  assert.match(markup,/LIGGEND/);
  assert.match(markup,/bracket-poster-preview/);
  assert.match(markup,/Download als PNG/);
@@ -138,7 +138,7 @@ test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op éé
   assert.ok(drawn.includes('DUEL '+n),'Duel '+n+' ontbreekt in de export');
  assert.ok(drawn.some(t=>t.includes('Deelnemer 1 Achternaam')));
  assert.ok(drawn.some(t=>t.startsWith('Deelnemer 32')),'Speler 32 moet zichtbaar blijven, desnoods ingekort');
- assert.ok(drawn.includes('TOERNOOISCHEMA')||drawn.includes('VOLLEDIGE TOERNOOISCHEMA'));
+ assert.ok(drawn.includes('TOERNOOISCHEMA')||drawn.includes('VOLLEDIG TOERNOOISCHEMA'));
  assert.ok(drawn.includes('BRONSFINALE'),'Bronsfinale ontbreekt');
  assert.ok(drawn.includes('FINALE'),'Finale ontbreekt');
 });
