@@ -11,6 +11,28 @@ De besloten website voor de **OPTSCH Heads-Up Cup**, met directe knock-out (sing
 - **Nieuwe competitie is blanco:** geen deelnemers, loting, resultaten, speelschema, speelweken of inschrijfdeadline. Titel en deadline worden door de beheerder ingesteld.
 - **Veiligheid:** alleen beheerders kunnen resetten of archiveren; acties gebruiken een version-check. Reeds bestaande toernooidata wordt niet automatisch gewijzigd.
 
+## OHC-beheerdersrechten, onafhankelijk van de Ranking
+
+De OHC gebruikt de bestaande gebruikersaccounts van de OPTSCH Ranking-database,
+maar heeft **eigen OHC-beheerdersrechten**. Een Ranking-host kan in de OHC
+volwaardig beheerder zijn zonder Ranking-admin te worden.
+
+- Bestaande Ranking-admins hebben automatisch ook volledige OHC-beheerrechten.
+- Extra OHC-beheerders worden door de databasebeheerder aan de private
+  \`public.ohc_admin_access\`-tabel gekoppeld op \`auth.users.id\` (met \`active=true\`).
+  De tabel is niet rechtstreeks toegankelijk vanuit de browser en gebruikt RLS.
+- \`public.ohc_is_admin()\` controleert of een ingelogde gebruiker óf
+  Ranking-admin óf expliciet OHC-beheerder is; rollen worden **niet**
+  overgenomen uit een andere Supabase-database zoals OSC.
+- De OHC-RLS-policies voor deelnemersgegevens, privé-toernooidata en archieven,
+  en alle mutatie-RPC's (\`ohc_save_state\`, \`ohc_reset_current\`,
+  \`ohc_archive_and_start_new\`) gebruiken \`ohc_is_admin()\`.
+- De OHC-website controleert beheerdersrechten door de private
+  \`ohc_events\`-gegevens te laden; een OHC-beheerder ziet dan alle
+  beheerschermen zonder aanpassing van de frontend.
+- De aparte OSC-accountrechten en de Ranking-rol van een OHC-beheerder
+  blijven volledig ongewijzigd.
+
 ## Live database
 
 De applicatie gebruikt het bestaande Supabase-project **OPTSCH Ranking** (`lnlaqrljtwrxtfsyotnn`), maar beheert de OHC volledig in afzonderlijke tabellen:
