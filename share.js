@@ -8,7 +8,9 @@ const OHC_SHARE_TYPES={
  schema:{label:'Speelschema',title:'SPEELSCHEMA'},
  uitslagen:{label:'Uitslagen',title:'UITSLAGEN'},
  deelnemers:{label:'Deelnemersoverzicht',title:'DEELNEMERS'},
- prijzen:{label:'Prijzen en buy-in',title:'PRIJZENPOT'}
+ prijzen:{label:'Prijzen en buy-in',title:'PRIJZENPOT'},
+ kalender:{label:'Speelkalender per maand',title:'SPEELKALENDER'},
+ 'kalender-volledig':{label:'Volledige speelagenda',title:'COMPLETE SPEELKALENDER'}
 };
 const OHC_SHARE_COLORS={
  bg:'#0d0d17',panel:'#171521',inner:'#24202e',gold:'#e4b76f',
@@ -18,7 +20,7 @@ const OHC_SHARE_COLORS={
 };
 const OHC_SHARE_W=1080;
 const OHC_SHARE_SCALE=2;
-let ohcShareType='loting',ohcShareRound=0,ohcShareBusy=false;
+let ohcShareType='loting',ohcShareRound=0,ohcShareBusy=false,ohcShareMonth='';
 let ohcShareImage=null,ohcSharePoster=null,ohcShareRenderId=0;
 let ohcSharePosterKey='';
 
@@ -31,20 +33,34 @@ function openShare(type='loting',round=null){
 function shareView(){
  const rounds=bracket().length;
  const roundTypes=['loting','schema','uitslagen'].includes(ohcShareType);
- const haveData=roundTypes?rounds>0:ohcShareType==='deelnemers'?data.players.length>0:true;
+ const calendarTypes=ohcShareType==='kalender'||ohcShareType==='kalender-volledig';
+ const calendarEntries=calendarTypes?ohcCalendarEntries():[];
+ const calendarMonths=[...new Set(calendarEntries.map(e=>e.date.slice(0,7)))];
+ const selectedMonth=calendarMonths.includes(ohcShareMonth)?ohcShareMonth:
+  (calendarMonths.includes(ohcCalendarMonth)?ohcCalendarMonth:calendarMonths[0]||'');
+ const haveData=roundTypes?rounds>0:calendarTypes?
+  (ohcShareType==='kalender'?calendarEntries.some(e=>e.date.startsWith(selectedMonth)):calendarEntries.length>0):
+  ohcShareType==='deelnemers'?data.players.length>0:true;
  const value=rounds?Math.min(ohcShareRound,rounds-1):0;
  const opts=Object.entries(OHC_SHARE_TYPES).map(([k,v])=>
   '<option value="'+k+'"'+(ohcShareType===k?' selected':'')+'>'+esc(v.label)+'</option>').join('');
  return '<section class="panel share-panel"><div class="sectiontitle"><h2>Deelbare OHC-afbeeldingen</h2>'+
   '<span class="pill ok">PNG • WhatsApp-formaat</span></div>'+
-  '<p class="panel-intro">Net als in de OSC maak je hier een verzorgde afbeelding met het officiële OHC-logo en alle informatie. Kies het soort overzicht en eventueel de ronde; de export wordt één complete poster.</p>'+
+  '<p class="panel-intro">Net als in de OSC maak je hier een verzorgde afbeelding met het officiële OHC-logo en alle informatie. Kies het soort overzicht en eventueel de ronde of maand; de export wordt één complete poster.</p>'+
   '<div class="formgrid share-controls"><div class="field"><label for="ohcShareType">Soort afbeelding</label>'+
   '<select id="ohcShareType" onchange="changeShareType(this.value)">'+opts+'</select></div>'+
   (roundTypes?'<div class="field"><label for="ohcShareRound">Toernooironde</label>'+
    '<select id="ohcShareRound" onchange="changeShareRound(this.value)" '+(!rounds?'disabled':'')+'>'+
    (rounds?Array.from({length:rounds},(_,r)=>
     '<option value="'+r+'"'+(r===value?' selected':'')+'>'+esc(roundLabel(r,rounds))+'</option>').join(''):'<option>Na de loting beschikbaar</option>')+'</select></div>':
-   '<div class="field"><label>Weergave</label><div class="share-selection-note">De volledige editie op één afbeelding</div></div>')+
+   ohcShareType==='kalender'?'<div class="field"><label for="ohcShareMonth">Speelmaand</label>'+
+    '<select id="ohcShareMonth" onchange="changeShareMonth(this.value)" '+(!calendarMonths.length?'disabled':'')+'>'+
+    (calendarMonths.length?calendarMonths.map(m=>'<option value="'+m+'"'+(m===selectedMonth?' selected':'')+'>'+
+      esc(ohcCalendarMonthName(m))+'</option>').join(''):'<option>Geen geplande duels</option>')+
+    '</select></div>':
+   '<div class="field"><label>Weergave</label><div class="share-selection-note">'+
+    (ohcShareType==='kalender-volledig'?'Alle geplande datums met duels, op één afbeelding':
+     'De volledige editie op één afbeelding')+'</div></div>')+
   '</div>'+
   (!haveData?'<div class="notice orange">Er zijn nog geen gegevens om dit overzicht te delen. Voer eerst de loting uit of voeg deelnemers toe.</div>':'')+
   '<div class="btnbar share-actions">'+
@@ -82,7 +98,25 @@ function shareActiveInfo(){
   return {type,matches:[],round:null,label:'Deelnemersoverzicht'};
  }
  if(type==='prijzen')return {type,matches:[],round:null,label:'Buy-in en prijzenpot'};
+ if(type==='kalender'||type==='kalender-volledig'){
+  const all=ohcCalendarEntries();
+  if(!all.length)return null;
+  if(type==='kalender-volledig')return {
+   type,round:null,matches:[],entries:all,month:null,label:'Alle speeldata'
+  };
+  const months=[...new Set(all.map(e=>e.date.slice(0,7)))];
+  const month=months.includes(ohcShareMonth)?ohcShareMonth:
+   months.includes(ohcCalendarMonth)?ohcCalendarMonth:months[0];
+  return {type,round:null,matches:[],month,
+   entries:all.filter(e=>e.date.startsWith(month)),label:ohcCalendarMonthName(month)};
+ }
  return null;
+}
+function changeShareMonth(month){
+ if(!ohcCalendarValidMonth(month))return;
+ if(!ohcCalendarEntries().some(e=>e.date.startsWith(month)))return;
+ ohcShareMonth=month;ohcSharePoster=null;ohcSharePosterKey='';
+ render();
 }
 function shareStatus(text){
  const el=document.getElementById('ohcShareStatus');
@@ -91,10 +125,10 @@ function shareStatus(text){
 function shareFileLabel(info){
  const prefix=(data.settings?.title||'OHC').toLowerCase().normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,35)||'ohc';
- return prefix+'-'+info.type+(info.round===null?'':'-ronde-'+(info.round+1))+'.png';
+ return prefix+'-'+info.type+(info.round===null?'':'-ronde-'+(info.round+1))+(info.month?'-'+info.month:'')+'.png';
 }
 function shareContextKey(info){
- return JSON.stringify({type:info.type,round:info.round,
+ return JSON.stringify({type:info.type,round:info.round,month:info.month||null,
   players:data.players,draw:data.draw,results:data.results,
   schedule:data.schedule,settings:data.settings});
 }
@@ -163,7 +197,9 @@ function shareBase(ctx,height,logo,info,itemsCount){
  shareText(ctx,info.round!==null?info.label:info.label,285,207,715,C.purple,23,750);
  const subtitle=info.round!==null?
   ((getRoundWindows()[info.round]?.label||'')+' · '+itemsCount+' duels'):
-  info.type==='deelnemers'?itemsCount+' ingeschreven spelers':'Prijzen en uitbetalingen';
+  ['kalender','kalender-volledig'].includes(info.type)?
+   itemsCount+' duels op '+new Set(info.entries.map(e=>e.date)).size+' speeldagen':
+   info.type==='deelnemers'?itemsCount+' ingeschreven spelers':'Prijzen en uitbetalingen';
  shareText(ctx,subtitle,84,274,912,C.pale,25,650);
  ctx.fillStyle='rgba(236,192,128,.5)';ctx.fillRect(84,304,912,2);
  ctx.fillStyle='rgba(236,192,128,.4)';ctx.fillRect(84,height-142,912,2);
