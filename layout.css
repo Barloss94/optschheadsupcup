@@ -339,7 +339,7 @@
  .ohc-calendar-match-status{margin-left:auto}
 }
 
-/* Volledige toernooiboom: breed en op mobiel horizontaal inspecteerbaar */
+/* Volledige toernooischema: breed en op mobiel horizontaal inspecteerbaar */
 .share-poster-preview.bracket-poster-preview{max-width:1220px;overflow:auto;overscroll-behavior-x:contain}
 .bracket-poster-preview canvas{width:100%;height:auto}
 @media(max-width:760px){
