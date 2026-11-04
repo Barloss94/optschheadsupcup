@@ -131,7 +131,7 @@ test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op éé
   "width:canvas.width,height:canvas.height,geometry:g,filename:shareFileLabel(info)}");
  assert.equal(result.rounds,5);
  assert.equal(result.openings,16);
- assert.ok(result.width>=2900&&result.width<=3300);
+ assert.ok(result.width>=1800&&result.width<=3300);
  assert.ok(result.height>=1450&&result.height<=1650);
  assert.match(result.filename,/toernooiboom\.png$/);
  for(let n=1;n<=16;n++)
@@ -146,7 +146,7 @@ test('Alleen in de PNG zijn de duelkaarten compacter; de website behoudt zijn af
  seed(32);
  const result=run("const g=bracketPosterGeometry(bracket()),web=bracketMirrorLayout(bracket());"+
   "return {pngW:g.cardW,pngH:g.cardH,webH:web.cardHeight,columns:g.layout.columns};");
- assert.equal(result.pngW,276);
+ assert.ok(result.pngW>=118&&result.pngW<276);
  assert.equal(result.pngH,101);
  assert.equal(result.webH,156);
  assert.equal(result.columns,9);
@@ -174,7 +174,7 @@ test('Compacte PNG heeft minder breedte nodig zonder rondekolommen te schrappen'
   "return {columns:g.layout.columns,cardWidth:g.cardW,cardHeight:g.cardH,"+
   "gap:g.colGap,fullWidth:g.width,firstCount:rounds[0].length};");
  assert.equal(result.columns,9);
- assert.equal(result.cardWidth,276);
+ assert.ok(result.cardWidth>=118&&result.cardWidth<276);
  assert.equal(result.cardHeight,101);
  assert.equal(result.firstCount,16);
  // Voorheen 3422 px breed; de afbeelding wordt smaller zonder minder duels.
@@ -191,6 +191,40 @@ test('Elke kaart toont de speeldatum of Datum volgt onder de spelers',()=>{
  assert.ok(date&&names.length>=2);
  assert.ok(names.slice(0,2).every(c=>c.y<date.y));
  assert.ok(names.some(c=>c.x===date.x),'Datum blijft links onder de namen staan');
+});
+
+test('Kaartbreedte wordt automatisch bepaald door de langste naam in de PNG',()=>{
+ seed(4);
+ const initial=run("return {png:bracketPosterGeometry(bracket()).cardW,web:bracketCardWidth(bracket())}");
+ const longName='Alexandrius Maximilianus Vermeulendriessen-Winterbroek';
+ context.longName=longName;
+ const wider=run("data.players[0].name=longName;"+
+  "const g=bracketPosterGeometry(bracket());"+
+  "return {png:g.cardW,web:bracketCardWidth(bracket()),total:g.width}");
+ assert.ok(wider.png>initial.png,'Een lange naam moet de PNG-kaarten breder maken');
+ assert.ok(wider.web>initial.web,'Een lange naam moet de websitekaarten breder maken');
+ assert.equal(wider.total,136+wider.png*3+53*2);
+ const markup=run("return bracketView()");
+ assert.ok(markup.includes('--card-width:'+wider.web+'px'));
+ assert.ok(markup.includes(longName));
+ run("ohcShareType='boom';buildOhcSharePoster(shareActiveInfo(),null)");
+ assert.ok(drawn.includes(longName),'De PNG moet een lange naam zonder afkappen tonen');
+});
+test('De datum bepaalt de breedte wanneer deze langer is dan de spelersnamen',()=>{
+ seed(4);
+ run("data.players.forEach((p,i)=>p.name='A'+i);");
+ const empty=run("return bracketPosterGeometry(bracket()).cardW");
+ const dated=run("data.schedule['0:0']={date:'2026-12-09',time:'23:45',provisional:false};"+
+  "return bracketPosterGeometry(bracket()).cardW");
+ assert.ok(dated>=empty,'Een lange datum mag de kaart niet buiten de rand laten vallen');
+ assert.ok(dated>118,'Datum is breder dan alleen de minimumkaart');
+});
+test('Gespiegelde websitekolommen gebruiken de gemeten variabele breedte',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','layout.css'),'utf8');
+ assert.match(css,/grid-template-columns:repeat\(var\(--mirrored-columns\),var\(--card-width,236px\)\)/);
+ assert.match(css,/\.mirrored-bracket \.bracketcolumn\{\s*width:var\(--card-width,236px\);\s*min-width:var\(--card-width,236px\);/);
+ assert.match(css,/\.mirrored-bracket \.slot \.name\{overflow:visible;text-overflow:clip;white-space:nowrap\}/);
+ assert.match(html,/--card-width:'\+cardWidth\+'px/);
 });
 
 test('De bracketconnectoren koppelen werkelijk op basis van vaste matchroutes',()=>{
