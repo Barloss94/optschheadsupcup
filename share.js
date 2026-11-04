@@ -374,9 +374,9 @@ function shareCalendarAgenda(ctx,info){
    doorschuifkoppelingen blijven zoals vastgelegd bij de loting. */
 /* De PNG gebruikt dezelfde spiegeling en dezelfde match-ID's als de website. */
 function bracketPosterGeometry(rounds){
- const cardW=312,cardH=108,colGap=58,marginX=75;
+ const cardW=276,cardH=101,colGap=53,marginX=68;
  const layout=bracketMirrorLayout(rounds,{
-  cardHeight:cardH,pitch:130,top:355,bronzeGap:196
+  cardHeight:cardH,pitch:119,top:355,bronzeGap:185
  });
  const width=marginX*2+layout.columns*cardW+(layout.columns-1)*colGap;
  const bottom=Math.max(...layout.positions.flat().map(p=>p.y+cardH));
@@ -440,25 +440,26 @@ function bracketPosterCard(ctx,m,r,i,g,rounds){
    headFill.addColorStop(1,'#493449');
   }
  }
- shareFillRound(ctx,x+11,y+6,w-22,24,8,headFill);
+ shareFillRound(ctx,x+9,y+5,w-18,24,7,headFill);
  const label=displayDuelLabel(m,rounds).toUpperCase();
- shareText(ctx,label,x+20,y+25,w-39,
-  final?'#24192a':bronze?'#fff0d9':C.gold,17,900);
+ shareText(ctx,label,x+17,y+24,w-34,
+  final?'#24192a':bronze?'#fff0d9':C.gold,15,900);
  for(let slot=0;slot<2;slot++){
   const id=slot===0?m.a:m.b;
   const str=id?name(id):m.isBye&&slot===1?'Vrijloting':
    bracketSlotText(r,m.index,slot,id);
   const winner=id&&id===m.winner;
-  shareText(ctx,(winner?'✓ ':'')+str,x+15,y+51+slot*21,w-30,
-   winner?C.green:id?C.white:C.muted,17,winner?900:700);
+  shareText(ctx,(winner?'✓ ':'')+str,x+14,y+48+slot*19,w-28,
+   winner?C.green:id?C.white:C.muted,16,winner?900:700);
  }
+ // De speeldatum blijft onder beide spelers; er is geen extra kolom nodig.
  const schedule=data.schedule[m.id];
- if(schedule?.date&&!m.isBye){
-  ctx.fillStyle='rgba(193,158,182,.35)';
-  ctx.fillRect(x+15,y+h-27,w-30,1);
-  const when=prettyDate(schedule.date)+(schedule.time?' · '+schedule.time+' uur':'');
-  shareText(ctx,when,x+15,y+h-9,w-30,C.pale,12,700);
- }
+ const when=m.isBye?'VRIJLOTING':schedule?.date?
+  prettyDate(schedule.date)+(schedule.time?' · '+schedule.time+' uur':''):
+  'DATUM VOLGT';
+ ctx.fillStyle='rgba(193,158,182,.35)';
+ ctx.fillRect(x+14,y+75,w-28,1);
+ shareText(ctx,when,x+14,y+92,w-28,schedule?.date?C.pale:C.muted,12,700);
 }
 function buildOhcBracketPoster(logo,rounds){
  if(!rounds?.length)throw Error('Er is nog geen loting om te exporteren.');
