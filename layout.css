@@ -5,8 +5,8 @@
 #main>.hero{margin-top:0}
 .page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;padding:10px 2px 23px}
 .page-heading-copy{max-width:790px}
-.page-eyebrow{font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#d9b16e;margin-bottom:8px;font-family:'Exo 2',sans-serif}
-.page-heading h1{font-family:'Exo 2',sans-serif;font-size:clamp(27px,3.4vw,40px);letter-spacing:-1px;line-height:1.12;margin:0 0 10px;color:#fff0d1}
+.page-eyebrow{font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#e7c58e;margin-bottom:9px;font-family:Inter,system-ui,sans-serif}
+.page-heading h1{font-family:Inter,system-ui,sans-serif;font-size:clamp(27px,3.4vw,40px);font-weight:750;letter-spacing:-.5px;line-height:1.25;margin:0 0 10px;color:#fff0d1}
 .page-heading p{font-size:13px;line-height:1.6;color:#bdb1c5;margin:0;max-width:720px}
 .page-heading-status{white-space:nowrap;flex-shrink:0}
 .page-subnav{display:flex;align-items:center;gap:8px;overflow:auto;padding:0 2px 15px;margin-bottom:10px;scrollbar-width:thin;scrollbar-color:#846a58 transparent;max-width:100%}
@@ -23,21 +23,21 @@
 .launch-card:hover{transform:translateY(-2px);border-color:#d7aa5c;background:linear-gradient(145deg,#30253a,#201925)}
 .launch-card:focus-visible{outline:2px solid #ffe49a;outline-offset:3px}
 .launch-icon{display:grid;place-items:center;background:#3d2b3c;border:1px solid #70517d;border-radius:11px;width:40px;height:40px;font-size:21px}
-.launch-title{display:block;color:#ffe6ac;font-weight:850;font-size:15px;line-height:1.2;font-family:'Exo 2',sans-serif}
-.launch-description{font-size:12px;line-height:1.55;color:#b9afc2;max-width:310px}
+.launch-title{display:block;color:#ffe9bb;font-weight:700;font-size:16px;line-height:1.4;letter-spacing:.05px;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.launch-description{font-size:13px;line-height:1.6;color:#c8bfce;max-width:310px}
 .launch-card::after{content:"›";position:absolute;right:17px;top:14px;color:#eac471;font-size:25px;font-weight:300}
 .dashboard-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
 .dashboard-head h2{margin:0;font-size:20px}
 .dashboard-status{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;background:linear-gradient(115deg,#1e1725,#18251d);border:1px solid #785d4e;border-radius:17px;padding:21px 24px;margin:18px 0 16px}
 .dashboard-status-label{color:#c6b5c4;font-size:11px;font-weight:850;letter-spacing:1.2px;text-transform:uppercase}
-.dashboard-status-title{font-family:'Exo 2',sans-serif;color:#ffe3a2;font-weight:850;font-size:23px;margin:5px 0}
+.dashboard-status-title{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#ffe9ba;font-weight:750;letter-spacing:-.2px;line-height:1.36;font-size:23px;margin:6px 0}
 .dashboard-status-description{font-size:12px;color:#c4b8c5;line-height:1.6}
 .dashboard-status .btn{white-space:nowrap}
 .overview-progress{margin-top:10px}
 .overview-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .quick-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .quick-metric{background:#1d1823;border:1px solid #514052;padding:15px;border-radius:12px}
-.quick-metric b{display:block;color:#f9d99c;font-size:19px;font-family:'Exo 2',sans-serif}
+.quick-metric b{display:block;color:#ffe6b6;font-size:19px;font-weight:750;letter-spacing:0;line-height:1.35;font-family:Inter,system-ui,sans-serif}
 .quick-metric span{font-size:11px;color:#b9adbe}
 .round-filter-bar{display:flex;gap:7px;overflow-x:auto;padding:12px 0 16px;align-items:center;margin:8px 0 6px;border-top:1px solid #4f3a50;scrollbar-width:thin}
 .round-filter-label{font-size:11px;color:#ab9db0;white-space:nowrap;font-weight:800;padding-right:7px}
@@ -168,7 +168,7 @@
 .archive-item strong{display:block;color:#ffe0af;font-size:15px;margin-bottom:8px}
 .archive-item .tag{display:block}
 .archive-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:25px;background:linear-gradient(125deg,#1f2224,#251b30);border:1px solid #a48355;border-radius:17px;padding:25px 28px;margin-bottom:18px}
-.archive-intro h2{font-family:'Exo 2',sans-serif;font-size:28px;margin:13px 0;color:#ffe1a5}
+.archive-intro h2{font-family:Inter,system-ui,sans-serif;font-size:28px;font-weight:750;line-height:1.3;margin:13px 0;color:#ffe7b8}
 .archive-intro p{max-width:750px;color:#c7bdc9;font-size:12px;line-height:1.6;margin:0}
 .archive-intro .btn{flex-shrink:0}
 .archive-subnav{margin-bottom:17px}
@@ -223,3 +223,36 @@
 #registrationSettings .field input[type=datetime-local]{width:100%;min-width:0;min-height:45px;color:#ffefcf}
 #registrationSettings .field .hint{font-size:12px;line-height:1.6;margin:8px 0 0}
 @media(max-width:680px){.setup-steps{grid-template-columns:1fr}.tournament-setup .btnbar .btn{width:100%}}
+
+/* Typography: leesbare goudkleurige tekst in alle modules, ook op mobiel */
+.panel h2,.panel h3,.sectiontitle h2,.dashboard-head h2,
+.roundgroup>.headingline,.roundgroup>.grouphead h3,.archive-item strong,
+.danger-action h3,.swap-preview h3,.setup-step strong {
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-weight:700;
+  letter-spacing:0;
+  line-height:1.38;
+  text-shadow:none;
+}
+.panel h2,.sectiontitle h2{letter-spacing:-.2px}
+.stat .label{font-size:12px;font-weight:600;letter-spacing:.1px;line-height:1.4}
+.stat .sub{font-size:12px;line-height:1.55}
+.stat .number{font-family:Inter,system-ui,sans-serif;font-weight:750;letter-spacing:-.4px;line-height:1.3}
+.stat .status-number{
+  color:#ffe8b5;
+  font-size:18px;
+  font-weight:700;
+  letter-spacing:0;
+  line-height:1.42;
+  margin-top:12px;
+  overflow-wrap:break-word;
+}
+.launch-title,.stat .status-number,.dashboard-status-title,.quick-metric b{
+  text-shadow:none;
+  -webkit-text-stroke:0;
+}
+@media(max-width:620px){
+  .stat .status-number{font-size:16px;margin-top:10px}
+  .launch-title{font-size:15.5px;line-height:1.42}
+  .launch-description{font-size:12.5px}
+}
