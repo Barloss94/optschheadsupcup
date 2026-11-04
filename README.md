@@ -19,16 +19,16 @@ volwaardig beheerder zijn zonder Ranking-admin te worden.
 
 - Bestaande Ranking-admins hebben automatisch ook volledige OHC-beheerrechten.
 - Extra OHC-beheerders worden door de databasebeheerder aan de private
-  \`public.ohc_admin_access\`-tabel gekoppeld op \`auth.users.id\` (met \`active=true\`).
+  `public.ohc_admin_access`-tabel gekoppeld op `auth.users.id` (met `active=true`).
   De tabel is niet rechtstreeks toegankelijk vanuit de browser en gebruikt RLS.
-- \`public.ohc_is_admin()\` controleert of een ingelogde gebruiker óf
+- `public.ohc_is_admin()` controleert of een ingelogde gebruiker óf
   Ranking-admin óf expliciet OHC-beheerder is; rollen worden **niet**
   overgenomen uit een andere Supabase-database zoals OSC.
 - De OHC-RLS-policies voor deelnemersgegevens, privé-toernooidata en archieven,
-  en alle mutatie-RPC's (\`ohc_save_state\`, \`ohc_reset_current\`,
-  \`ohc_archive_and_start_new\`) gebruiken \`ohc_is_admin()\`.
+  en alle mutatie-RPC's (`ohc_save_state`, `ohc_reset_current`,
+  `ohc_archive_and_start_new`) gebruiken `ohc_is_admin()`.
 - De OHC-website controleert beheerdersrechten door de private
-  \`ohc_events\`-gegevens te laden; een OHC-beheerder ziet dan alle
+  `ohc_events`-gegevens te laden; een OHC-beheerder ziet dan alle
   beheerschermen zonder aanpassing van de frontend.
 - De aparte OSC-accountrechten en de Ranking-rol van een OHC-beheerder
   blijven volledig ongewijzigd.
@@ -37,7 +37,7 @@ volwaardig beheerder zijn zonder Ranking-admin te worden.
 
 De applicatie gebruikt het bestaande Supabase-project **OPTSCH Ranking** (`lnlaqrljtwrxtfsyotnn`), maar beheert de OHC volledig in afzonderlijke tabellen:
 
-- `public.ohc_events`: volledige deelnemersgegevens, verhinderingen, loting, uitslagen, wedstrijdplanning en versienummer. Alleen bestaande Ranking-beheerders kunnen deze tabel lezen en wijzigen.
+- `public.ohc_events`: volledige deelnemersgegevens, verhinderingen, loting, uitslagen, wedstrijdplanning en versienummer. Alleen OHC-beheerders en bestaande Ranking-admins kunnen deze tabel lezen en wijzigen.
 - `public.ohc_public_events`: een met Supabase Auth afgeschermd spelersoverzicht met **volledige namen**, loting en wedstrijduitslagen. Beschikbaarheid wordt hier niet vrijgegeven. Alleen ingelogde gebruikers kunnen dit overzicht lezen; anonieme toegang is ingetrokken.
 - `public.ohc_save_state(...)`: bewaart een wijziging transactioneel, controleert de beheerrol en voorkomt overschrijven van nieuwere toernooiversies.
 
@@ -177,5 +177,5 @@ Als de URL nog niet bereikbaar is, is GitHub Pages nog niet geactiveerd of is de
 - Ingelogde gebruikers zien volledige namen, bracket, speeldata en uitslagen. Alleen beheerders mogen de persoonlijke beschikbaarheden bekijken en wedstrijden of inschrijvingen wijzigen.
 - De website biedt momenteel één OHC-evenement (`2026`). Meerdere seizoenen zijn een toekomstige uitbreiding.
 - Blindstructuur en forfaitregels zijn nog niet definitief vastgesteld. De derde en vierde plaats worden door de bronsfinale bepaald.
-- Gebruik een bestaand OPTSCH-account om de OHC te bekijken. Met een bestaand Ranking-adminaccount zijn ook de beheerdersfuncties toegankelijk. Nieuwe OHC-beheeraccounts worden niet automatisch aangemaakt.
+- Gebruik een bestaand OPTSCH-account om de OHC te bekijken. Met een bestaand Ranking-adminaccount of een expliciete OHC-beheerdersmachtiging zijn ook de beheerdersfuncties toegankelijk. Nieuwe OHC-beheeraccounts worden niet automatisch aangemaakt.
 
