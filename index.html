@@ -73,7 +73,7 @@ async function initialize(){
      window.ohcRealtime=sb.channel('ohc-public-updates')
        .on('postgres_changes',{event:'UPDATE',schema:'public',table:'ohc_public_events'},
          async payload=>{
-           if(payload.new?.event_id!==eventId)return;
+           if(!authUser||payload.new?.event_id!==eventId)return;
            publicState=normalizeState(payload.new.state);
            if(!isAdmin){data=structuredClone(publicState);render()}
          }).subscribe();
@@ -108,7 +108,7 @@ async function login(){
 async function logout(){
  const r=await sb.auth.signOut();
  if(r.error){notify('Uitloggen mislukt: '+r.error.message);return}
- authUser=null;isAdmin=false;eventId=null;publicState=null;data=structuredClone(DEFAULT);tab='overzicht';location.hash='overzicht';render();
+ authUser=null;isAdmin=false;eventId=null;publicState=null;data=structuredClone(DEFAULT);if(window.ohcRealtime){sb.removeChannel(window.ohcRealtime);window.ohcRealtime=null;}tab='overzicht';location.hash='overzicht';render();
 }
 
 const SHORT_DAYS=['Zo','Ma','Di','Wo','Do','Vr','Za'];
