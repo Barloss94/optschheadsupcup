@@ -188,19 +188,21 @@ function shareCard(ctx,m,info,x,y,w,h){
  shareText(ctx,a,xname,y+99,nameWidth,colorA,24,850);
  shareText(ctx,b,xname,y+137,nameWidth,colorB,24,850);
  ctx.fillStyle='rgba(189,172,197,.25)';ctx.fillRect(x+25,y+151,w-50,1);
- let detail='';
+ let detail='',score='';
  const scheduled=data.schedule[m.id];
  if(result){
   if(m.isBye)detail='AUTOMATISCH DOOR';
   else if(m.winner){
-   const score=data.settings?.resultText?.[m.id];
-   detail='WINNAAR: '+name(m.winner)+(score?'  •  '+score:'');
+   score=String(data.settings?.resultText?.[m.id]||'').slice(0,20);
+   detail='WINNAAR: '+name(m.winner);
   }else detail='NOG GEEN UITSLAG';
  }else if(scheduled?.date){
   detail=prettyDate(scheduled.date)+' · '+(scheduled.time||DEFAULT_MATCH_TIME)+' uur';
   if(scheduled.provisional)detail+=' • VOORLOPIG';
  }else detail=m.isBye?'VRIJLOTING':'DATUM VOLGT';
- shareText(ctx,detail,x+27,y+h-26,nameWidth,(result&&m.winner)?C.green:C.warning,17,800);
+ shareText(ctx,detail,x+27,y+h-26,nameWidth-(score?92:0),
+   (result&&m.winner)?C.green:C.warning,17,800);
+ if(score)shareText(ctx,score,x+w-25,y+h-26,88,C.lightGold,19,900,'right');
 }
 function shareCardPosters(ctx,info){
  const items=info.matches;
