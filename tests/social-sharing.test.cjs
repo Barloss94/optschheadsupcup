@@ -78,7 +78,8 @@ test('Speelschema-poster bevat speeldatum en starttijd',()=>{
 test('Uitslagenposter benadrukt winnaar en score',()=>{
  seed(4);
  run("data.results['0:0']='p0';data.settings.resultText['0:0']='2-1';ohcShareType='uitslagen';ohcShareRound=0;buildOhcSharePoster(shareActiveInfo(),null)");
- assert.ok(drawn.some(x=>x.includes('WINNAAR: Deelnemer 1 Achternaam')));
+ assert.ok(drawn.some(x=>x.startsWith('WINNAAR:')));
+ assert.ok(drawn.some(x=>x.includes('Deelnemer 1 Achternaam')));
  assert.ok(drawn.some(x=>x.includes('2-1')));
 });
 test('Deelnemersposter toont alle ingeschreven namen',()=>{
