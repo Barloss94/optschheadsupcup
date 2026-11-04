@@ -93,3 +93,48 @@ test('Archieflijst is voor ingelogde bezoekers zichtbaar',()=>{
  assert.match(view,/OHC 2026/);
  assert.match(view,/openArchive/);
 });
+
+test('Nieuwe editie blijft gesloten totdat de inschrijfdeadline is ingevuld',()=>{
+ emptyEvent();
+ const result=run("return {closed:registrationClosed(),configured:registrationDeadlineConfigured(),label:effectiveStatus(),setup:tournamentSetupChecklist()};");
+ assert.equal(result.closed,true);
+ assert.equal(result.configured,false);
+ assert.match(result.label,/nog instellen/i);
+ assert.match(result.setup,/Inschrijfdeadline/);
+ assert.match(result.setup,/beheer-instellingen/);
+});
+
+test('Inschrijfdeadline is per editie aan te passen in het beheerscherm',()=>{
+ emptyEvent();
+ const h=run("return adminConfigPage()");
+ assert.match(h,/ohcEventTitle/);
+ assert.match(h,/ohcRegistrationClose/);
+ assert.match(h,/datetime-local/);
+ assert.match(h,/saveGeneralSettings/);
+ assert.match(h,/ohcWeekFrom0/);
+ assert.match(h,/ohcWeekUntil4/);
+});
+
+test('Inschrijfdeadline gebruikt Nederlandse winter- en zomertijd, ongeacht toestel',()=>{
+ emptyEvent();
+ assert.equal(run("return dutchLocalDeadlineIso('2027-01-17T23:59')"),'2027-01-17T22:59:00.000Z');
+ assert.equal(run("return dutchLocalDeadlineIso('2027-07-17T23:59')"),'2027-07-17T21:59:00.000Z');
+ assert.equal(run("return localDeadlineInput('2027-01-17T22:59:00.000Z')"),'2027-01-17T23:59');
+ assert.throws(()=>run("return dutchLocalDeadlineIso('2027-03-28T02:30')"),/bestaat niet/);
+ assert.throws(()=>run("return dutchLocalDeadlineIso('2027-10-31T02:30')"),/wintertijdomschakeling/);
+});
+
+test('Handmatige inschrijving sluit zodra de instelbare deadline is verstreken',()=>{
+ emptyEvent();
+ assert.equal(run("data.settings.registrationClosesAt='2090-01-01T12:00:00.000Z';return registrationClosed()"),false);
+ assert.equal(run("data.settings.registrationClosesAt='2020-01-01T12:00:00.000Z';return registrationClosed()"),true);
+ assert.equal(run("data.settings.registrationClosesAt='2090-01-01T12:00:00.000Z';data.settings.status='Inschrijving gesloten';return registrationClosed()"),true);
+});
+
+test('Na een reset of archivering opent direct de instelpagina van de nieuwe editie',()=>{
+ emptyEvent();
+ const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ const block=source.slice(source.indexOf('async function refreshCurrentAfterLifecycle()'),
+   source.indexOf('async function resetCurrentTournament()'));
+ assert.match(block,/tab=isAdmin\?'beheer-instellingen':'overzicht'/);
+});
