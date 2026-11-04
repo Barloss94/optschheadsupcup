@@ -189,3 +189,24 @@
  .danger-action{padding:17px}
  .danger-action .btn{width:100%}
 }
+
+/* OSC-style deelbare rondeposters: overzichtelijk en mobiel */
+.share-panel{max-width:1180px;margin-inline:auto}
+.share-panel .sectiontitle{gap:14px;flex-wrap:wrap}
+.share-controls{margin:20px 0 10px;align-items:end}
+.share-controls .field{min-width:0}
+.share-controls select{width:100%;min-height:46px;border:1px solid #755c70;border-radius:11px;background:#17131d;color:#f8e9cf;padding:10px 13px;font-size:14px}
+.share-controls select:focus-visible{outline:2px solid #e7bb73;outline-offset:3px}
+.share-selection-note{min-height:46px;border:1px dashed #775c75;border-radius:11px;color:#bfb3c8;padding:12px 15px;font-size:13px;display:flex;align-items:center}
+.share-shortcut{margin:0 0 16px}
+.share-actions{gap:12px;margin:22px 0 12px}
+.share-actions .btn{min-height:46px}
+.share-actions button:disabled{opacity:.45;cursor:not-allowed}
+.share-advice{max-width:850px;line-height:1.6}
+.share-preview-section{margin-top:24px;border-top:1px solid #604960;padding-top:20px}
+.share-preview-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:0 0 16px;flex-wrap:wrap}
+.share-preview-head h3{font-size:19px;color:#f8dca6;margin:0}
+.share-poster-preview{width:100%;max-width:570px;margin:auto;border:1px solid #7c6573;border-radius:13px;overflow:hidden;background:radial-gradient(circle at top left,#244a36,#15131f 60%);box-shadow:0 24px 42px #0005;min-height:260px}
+.share-poster-preview canvas{display:block;width:100%;height:auto;aspect-ratio:auto}
+#ohcShareStatus{margin-top:16px;text-align:center;line-height:1.6}
+@media(max-width:680px){.share-controls{grid-template-columns:1fr}.share-actions{display:grid;grid-template-columns:1fr}.share-actions .btn{width:100%}.share-poster-preview{max-width:100%}}
