@@ -346,3 +346,73 @@
  .share-poster-preview.bracket-poster-preview{max-width:100%;overflow-x:auto;overflow-y:hidden}
  .bracket-poster-preview canvas{min-width:820px}
 }
+
+
+/* Gespiegelde knock-outboom: beide helften komen samen bij de centrale finales. */
+.bracket-guide{text-align:center;margin:4px 0 14px;color:#ead2ac}
+.bracketscroll{scrollbar-gutter:stable}
+.bracket.mirrored-bracket{
+ display:grid;
+ grid-template-columns:repeat(var(--mirrored-columns),236px);
+ gap:36px;
+ align-items:start;
+ width:max-content;
+ min-width:max-content;
+}
+.mirrored-bracket .bracketcolumn{
+ width:236px;
+ min-width:236px;
+ min-height:0;
+ position:relative;
+}
+.mirrored-bracket .bracketround{
+ min-height:44px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+ font-size:12px;
+ line-height:1.45;
+}
+.mirrored-bracket .bracketcards{
+ position:relative;
+ display:block;
+ height:var(--mirrored-height);
+ min-height:0;
+ gap:0;
+}
+.mirrored-bracket .matchcard{
+ position:absolute;
+ left:0;
+ width:100%;
+ min-height:0;
+ padding:10px 12px;
+ gap:5px;
+ justify-content:center;
+}
+.mirrored-bracket .matchcard .slot{min-height:28px;padding:5px 8px}
+.mirrored-bracket .matchcard .matchdetails{font-size:10px;margin-top:1px}
+.mirrored-bracket .mirrored-column.center .bracketround{
+ color:#ffe6ac;
+ font-weight:900;
+}
+.mirrored-bracket .matchcard.final-match{
+ border:2px solid #e5b975;
+ background:linear-gradient(135deg,#35283a,#211927);
+ box-shadow:0 0 0 1px #e1b16a44,0 10px 28px #0007;
+}
+.mirrored-bracket .matchcard.bronze-match{
+ border:2px solid #ac8f72;
+ background:linear-gradient(135deg,#2e2736,#201b29);
+}
+.mirrored-bracket .bracketwires path{stroke-width:2.5;opacity:.88}
+.mirrored-bracket .bracketwires path.bronze-wire{
+ stroke:#c6abc9;
+ stroke-dasharray:5 5;
+ stroke-width:1.7;
+ opacity:.8;
+}
+@media(max-width:620px){
+ .bracket-guide{font-size:11px}
+ .bracket.mirrored-bracket{gap:24px}
+}
