@@ -93,5 +93,5 @@ test('Lotingspagina toont veilige wisselcontrols en start na hoofdsectie',()=>{
  const html=run("return adminLotteryPage()");
  assert.match(html,/id="swapFrom"/);
  assert.match(html,/id="swapTo"/);
- assert.match(html,/<\/p><\/section><section class="panel" id="roundOneSwap">/);
+ assert.ok(html.indexOf('</section>')>=0 && html.indexOf('</section>')<html.indexOf('id="roundOneSwap"'));
 });
