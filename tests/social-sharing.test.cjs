@@ -128,8 +128,8 @@ test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op éé
   "width:canvas.width,height:canvas.height,geometry:g,filename:shareFileLabel(info)}");
  assert.equal(result.rounds,5);
  assert.equal(result.openings,16);
- assert.ok(result.width>=2400&&result.width<=3200);
- assert.ok(result.height>=1900);
+ assert.ok(result.width>=3400&&result.width<=4300);
+ assert.ok(result.height>=1500);
  assert.match(result.filename,/toernooiboom\.png$/);
  for(let n=1;n<=16;n++)
   assert.ok(drawn.includes('DUEL '+n),'Duel '+n+' ontbreekt in de export');
@@ -165,6 +165,56 @@ test('Deelbare boom behoudt de zichtbare chronologische duelnummering',()=>{
  assert.ok(drawn.includes('DUEL 1'));
  assert.ok(drawn.includes('DUEL 2'));
  assert.ok(drawn.some(t=>t==='Deelnemer 1 Achternaam'));
+});
+
+test('Spiegelbeeld: finalekaart in middelste kolom en bronsfinale direct eronder',()=>{
+ seed(32);
+ const g=run("return bracketMirrorLayout(bracket())");
+ assert.equal(g.columns,9);
+ assert.equal(g.centerColumn,4);
+ assert.equal(g.positions[4][0].column,4);
+ assert.equal(g.positions[4][1].column,4);
+ assert.ok(g.positions[4][1].cy>g.positions[4][0].cy+g.cardHeight);
+ assert.equal(g.positions[3][0].column,3);
+ assert.equal(g.positions[3][1].column,5);
+ assert.equal(g.positions[0][0].column,0);
+ assert.equal(g.positions[0][8].column,8);
+ assert.equal(g.positions[0][0].cy,g.positions[0][8].cy);
+ assert.equal(g.positions[3][0].cy,g.positions[4][0].cy);
+ assert.equal(g.positions[3][1].cy,g.positions[4][0].cy);
+ const p=run("return bracketPosterGeometry(bracket())");
+ assert.equal(p.layout.centerColumn,4);
+ assert.equal(p.layout.positions[4][0].column,4);
+ assert.equal(p.layout.positions[4][1].column,4);
+ assert.equal(p.layout.positions[3][0].column,3);
+ assert.equal(p.layout.positions[3][1].column,5);
+});
+test('Gespiegelde boom toont alle bracketduels precies eenmaal en behoudt de vaste matches',()=>{
+ seed(32);
+ const markup=run("return bracketView()");
+ const cards=[...markup.matchAll(/data-duel="([0-9]+:[0-9]+)"/g)].map(x=>x[1]);
+ const unique=new Set(cards);
+ assert.equal(cards.length,32);
+ assert.equal(unique.size,cards.length);
+ assert.equal((markup.match(/class="bracketcolumn mirrored-column/g)||[]).length,9);
+ assert.equal((markup.match(/mirrored-column center/g)||[]).length,1);
+ assert.match(markup,/Finale en bronsfinale/);
+ assert.match(markup,/class="matchcard final-match"/);
+ assert.match(markup,/class="matchcard bronze-match"/);
+ assert.match(markup,/ohcBracketScroll/);
+ assert.match(html,/function centerBracketOnFinal\(\)/);
+ assert.match(html,/requestAnimationFrame\(\(\)=>\{drawBracketConnections\(\);centerBracketOnFinal\(\)\}\)/);
+});
+test('Ook bij vier spelers blijven beide finales midden tussen de twee halve finales',()=>{
+ seed(4);
+ const g=run("return bracketMirrorLayout(bracket())");
+ assert.equal(g.columns,3);
+ assert.equal(g.centerColumn,1);
+ assert.equal(g.positions[0][0].column,0);
+ assert.equal(g.positions[0][1].column,2);
+ assert.equal(g.positions[1][0].column,1);
+ assert.equal(g.positions[1][1].column,1);
+ assert.ok(g.positions[1][1].cy>g.positions[1][0].cy);
 });
 
 test('De website en alle deelbare posters gebruiken dezelfde nieuwe slagzin',()=>{
