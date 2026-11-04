@@ -53,3 +53,15 @@ test('Website toont het inlogformulier direct bij anonieme eerste opening',async
  assert.match(nodes.main.innerHTML,/loginEmail/);
  assert.doesNotMatch(nodes.main.innerHTML,/Verbinding mislukt/);
 });
+
+test('Linksboven wordt een echte OHC-logoafbeelding getoond, ook op mobiele schermen',()=>{
+ const brand=fs.readFileSync(path.join(root,'brand.css'),'utf8');
+ const header=html.match(/<header class="top">[\s\S]*?<\/header>/)?.[0];
+ assert.ok(header,'De bovenste websiteheader bestaat');
+ assert.match(header,/<img\s+class="brand-emblem"\s+src="\.\/assets\/ohc-logo\.avif"/);
+ assert.match(header,/width="84" height="66"/);
+ assert.doesNotMatch(header,/<div class="mark brand-emblem"/);
+ assert.match(brand,/\.identity img\.brand-emblem\s*\{[^}]*display:block/);
+ assert.match(brand,/@media\(max-width:690px\)\s*\{[\s\S]*?\.identity img\.brand-emblem\s*\{[^}]*height:57px/);
+ assert.doesNotMatch(brand,/\.mark\.brand-emblem\s*\{[^}]*background:none/);
+});
