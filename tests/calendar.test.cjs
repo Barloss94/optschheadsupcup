@@ -55,7 +55,7 @@ test('Kalender heeft eigen beveiligde route en navigatie',()=>{
  seed();
  assert.match(html,/\['kalender','Kalender'\]/);
  assert.match(html,/kalender:typeof ohcCalendarView/);
- assert.match(html,/openCalendarShare/);
+ assert.match(calendar,/function openCalendarShare\(/);
 });
 test('Kalender toont duels onder hun datum en juiste speeltijd',()=>{
  seed();
