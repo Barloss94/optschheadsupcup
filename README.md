@@ -37,13 +37,15 @@ Open `index.html` in een browser via een HTTP-server of gebruik GitHub Pages. De
 
 De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestand in de OHC-database gezet. De **loting is niet uitgevoerd**.
 
-## Inschrijven en CSV-verwerking
+## Inschrijfdeadline voor iedere nieuwe editie
 
-- **Inschrijven voor spelers:** tot en met **20 november 2026 om 23:59 uur Nederlandse tijd**.
-- **21 november 2026:** de beheerder uploadt het Google Forms-CSV-bestand met alle tijdig ontvangen inschrijvingen.
-- De datum waarop de beheerder het CSV-bestand verwerkt staat los van de inschrijfdeadline voor spelers. De import mag daarom ook ná het sluiten van de inschrijving nieuwe deelnemers uit de ontvangen CSV aanmaken.
-- De CSV-import is uitsluitend beschikbaar achter de bestaande Ranking-beheerlogin. Rechtstreeks nieuwe spelers handmatig toevoegen wordt vanaf 21 november in de interface geblokkeerd; bestaande gegevens kunnen nog worden gecorrigeerd.
-- Na de officiële loting slaat de import nieuwe deelnemers over om de toernooiboom intact te houden.
+- Een nieuwe OHC-competitie begint met een **lege inschrijfdeadline**, lege speelperiodes, geen spelers en geen loting. Er worden geen datums of weeknummers uit eerdere edities overgenomen.
+- De beheerder gaat naar **Beheer → Instellingen en deadline** en stelt onder **1. Toernooi en inschrijving instellen** de toernooinaam, uiterste inschrijfdatum **inclusief tijd** en toernooistatus in. Alle tijden worden geïnterpreteerd als **Nederlandse tijd** (met zomer-/wintertijd).
+- Onder **2. Speelperiodes per ISO-week** stelt de beheerder daarna de speelweken voor iedere ronde in. Het beheer toont welke van deze twee onderdelen nog niet zijn afgerond.
+- Zonder ingevulde deadline blijft de nieuwe editie **in voorbereiding**: handmatig deelnemers toevoegen wordt niet opengesteld, ook niet als de beheerder de status op "Inschrijving open" heeft gezet. Na het verstrijken van de gekozen deadline sluit het handmatig toevoegen van deelnemers automatisch.
+- De beheerder mag het ontvangen inschrijvings-CSV-bestand na de deadline nog importeren, bijvoorbeeld om aanmeldingen die op tijd zijn ontvangen alsnog te verwerken. Na de loting kan de import geen nieuwe deelnemers toevoegen.
+- **Externe Google Forms-formulieren** worden niet vanuit de OHC-app gesloten; als de inschrijving via een extern formulier loopt, moet de sluitdatum daarvan apart worden ingesteld.
+- Na volledig resetten of archiveren en opnieuw starten opent bij een beheerder direct de instellingenpagina van de nieuwe editie.
 
 ## Vaste knock-outbracket en beschikbaarheid
 
