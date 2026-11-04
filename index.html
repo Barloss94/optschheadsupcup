@@ -469,7 +469,7 @@ function navGroup(t){
 function nav(){
  const root=$('nav');
  if(!authUser){root.innerHTML='';return}
- const items=[['overzicht','Overzicht'],['schema','Wedstrijden'],['boom','Toernooiboom'],['deelnemers','Deelnemers'],['reglement','Informatie'],['archief','Archief']];
+ const items=[['overzicht','Overzicht'],['schema','Wedstrijden'],['boom','Toernooiboom'],['deelnemers','Deelnemers'],['reglement','Informatie'],['delen','Delen'],['archief','Archief']];
  if(isAdmin)items.push(['beheer','Beheer']);
  const active=navGroup(tab);
  root.innerHTML=items.map(x=>'<button type="button" data-tab="'+x[0]+'" class="'+(active===x[0]?'active':'')+'" '+(active===x[0]?'aria-current="page"':'')+' onclick="setTab(this.dataset.tab)">'+x[1]+'</button>').join('')+
@@ -553,7 +553,8 @@ function overview(){
   ['deelnemers','users','Deelnemers','Bekijk het ingeschreven spelersveld.'],
   ['periodes','clock','Speelperiodes','Per ronde de speelweken en uitzonderingen.'],
   ['prijzen','trophy','Prijzen','Buy-in, prijzenpot en uitbetalingen.'],
-  ['reglement','book-open','Reglement','De spelregels en gemaakte afspraken.']
+  ['reglement','book-open','Reglement','De spelregels en gemaakte afspraken.'],
+  ['delen','share-2','Deelbare afbeeldingen','Deel loting, speelschema en uitslagen in OSC-stijl.']
  ];
  const intro='<div class="dashboard-status"><div><div class="dashboard-status-label">Huidige toernooistatus</div><div class="dashboard-status-title">'+label+'</div><div class="dashboard-status-description">'+tagline+'</div></div>'+
   button(ready?'Bekijk het speelschema':'Bekijk deelnemers',"setTab('"+next+"')",'')+'</div>';
@@ -569,7 +570,7 @@ function scheduleView(){
  const b=bracket();
  const calendar='';
  if(!b.length)return calendar+'<div class="panel">'+heading('Wedstrijden')+'<div class="empty"><div class="bigicon">📅</div><strong>De loting is nog niet uitgevoerd</strong><p>De officiële speelperiodes liggen vast. Zodra de loting is uitgevoerd, worden alle duels automatisch over de beschikbare dagen verspreid.</p></div></div>';
- return calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
+ return '<div class="btnbar share-shortcut">'+button('📸 Deel speelschema',"openShare('schema')",'alt')+'</div>'+calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
  '<p class="muted smalltext">Alle duels van een ronde moeten gespeeld zijn voordat de volgende ronde begint. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur, mits alle eerdere speeldagen vaststaan. Bij een conflict staat er een voorlopig voorstel. Verplaatsen kan alleen in onderling overleg, binnen de rondeperiode.</p>'+
  (archiveReadonly?'':'<div class="btnbar" style="margin-bottom:18px">'+button('Wedstrijden exporteren (CSV)','exportMatchesCsv()','ghost',true)+'</div>')+
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
@@ -596,7 +597,7 @@ function bracketRouteText(r,index,total){
 }
 function bracketView(){
  const rounds=bracket();
- return '<section class="panel">'+
+ return (rounds.length&&!archiveReadonly?'<div class="btnbar share-shortcut">'+button('📸 Deel ronde-indeling',"openShare('loting')",'alt')+'</div>':'')+'<section class="panel">'+
  heading('Vaste knock-outbracket',rounds.length?'<span class="pill blue">'+data.players.length+' spelers · '+rounds.length+' rondes</span>':'')+
  '<details class="help-details"><summary>Hoe lees ik de toernooiboom?</summary><p class="smalltext muted">De loting gebruikt de beschikbaarheid om lastige ontmoetingen zo laat mogelijk in de bracket te plaatsen. Als spelers zonder gezamenlijke speeldag elkaar toch ontmoeten, regelen ze onderling een datum binnen hun rondeperiode. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Daardoor verschijnt een winnende speler in meerdere opeenvolgende rondes, maar in de loting zelf staat iedereen slechts eenmaal. Bij identieke verkorte namen staat een uniek deelnemersnummer (#). Er wordt niet opnieuw geloot.</p></details>'+
  (rounds.length?
@@ -782,7 +783,8 @@ const pageInfo={
  'beheer-planning':['Wedstrijden plannen','Bevestig speeldata, pas voorstellen aan en controleer conflicten.','ORGANISATIE'],
  'beheer-instellingen':['Toernooi-instellingen','Status, spelvorm en vaste speelperiodes.','ORGANISATIE'],
  'beheer-bestanden':['Toernooibeheer','Back-ups, volledige reset en archiveren van de huidige editie.','ORGANISATIE'],
- archief:['Toernooiarchief','Alle afgesloten OHC-edities, veilig bewaard.','HISTORIE']
+ archief:['Toernooiarchief','Alle afgesloten OHC-edities, veilig bewaard.','HISTORIE'],
+ delen:['Delen en exports','Maak ronde-indelingen, speelschema’s en uitslagen als deelbare afbeeldingen.','AFBEELDINGEN']
 };
 function tileGrid(items,extraClass){
  return '<div class="launch-grid '+(extraClass||'')+'">'+items.map(function(item){
@@ -792,7 +794,7 @@ function tileGrid(items,extraClass){
  }).join('')+'</div>';
 }
 function tileIcon(id){
- const m={'calendar-days':'📅',network:'♠',users:'👥',clock:'🕒',trophy:'🏆',
+ const m={'calendar-days':'📅',network:'♠',users:'👥',clock:'🕒',trophy:'🏆','share-2':'📸',
  'book-open':'📖','file-up':'📥',shuffle:'🎲','check-circle':'✅',
  'calendar-clock':'🗓️','sliders-horizontal':'⚙️','folder-archive':'📁'};
  return m[id]||'♠';
@@ -1073,7 +1075,7 @@ function adminLotteryPage(){
    (drawn?button('Uitslagen invoeren',"setTab('beheer-resultaten')",'ghost'):'')+'</div></div>'+
   drawAvailabilityNotice()+
   '<p class="admin-subtle">Een dag die niet als verhinderd is geregistreerd, telt als beschikbaar. Controleer daarom alle zeven weekdagen voordat je de loting uitvoert.</p></section>';
- return introduction+firstRoundSwapPanel();
+ return introduction+(drawn?'<div class="btnbar share-shortcut">'+button('📸 Deel de loting',"openShare('loting',0)",'alt')+'</div>':'')+firstRoundSwapPanel();
 }
 function adminResultsPage(){
  if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">🏆</div><strong>Er is nog geen loting</strong><p>Voer eerst de officiële loting uit om uitslagen per duel in te kunnen voeren.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
@@ -1082,7 +1084,7 @@ function adminResultsPage(){
  const p=output.indexOf(marker);
  if(p<0)return output;
  const results='<section class="panel"><div id="ohcResults">'+output.slice(p+marker.length);
- return withRoundFilter(results,'resultaten');
+ return '<div class="btnbar share-shortcut">'+button('📸 Deel uitslagen',"openShare('uitslagen')",'alt')+'</div>'+withRoundFilter(results,'resultaten');
 }
 function adminPlanningPage(){
  if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">📅</div><strong>Nog geen wedstrijden</strong><p>Maak eerst de loting om speeldata te kunnen vaststellen.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
@@ -1431,7 +1433,7 @@ function render(){
   beheer:adminView,'beheer-deelnemers':adminPlayersPage,'beheer-import':adminImportPage,
   'beheer-loting':adminLotteryPage,'beheer-resultaten':adminResultsPage,
   'beheer-planning':adminPlanningPage,'beheer-instellingen':adminConfigPage,
-  'beheer-bestanden':adminFilesPage,archief:archiveView
+  'beheer-bestanden':adminFilesPage,archief:archiveView,delen:shareView
  };
  if(!routes[tab])tab='overzicht';
  if(!isAdmin&&tab.startsWith('beheer'))tab='overzicht';
@@ -1445,6 +1447,7 @@ function render(){
   (info?subNavigation(infoNavigation,tab):admin?subNavigation(adminNavigation,tab):'')+
   routes[tab]();
  if(tab==='boom'||(tab==='archief'&&archiveRecord&&archiveSection==='boom'))requestAnimationFrame(drawBracketConnections);
+ if(tab==='delen')requestAnimationFrame(()=>void updateSharePreview());
 }
 function selectEdit(id){editPlayer=id;render();$('personformtitle')?.scrollIntoView({behavior:'smooth',block:'center'})}
 function changePlayers(){/* De deelnemerslijst wordt na loting niet ongemerkt gewijzigd. */}
@@ -1761,5 +1764,6 @@ addEventListener('resize',()=>{if(tab==='boom')requestAnimationFrame(drawBracket
 addEventListener('hashchange',()=>{const next=location.hash.slice(1);if(next!==tab){tab=next;render()}});
 initialize();
 </script>
+<script src="./share.js?v=1"></script>
 </body>
 </html>
