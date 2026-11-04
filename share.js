@@ -372,68 +372,75 @@ function shareCalendarAgenda(ctx,info){
 /* Volledige deelbare toernooiboom: één liggende afbeelding, inclusief routes.
    Alleen de zichtbare nummering hangt af van de speeldagen; de match-ID's en
    doorschuifkoppelingen blijven zoals vastgelegd bij de loting. */
+/* De PNG gebruikt dezelfde spiegeling en dezelfde match-ID's als de website. */
 function bracketPosterGeometry(rounds){
- const cardW=410,cardH=96,colGap=95,marginX=80;
- const pitch=114,top=346;
- const firstCount=Math.max(1,rounds[0]?.length||0);
- const width=marginX*2+rounds.length*cardW+(rounds.length-1)*colGap;
- const height=Math.max(1120,top+firstCount*pitch+170);
- const centers=rounds.map(()=>[]);
- for(let i=0;i<firstCount;i++)centers[0][i]=top+i*pitch+cardH/2;
- for(let r=1;r<rounds.length;r++){
-  for(let i=0;i<rounds[r].length;i++){
-   if(rounds[r][i].isBronze){
-    const finalCenter=centers[r][0]??(top+pitch*firstCount/2);
-    centers[r][i]=finalCenter+pitch*1.38;
-   }else{
-    const one=centers[r-1][i*2],two=centers[r-1][i*2+1];
-    centers[r][i]=one!==undefined&&two!==undefined?(one+two)/2:
-     one!==undefined?one:two!==undefined?two:top+pitch*i+cardH/2;
-   }
-  }
- }
- return {cardW,cardH,colGap,marginX,pitch,top,width,height,centers,
-  x:r=>marginX+r*(cardW+colGap),
-  y:(r,i)=>centers[r][i]-cardH/2};
+ const cardW=346,cardH=118,colGap=62,marginX=75;
+ const layout=bracketMirrorLayout(rounds,{
+  cardHeight:cardH,pitch:139,top:355,bronzeGap:222
+ });
+ const width=marginX*2+layout.columns*cardW+(layout.columns-1)*colGap;
+ const bottom=Math.max(...layout.positions.flat().map(p=>p.y+cardH));
+ const height=Math.max(1170,Math.ceil(bottom+165));
+ return {cardW,cardH,colGap,marginX,width,height,layout,
+  centers:layout.positions.map(row=>row.map(pos=>pos.cy)),
+  x:(r,i)=>marginX+layout.positions[r][i].column*(cardW+colGap),
+  y:(r,i)=>layout.positions[r][i].y};
 }
 function bracketPosterConnections(ctx,rounds,g){
- const C=OHC_SHARE_COLORS;
- ctx.save();ctx.lineWidth=3;ctx.strokeStyle='rgba(226,181,108,.7)';
- ctx.lineJoin='round';ctx.lineCap='round';
- for(let r=1;r<rounds.length;r++)for(let i=0;i<rounds[r].length;i++){
-  if(rounds[r][i].isBronze)continue;
-  const parents=[i*2,i*2+1].filter(j=>j<rounds[r-1].length);
-  const x0=g.x(r-1)+g.cardW,x1=g.x(r),mid=(x0+x1)/2,dest=g.centers[r][i];
-  for(const j of parents){
-   const src=g.centers[r-1][j];
-   if(src===undefined)continue;
-   ctx.beginPath();
-   ctx.moveTo(x0,src);ctx.lineTo(mid,src);ctx.lineTo(mid,dest);ctx.lineTo(x1,dest);
-   ctx.stroke();
-  }
+ ctx.save();
+ ctx.lineWidth=3;
+ ctx.strokeStyle='rgba(227,183,108,.8)';
+ ctx.lineJoin='round';
+ ctx.lineCap='round';
+ const last=rounds.length-1;
+ function draw(source,dest,dashed=false){
+  const a=g.layout.positions[source.round][source.index];
+  const b=g.layout.positions[dest.round][dest.index];
+  const fromLeft=a.column<b.column;
+  const sx=g.x(source.round,source.index)+(fromLeft?g.cardW:0);
+  const tx=g.x(dest.round,dest.index)+(fromLeft?0:g.cardW);
+  const branch=(sx+tx)/2;
+  ctx.beginPath();
+  ctx.moveTo(sx,a.cy+(dashed?29:0));
+  ctx.lineTo(branch,a.cy+(dashed?29:0));
+  ctx.lineTo(branch,b.cy);
+  ctx.lineTo(tx,b.cy);
+  ctx.stroke();
+ }
+ for(let r=0;r<last;r++)for(const m of rounds[r]){
+  const next=rounds[r+1][Math.floor(m.index/2)];
+  if(next)draw(m,next);
+ }
+ const semis=rounds[last-1]||[];
+ const bronze=rounds[last]?.find(m=>m.isBronze);
+ if(bronze&&semis.length===2){
+  ctx.strokeStyle='rgba(197,170,211,.78)';
+  ctx.lineWidth=2;
+  ctx.setLineDash?.([9,8]);
+  semis.forEach(m=>draw(m,bronze,true));
+  ctx.setLineDash?.([]);
  }
  ctx.restore();
 }
 function bracketPosterCard(ctx,m,r,i,g,rounds){
- const C=OHC_SHARE_COLORS,x=g.x(r),y=g.y(r,i),w=g.cardW,h=g.cardH;
- const bronze=!!m.isBronze,decided=!!m.winner;
- shareFillRound(ctx,x,y,w,h,15,bronze?'#2b2130':'#201b2b',
-  decided?'rgba(64,210,147,.83)':bronze?'rgba(205,160,105,.75)':'rgba(160,122,190,.7)',2);
- shareFillRound(ctx,x+11,y+8,w-22,26,8,bronze?'#806240':'#493449');
- shareText(ctx,displayDuelLabel(m,rounds).toUpperCase(),x+20,y+28,w-40,
-  bronze?C.lightGold:C.gold,16,900);
+ const C=OHC_SHARE_COLORS,x=g.x(r,i),y=g.y(r,i),w=g.cardW,h=g.cardH;
+ const bronze=!!m.isBronze,final=r===rounds.length-1&&!bronze,decided=!!m.winner;
+ shareFillRound(ctx,x,y,w,h,15,bronze?'#302436':final?'#35283b':'#211b2d',
+  decided?'rgba(64,210,147,.9)':final?'#e9b970':bronze?'rgba(205,160,105,.9)':'rgba(160,122,190,.7)',final?3:2);
+ shareFillRound(ctx,x+11,y+8,w-22,27,8,bronze?'#806240':final?'#765638':'#493449');
+ const label=displayDuelLabel(m,rounds).toUpperCase();
+ shareText(ctx,label,x+20,y+28,w-39,bronze?C.lightGold:C.gold,17,900);
  for(let slot=0;slot<2;slot++){
   const id=slot===0?m.a:m.b;
   const str=id?name(id):m.isBye&&slot===1?'Vrijloting':
    bracketSlotText(r,m.index,slot,id);
   const winner=id&&id===m.winner;
-  shareText(ctx,(winner?'✓ ':'')+str,x+20,y+56+slot*27,w-40,
+  shareText(ctx,(winner?'✓ ':'')+str,x+20,y+59+slot*30,w-40,
    winner?C.green:id?C.white:C.muted,20,winner?900:700);
  }
  const schedule=data.schedule[m.id];
  if(schedule?.date&&!m.isBye){
-  const stamp=prettyDate(schedule.date);
-  shareText(ctx,stamp,x+w-12,y+28,180,C.pale,13,650,'right');
+  shareText(ctx,prettyDate(schedule.date),x+w-14,y+107,w-30,C.pale,14,650,'right');
  }
 }
 function buildOhcBracketPoster(logo,rounds){
@@ -456,9 +463,13 @@ function buildOhcBracketPoster(logo,rounds){
  shareText(ctx,(data.settings.title||'OHC')+'  •  '+data.players.length+
   ' spelers  •  '+rounds.length+' rondes',244,204,g.width-320,C.purple,22,750);
  ctx.fillStyle='rgba(236,192,128,.6)';ctx.fillRect(76,246,g.width-152,2);
- for(let r=0;r<rounds.length;r++){
-  shareText(ctx,roundLabel(r,rounds.length).toUpperCase(),g.x(r),314,
-   g.cardW,C.lightGold,23,850);
+ for(let col=0;col<g.layout.columns;col++){
+  const m=rounds.flat().find(m=>g.layout.positions[m.round][m.index].column===col);
+  if(!m)continue;
+  const title=col===g.layout.centerColumn?'FINALE & BRONSFINALE':
+   roundLabel(m.round,rounds.length).toUpperCase();
+  shareText(ctx,title,g.marginX+col*(g.cardW+g.colGap)+g.cardW/2,316,
+   g.cardW,col===g.layout.centerColumn?C.gold:C.lightGold,23,850,'center');
  }
  bracketPosterConnections(ctx,rounds,g);
  rounds.forEach((matches,r)=>matches.forEach((m,i)=>
