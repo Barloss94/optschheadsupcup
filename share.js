@@ -212,7 +212,7 @@ function shareCard(ctx,m,info,x,y,w,h){
  const ribbon=ctx.createLinearGradient(x,y,x+w,y);
  ribbon.addColorStop(0,'#f2ca84');ribbon.addColorStop(1,'#bf8352');
  shareFillRound(ctx,x+13,y+12,w-26,44,12,ribbon);
- const label=m.isBronze?'BRONSFINALE':info.round===bracket().length-1?'FINALE':'DUEL '+(m.index+1);
+ const label=displayDuelLabel(m).toUpperCase();
  shareText(ctx,label,x+30,y+43,w-58,'#1b1423',22,950);
  const a=m.a?name(m.a):bracketSlotText(info.round,m.index,0,m.a);
  const b=m.b?name(m.b):m.isBye?'Vrijloting':bracketSlotText(info.round,m.index,1,m.b);
@@ -241,7 +241,7 @@ function shareCard(ctx,m,info,x,y,w,h){
  if(score)shareText(ctx,score,x+w-25,y+h-26,88,C.lightGold,19,900,'right');
 }
 function shareCardPosters(ctx,info){
- const items=info.matches;
+ const items=sortedRoundMatches(info.round);
  const columns=items.length===1?1:2;
  const gap=18,origin=86,available=908,cardW=(available-gap*(columns-1))/columns,cardH=210,rowGap=19;
  for(let i=0;i<items.length;i++){
