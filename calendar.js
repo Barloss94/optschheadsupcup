@@ -96,7 +96,7 @@ function ohcCalendarSelectDate(date){
 }
 function ohcCalendarMatchLabel(entry){
  return entry.isBronze?'Bronsfinale':
-  entry.round===bracket().length-1?'Finale':'Ronde '+(entry.round+1)+' · duel '+(entry.index+1);
+  entry.round===bracket().length-1?'Finale':'Ronde '+(entry.round+1)+' · duel '+displayDuelNumber(entry.round,entry.index);
 }
 function ohcCalendarDayCard(entry){
  const statusClass=entry.status==='Gespeeld'?'played':
