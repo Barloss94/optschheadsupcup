@@ -167,10 +167,10 @@ function shareFit(ctx,text,maxWidth,maxChars=70){
  while(s.length>2&&ctx.measureText(s+'…').width>maxWidth)s=s.slice(0,-1);
  return s+'…';
 }
-function shareText(ctx,text,x,y,maxWidth,color,size=28,weight=700,align='left'){
+function shareText(ctx,text,x,y,maxWidth,color,size=28,weight=700,align='left',maxChars=70){
  ctx.save();ctx.fillStyle=color;ctx.font=weight+' '+size+'px Arial, sans-serif';
  ctx.textAlign=align;ctx.textBaseline='alphabetic';
- ctx.fillText(shareFit(ctx,text,maxWidth),x,y);
+ ctx.fillText(shareFit(ctx,text,maxWidth,maxChars),x,y);
  ctx.restore();
 }
 function shareBase(ctx,height,logo,info,itemsCount){
@@ -486,7 +486,7 @@ function bracketPosterCard(ctx,m,r,i,g,rounds){
    bracketSlotText(r,m.index,slot,id);
   const winner=id&&id===m.winner;
   shareText(ctx,(winner?'✓ ':'')+str,x+14,y+48+slot*19,w-28,
-   winner?C.green:id?C.white:C.muted,16,winner?900:700);
+   winner?C.green:id?C.white:C.muted,16,winner?900:700,'left',200);
  }
  // De speeldatum blijft onder beide spelers; er is geen extra kolom nodig.
  const schedule=data.schedule[m.id];
@@ -523,7 +523,8 @@ function buildOhcBracketPoster(logo,rounds){
   const title=col===g.layout.centerColumn?'FINALE & BRONSFINALE':
    roundLabel(m.round,rounds.length).toUpperCase();
   shareText(ctx,title,g.marginX+col*(g.cardW+g.colGap)+g.cardW/2,316,
-   g.cardW,col===g.layout.centerColumn?C.gold:C.lightGold,23,850,'center');
+   g.cardW,col===g.layout.centerColumn?C.gold:C.lightGold,
+   col===g.layout.centerColumn?17:20,850,'center');
  }
  bracketPosterConnections(ctx,rounds,g);
  rounds.forEach((matches,r)=>matches.forEach((m,i)=>
