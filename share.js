@@ -373,8 +373,44 @@ function shareCalendarAgenda(ctx,info){
    Alleen de zichtbare nummering hangt af van de speeldagen; de match-ID's en
    doorschuifkoppelingen blijven zoals vastgelegd bij de loting. */
 /* De PNG gebruikt dezelfde spiegeling en dezelfde match-ID's als de website. */
+/* Meet de daadwerkelijke kaartinhoud met de canvas-lettertypes.
+   Daardoor zijn kaart- en kolombreedtes niet langer afhankelijk van 276px. */
+function bracketPosterCardWidth(rounds){
+ let ctx=null;
+ try{ctx=document.createElement('canvas').getContext('2d')}catch(_){}
+ const textWidth=(value,size,weight)=>{
+  const str=String(value??'');
+  if(ctx){
+   ctx.font=weight+' '+size+'px Arial,sans-serif';
+   return ctx.measureText(str).width;
+  }
+  return Array.from(str).reduce((sum,c)=>sum+
+   size*(/[ilI1.,:;!|]/.test(c)?.27:/[MW@#%]/.test(c)?.85:.54),0);
+ };
+ let longest=0;
+ const consider=(text,size,weight,extra=0)=>{
+  longest=Math.max(longest,textWidth(text,size,weight)+extra);
+ };
+ for(let r=0;r<rounds.length;r++)for(const m of rounds[r]){
+  consider(displayDuelLabel(m,rounds).toUpperCase(),15,900,1);
+  for(let slot=0;slot<2;slot++){
+   const id=slot===0?m.a:m.b;
+   const text=id?name(id):m.isBye&&slot===1?'Vrijloting':
+    bracketSlotText(r,m.index,slot,id);
+   consider((id&&id===m.winner?'✓ ':'')+text,16,
+    id&&id===m.winner?900:700,2);
+  }
+  const schedule=data.schedule[m.id];
+  const when=m.isBye?'VRIJLOTING':schedule?.date?
+   prettyDate(schedule.date)+(schedule.time?' · '+schedule.time+' uur':''):
+   'DATUM VOLGT';
+  consider(when,12,700,1);
+ }
+ // De koppen boven de kolommen mogen afbreken, de inhoud van de kaart niet.
+ return Math.max(118,Math.ceil(longest+34));
+}
 function bracketPosterGeometry(rounds){
- const cardW=276,cardH=101,colGap=53,marginX=68;
+ const cardW=bracketPosterCardWidth(rounds),cardH=101,colGap=53,marginX=68;
  const layout=bracketMirrorLayout(rounds,{
   cardHeight:cardH,pitch:119,top:355,bronzeGap:185
  });
