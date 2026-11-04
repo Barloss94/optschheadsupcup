@@ -303,7 +303,7 @@ function shareCalendarAgendaStart(info){
 function shareCalendarPosterHeight(info){
  const groups=shareCalendarGroupedDates(info.entries).length;
  const start=shareCalendarAgendaStart(info);
- return Math.max(1440,start+groups*59+info.entries.length*120+200);
+ return Math.max(1440,start+groups*65+info.entries.length*120+220);
 }
 function shareCalendarGrid(ctx,info){
  const C=OHC_SHARE_COLORS,dates=ohcCalendarMonthDates(info.month);
@@ -330,7 +330,7 @@ function shareCalendarGrid(ctx,info){
   if(matches.length){
    shareText(ctx,String(matches.length)+(matches.length===1?' DUEL':' DUELS'),
     x+10,y+52,cellW-20,allPlayed?C.green:C.gold,15,850);
-   shareText(ctx,matches.length===1?'20:00 / TIJD VOLGT':'BEKIJK LIJST',
+   shareText(ctx,matches.length===1?matches[0].time+' UUR':'BEKIJK LIJST',
     x+10,y+74,cellW-20,C.muted,11,650);
   }
  });
