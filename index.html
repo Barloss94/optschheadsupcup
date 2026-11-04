@@ -116,37 +116,47 @@ async function logout(){
 
 const SHORT_DAYS=['Zo','Ma','Di','Wo','Do','Vr','Za'];
 const DAYS=[{id:1,name:'Maandag',search:'maandagen'},{id:2,name:'Dinsdag',search:'dinsdagen'},{id:3,name:'Woensdag',search:'woensdagen'},{id:4,name:'Donderdag',search:'donderdagen'},{id:5,name:'Vrijdag',search:'vrijdagen'},{id:6,name:'Zaterdag',search:'zaterdagen'},{id:0,name:'Zondag',search:'zondagen'}];
-const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":"2026-11-21T00:00:00+01:00","buyInCents":1250,"fixedCostsCents":5650,"maxPlayers":32,"prizes":{"firstPercent":35,"secondPercent":25,"thirdPercent":15.5,"fourthPercent":12.5,"round3LosersPercent":3,"round3LosersCount":4,"firstRoundingCents":100,"secondRoundingCents":100,"fourthRoundingCents":50,"round3LosersRoundingCents":100,"thirdGetsRemainder":true,"method":"spreadsheet_third_place_remainder"},"roundDeadlines":{},"resultText":{}}};
+const DEFAULT={"players":[],"draw":[],"results":{},"schedule":{},"settings":{"title":"OPTSCH HEADS-UP CUP","format":"Directe knock-out","status":"Inschrijving open","registrationClosesAt":null,"roundWindows":[],"buyInCents":1250,"fixedCostsCents":5650,"maxPlayers":32,"prizes":{"firstPercent":35,"secondPercent":25,"thirdPercent":15.5,"fourthPercent":12.5,"round3LosersPercent":3,"round3LosersCount":4,"firstRoundingCents":100,"secondRoundingCents":100,"fourthRoundingCents":50,"round3LosersRoundingCents":100,"thirdGetsRemainder":true,"method":"spreadsheet_third_place_remainder"},"roundDeadlines":{},"resultText":{}}};
 
-const ROUND_WINDOWS=[
+const LEGACY_ROUND_WINDOWS=[
  {weeks:'49/50',start:'2026-11-30',end:'2026-12-13',exclusions:['2026-12-04','2026-12-05','2026-12-06'],label:'30 november t/m 13 december 2026'},
  {weeks:'51/52',start:'2026-12-14',end:'2026-12-27',exclusions:['2026-12-24','2026-12-25','2026-12-26'],label:'14 t/m 27 december 2026'},
  {weeks:'1/2',start:'2027-01-04',end:'2027-01-17',exclusions:[],label:'4 t/m 17 januari 2027'},
  {weeks:'2/3',start:'2027-01-11',end:'2027-01-24',exclusions:[],label:'11 t/m 24 januari 2027'},
  {weeks:'3/4',start:'2027-01-18',end:'2027-01-31',exclusions:[],label:'18 t/m 31 januari 2027'}
 ];
-function ensureRoundSettings(){
- data.settings.roundDeadlines=Object.fromEntries(ROUND_WINDOWS.map((w,r)=>[r,w.end]));
- data.settings.roundWindows=ROUND_WINDOWS;
+function getRoundWindows(){
+ return Array.isArray(data?.settings?.roundWindows)?data.settings.roundWindows:[];
 }
+function ensureRoundSettings(){
+ const periods=getRoundWindows();
+ data.settings.roundDeadlines=Object.fromEntries(periods.map((w,i)=>[i,w.end]));
+ data.settings.roundWindows=periods;
+}
+
 function roundDays(r){
- const w=ROUND_WINDOWS[r];if(!w)return[];
+ const w=getRoundWindows()[r];if(!w)return[];
  const days=[];const date=new Date(w.start+'T12:00:00');
  while(toLocalISO(date)<=w.end){const day=toLocalISO(date);if(!w.exclusions.includes(day))days.push(day);date.setDate(date.getDate()+1)}
  return days;
 }
 function periodInfo(r){
- const w=ROUND_WINDOWS[r];if(!w)return'Niet ingedeeld';
+ const w=getRoundWindows()[r];if(!w)return'Niet ingedeeld';
  return 'Week '+w.weeks+' · '+w.label;
 }
 function blockedInfo(r){
- const w=ROUND_WINDOWS[r];return w.exclusions.length?'Niet spelen: '+w.exclusions.map(d=>prettyDate(d)).join(', '):'Geen uitgesloten datums';
+ const w=getRoundWindows()[r];if(!w)return 'Nog niet ingesteld';return w.exclusions.length?'Niet spelen: '+w.exclusions.map(d=>prettyDate(d)).join(', '):'Geen uitgesloten datums';
 }
 function roundCalendar(){
- return '<section class="panel">'+heading('Vaste speelperiodes','<span class="pill ok">Vastgesteld</span>')+
- '<p class="muted smalltext">De officiële speelperiodes van ronde 3, 4 en 5 overlappen, maar de wedstrijden van de rondes nooit: de volgende ronde begint pas nadat álle duels van de vorige ronde klaar zijn. Finale en bronsfinale vallen samen in ronde 5.</p>'+
- '<div class="roundperiods">'+ROUND_WINDOWS.map((w,i)=>'<div class="periodrow"><div><strong>Ronde '+(i+1)+'</strong><span class="tag"> WEEK '+w.weeks+'</span></div><div><div class="smalltext">'+esc(w.label)+'</div><div class="muted smalltext">'+esc(blockedInfo(i))+'</div></div></div>').join('')+'</div></section>';
+ const periods=getRoundWindows();
+ if(periods.length!==5)return '<section class="panel">'+heading('Speelperiodes','<span class="pill warn">Nog niet ingesteld</span>')+
+ '<div class="empty"><div class="bigicon">🗓️</div><strong>De speelweken zijn nog niet gekozen</strong><p>De organisatie kan per ronde de begin- en eindweek vastleggen. Daarna verschijnt hier het officiële speelschema.</p>'+
+ (isAdmin?button('Speelweken instellen',"setTab('beheer-instellingen')",'alt',true):'')+'</div></section>';
+ return '<section class="panel">'+heading('Speelperiodes','<span class="pill ok">Vastgesteld</span>')+
+ '<p class="muted smalltext">De weken van verschillende rondes mogen overlappen. Wedstrijden uit de volgende ronde beginnen echter nooit voordat alle duels van de vorige ronde zijn afgerond.</p>'+
+ '<div class="roundperiods">'+periods.map((w,i)=>'<div class="periodrow"><div><strong>Ronde '+(i+1)+'</strong><span class="tag"> WEEK '+esc(w.weeks)+'</span></div><div><div class="smalltext">'+esc(w.label)+'</div><div class="muted smalltext">'+esc(blockedInfo(i))+'</div></div></div>').join('')+'</div></section>';
 }
+
 function dateDifference(a,b){return Math.round((new Date(a+'T12:00:00')-new Date(b+'T12:00:00'))/86400000)}
 function roundDates(r,planned){
  return Object.entries(planned||{}).filter(([id,item])=>
@@ -196,7 +206,7 @@ function matchHasAgreement(m,s){
    s.agreedPlayers[0]===m.a&&s.agreedPlayers[1]===m.b);
 }
 function possibleDate(m,date,planned,existing=null){
- const w=ROUND_WINDOWS[m.round];
+ const w=getRoundWindows()[m.round];
  if(!w||date<w.start||date>w.end||w.exclusions.includes(date))return false;
  const prior=parentLatestDate(m.round,m.index,planned);
  if(prior&&date<=prior)return false;
@@ -330,15 +340,26 @@ function autoPlanMatches(showNotice=true){
   (conflicts.length?' '+conflicts.length+' vastgestelde datums hebben een conflict.':''));
  return result;
 }
-const REGISTRATION_DEADLINE='2026-11-21T00:00:00+01:00';
-function registrationClosed(){return Date.now()>=Date.parse(data.settings?.registrationClosesAt||REGISTRATION_DEADLINE)}
-function effectiveStatus(){const status=data.settings?.status||'Inschrijving open';return status==='Inschrijving open'&&registrationClosed()?'Inschrijving gesloten':status}
+function registrationDeadlineLabel(){
+ const value=data.settings?.registrationClosesAt;
+ if(!value)return 'Geen uiterste inschrijfdatum ingesteld';
+ const dt=new Date(value);
+ return Number.isNaN(dt.getTime())?'Nog niet ingesteld':
+  dt.toLocaleString('nl-NL',{timeZone:'Europe/Amsterdam',dateStyle:'long',timeStyle:'short'})+' uur';
+}
+function registrationClosed(){
+ const deadline=data.settings?.registrationClosesAt;
+ return !!deadline&&!Number.isNaN(Date.parse(deadline))&&Date.now()>=Date.parse(deadline);
+}
+function effectiveStatus(){
+ const status=data.settings?.status||'Inschrijving open';
+ return status==='Inschrijving open'&&registrationClosed()?'Inschrijving gesloten':status;
+}
 function registrationBanner(){
- const closed=registrationClosed();
- return '<section class="panel" style="border-color:'+(closed?'#34455e':'#d8863f')+'">'+
-  '<div class="sectiontitle"><h2>Inschrijvingen</h2><span class="pill '+(closed?'warn':'ok')+'">'+(closed?'GESLOTEN':'OPEN TOT 20 NOVEMBER')+'</span></div>'+
-  '<p class="smalltext">'+(closed?'De inschrijving voor spelers is gesloten sinds 21 november 2026. De beheerder kan de ontvangen inschrijvingen nog verwerken.':'Inschrijven kan tot en met vrijdag 20 november 2026, 23:59 uur (Nederlandse tijd).')+'</p>'+
-  '<p class="muted smalltext">Inschrijvingen sluiten op 20 november. Op 21 november verwerkt de beheerder de tijdig ontvangen aanmeldingen via CSV; dit is geen nieuwe inschrijfronde.</p></section>';
+ const closed=registrationClosed(),hasDeadline=!!data.settings?.registrationClosesAt;
+ return '<section class="panel"><div class="sectiontitle"><h2>Inschrijving</h2><span class="pill '+(closed?'warn':hasDeadline?'ok':'blue')+'">'+(closed?'GESLOTEN':hasDeadline?'OPEN':'DEADLINE VOLGT')+'</span></div>'+
+ '<p class="smalltext">'+(closed?'De inschrijftermijn is verstreken.':'Inschrijvingen worden verwerkt door de organisatie.')+'</p>'+
+ '<p class="muted smalltext">'+(hasDeadline?'Uiterste inschrijfdatum: '+esc(registrationDeadlineLabel()):'De inschrijfdeadline is nog niet ingesteld.')+'</p></section>';
 }
 function load(){return structuredClone(DEFAULT)}
 let data=load();let tab=location.hash.slice(1)||'overzicht';let editPlayer=null;
@@ -413,7 +434,7 @@ function prettyDate(v){if(!v)return'Nog niet gepland';const d=new Date(`${v}T12:
 function scheduleConflict(m,s){
  if(!s?.date)return'';
  if(!/^\d{4}-\d\d-\d\d$/.test(s.date)||Number.isNaN(+new Date(s.date+'T12:00:00')))return'Ongeldige datum.';
- const w=ROUND_WINDOWS[m.round],alerts=[];
+ const w=getRoundWindows()[m.round],alerts=[];
  if(!w||s.date<w.start||s.date>w.end)alerts.push('De datum valt buiten de verplichte speelperiode van ronde '+(m.round+1)+'.');
  if(w?.exclusions.includes(s.date))alerts.push('Deze datum is uitgesloten van het speelschema.');
  if(m.a&&m.b&&!availableOnDate(m,s.date)&&!matchHasAgreement(m,s))alerts.push('Deze datum past niet voor beide spelers. Registreer hun onderlinge akkoord voordat je de wedstrijd bevestigt.');
@@ -644,7 +665,7 @@ function adminScheduleView(){
  (m.isBye?'<p class="muted smalltext">Vrijloting: geen datum nodig.</p>':
  '<p class="hint">Op papier thuis: '+esc(m.a?name(m.a,true):'Nog niet bekend')+
  (s.requiresAgreement&&!matchHasAgreement(m,s)?' · Onderling overleg nodig over de voorgestelde speeldag':'')+'</p>'+
- '<div class="formgrid" style="margin-top:12px"><div class="field"><label for="date_'+r+'_'+m.index+'">Datum binnen '+esc(periodInfo(r))+'</label><input id="date_'+r+'_'+m.index+'" type="date" min="'+ROUND_WINDOWS[r].start+'" max="'+ROUND_WINDOWS[r].end+'" value="'+esc(s.date||'')+'" '+(!m.a||!m.b?'disabled':'')+'></div><div class="field"><label for="time_'+r+'_'+m.index+'">Tijdstip (standaard 20:00 uur)</label><input id="time_'+r+'_'+m.index+'" type="time" value="'+esc(s.time||DEFAULT_MATCH_TIME)+'" '+(!m.a||!m.b?'disabled':'')+'></div></div>'+
+ '<div class="formgrid" style="margin-top:12px"><div class="field"><label for="date_'+r+'_'+m.index+'">Datum binnen '+esc(periodInfo(r))+'</label><input id="date_'+r+'_'+m.index+'" type="date" min="'+getRoundWindows()[r].start+'" max="'+getRoundWindows()[r].end+'" value="'+esc(s.date||'')+'" '+(!m.a||!m.b?'disabled':'')+'></div><div class="field"><label for="time_'+r+'_'+m.index+'">Tijdstip (standaard 20:00 uur)</label><input id="time_'+r+'_'+m.index+'" type="time" value="'+esc(s.time||DEFAULT_MATCH_TIME)+'" '+(!m.a||!m.b?'disabled':'')+'></div></div>'+
  (!m.a||!m.b?'<p class="hint">Voorlopige datum voor dit duel. Bevestigen kan zodra beide spelers bekend zijn.</p>':
  '<div class="chips">'+(opt.length?opt.slice(0,4).map(x=>'<button class="chip" onclick="pickDate('+r+','+m.index+',\''+x+'\')" type="button">'+esc(prettyDate(x))+'</button>').join(''):'<span class="chip busy">Geen passende dag binnen de rondeperiode gevonden</span>')+'</div>'+
  '<label class="day" style="margin-top:12px;display:flex;align-items:center;gap:9px"><input type="checkbox" id="agreed_'+r+'_'+m.index+'"> Beide spelers zijn akkoord met de gewijzigde speeldag en/of starttijd</label>'+
@@ -687,7 +708,7 @@ function replanMatch(r,i){
 function adminSettingsView(){
  return '<section class="panel">'+heading('Vaste speelperiodes en instellingen')+
  '<p class="smalltext muted">De speelperiodes zijn door de organisatie vastgesteld en kunnen niet per wedstrijd worden verruimd. Data daarbuiten en uitgesloten feestdagen worden geblokkeerd.</p>'+
- '<div class="roundperiods">'+ROUND_WINDOWS.map((w,i)=>'<div class="periodrow"><strong>Ronde '+(i+1)+'</strong><div><div class="smalltext">'+esc(periodInfo(i))+'</div><div class="muted smalltext">'+esc(blockedInfo(i))+'</div></div></div>').join('')+'</div>'+
+ '<div class="roundperiods">'+getRoundWindows().map((w,i)=>'<div class="periodrow"><strong>Ronde '+(i+1)+'</strong><div><div class="smalltext">'+esc(periodInfo(i))+'</div><div class="muted smalltext">'+esc(blockedInfo(i))+'</div></div></div>').join('')+'</div>'+
  '<div class="formgrid"><div class="field"><label for="eventStatus">Toernooistatus</label><select id="eventStatus" onchange="updateStatus(this.value)">'+['Inschrijving open','Inschrijving gesloten','Loting uitgevoerd','Toernooi bezig','Toernooi afgerond'].map(x=>'<option '+(x===data.settings.status?'selected':'')+'>'+x+'</option>').join('')+'</select></div>'+
  '<div class="field"><label for="eventFormat">Toernooivorm (vastgelegd)</label><input id="eventFormat" value="Directe knock-out (maximaal 32 deelnemers)" disabled></div></div>'+
  '<hr class="divider"><h3>Export, back-up en herstellen</h3><div class="btnbar">'+button('Back-up (JSON)','exportJson()','alt',true)+button('Speelschema (CSV)','exportMatchesCsv()','ghost',true)+button('Toernooiboom (PNG)','exportBracketPng()','ghost',true)+button('Afdrukken / PDF','window.print()','ghost',true)+'</div>'+
@@ -712,7 +733,7 @@ function adminView(){
   '<div class="quick-metrics"><div class="quick-metric"><b>'+data.players.length+' / 32</b><span>Deelnemers</span></div><div class="quick-metric"><b>'+(drawn?'Uitgevoerd':'Nog niet')+'</b><span>Officiële loting</span></div><div class="quick-metric"><b>'+played+' / '+(expectedMatches()||'—')+'</b><span>Gespeelde duels</span></div></div>'+
   '<section class="panel"><h2 style="margin-bottom:17px">Beheeronderdelen</h2>'+tileGrid(cards,'management-grid')+'</section>';
 }
-function deadlineBadge(r){const w=ROUND_WINDOWS[r];return w?`<span class="pill blue">W${w.weeks} · ${esc(w.label)}</span>`:'<span class="pill warn">Geen periode vastgelegd</span>'}
+function deadlineBadge(r){const w=getRoundWindows()[r];return w?`<span class="pill blue">W${w.weeks} · ${esc(w.label)}</span>`:'<span class="pill warn">Geen periode vastgelegd</span>'}
 function rulesView(){const total=data.players.length,byes=total>1?2**Math.ceil(Math.log2(total))-total:0;return `<section class="panel"><div class="sectiontitle"><h2>Toernooireglement</h2><span class="pill ok">Vastgestelde toernooivorm</span></div><div class="steps"><div class="step"><div class="stepnum">ARTIKEL 01</div><h3>Directe uitschakeling</h3><p>Een speler die een duel verliest, is uitgeschakeld. Een winnaar gaat door naar het volgende duel. Er is geen verliezersronde.</p></div><div class="step"><div class="stepnum">ARTIKEL 02</div><h3>Willekeurige loting</h3><p>Deelnemers worden zonder plaatsingslijst ingeloot. Zo nodig zijn er ${byes} vrijlotingen voor het huidige deelnemersaantal.</p></div><div class="step"><div class="stepnum">ARTIKEL 03</div><h3>Eén kampioen</h3><p>De twee overgebleven spelers spelen de finale. De twee verliezende halvefinalisten spelen de bronsfinale: de winnaar wordt derde en de verliezer vierde.</p></div></div><hr class="divider"><h3>Hoe werkt de planning?</h3><p class="smalltext muted">Iedere ronde heeft een eigen toegestane speelperiode. De periodes mogen overlappen, maar de daadwerkelijk ingeplande rondes nooit: eerst worden alle duels van ronde 1 afgewerkt, dan pas begint ronde 2, enzovoort. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur zodra alle eerdere rondes vaststaan. Bij ontbreken van gezamenlijke beschikbaarheid is de thuisspeler leidend voor het voorlopige schema; de spelers maken dan onderling een definitieve afspraak. In onderling overleg mogen beide spelers de speeldag binnen die periode en/of de starttijd wijzigen. De organisatie bevestigt zulke afspraken. De uitgesloten decemberdatums blijven verboden.</p>${data.draw.length?`<div class="deadlinegrid">${Array.from({length:howManyRounds()},(_,i)=>`<div class="infoitem"><strong>${roundLabel(i,howManyRounds())}</strong>${deadlineBadge(i)}</div>`).join('')}</div>`:''}</section><section class="panel"><div class="sectiontitle"><h2>Nog vast te stellen</h2><span class="pill warn">Geen definitieve afspraken</span></div><p class="muted smalltext">Deze onderwerpen moeten door de organisatie worden besloten voordat de site als officieel reglement gebruikt kan worden.</p><div class="rulesgrid">${['Eventuele bijkomende kosten','Pokerplatform en speelvariant','Startstack en blindstructuur','Duur en eventuele onderbrekingen per duel','Omgaan met afzeggingen binnen de speelperiode','Regels bij niet verschijnen of technische problemen','Eventuele trofeeën en bijkomende kosten','Aanvullende regels bij een onbespeelbare finale of bronsfinale'].map(x=>`<div class="rulepending"><span class="openbullet">○</span>${x}</div>`).join('')}</div></section>`}
 function saveDeadlines(){notify('De vijf speelperiodes staan vast en kunnen niet worden gewijzigd.')}
 function downloadFile(text,filename,mime){const blob=new Blob([text],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
@@ -1140,7 +1161,7 @@ function savePlayer(){
   }
   p.name=n;p.blocked=blocked;
  }else{
-  if(registrationClosed()){notify('Inschrijven is gesloten sinds 21 november 2026.');return}
+  if(registrationClosed()){notify('De inschrijfdeadline is verstreken.');return}
   if(data.draw.length){notify('Na de loting kunnen geen nieuwe spelers worden toegevoegd.');return}
   if(data.players.length>=MAX_PLAYERS){notify('De OHC heeft maximaal 32 plaatsen.');return}
   data.players.push({id:safeId(),name:n,blocked});
@@ -1347,6 +1368,7 @@ function compatibleDraw(players=data.players){
 }
 function createDraw(){
  if(!isAdmin){notify('Alleen beheerders kunnen loten.');return}
+ if(getRoundWindows().length!==5){notify('Stel eerst alle vijf speelperiodes in via Beheer → Instellingen.');return}
  if(data.draw.length){notify('De bracket is al geloot: alle routes staan vast. Voor een volledige herstart moet de beheerder eerst de loting wissen.');return}
  const result=compatibleDraw(data.players);
  if(result.error){notify(result.error);return}
