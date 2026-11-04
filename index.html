@@ -1932,10 +1932,10 @@ function updateStatus(v){data.settings.status=v;save();render()}
    semicolon-wrapped CSV produced by certain spreadsheet exports. */
 function csvNameColumn(header){
  const h=String(header||'').trim().toLocaleLowerCase('nl').replace(/\s+/g,' ');
- return h==='naam'||h.startsWith('naam ')||h.includes('voor- en achternaam')||
-  h.includes('voor en achternaam')||h.includes('voornaam en achternaam')||
-  h.includes('volledige naam')||h.includes('naam deelnemer')||
-  h.includes('naam speler');
+ return h==='naam'||h.startsWith('naam ')||h.startsWith('voor- en achternaam')||
+  h.startsWith('voor en achternaam')||h.startsWith('voornaam en achternaam')||
+  h.startsWith('volledige naam')||h.startsWith('naam deelnemer')||
+  h.startsWith('naam speler');
 }
 function parseDelimitedCSV(text,delimiter=','){
  const rows=[];let row=[],current='',quoted=false;
