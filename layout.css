@@ -1,0 +1,122 @@
+
+/* OHC - rustige, taakgerichte informatiearchitectuur */
+:root { --content:1220px; }
+#main{padding-top:25px;padding-bottom:35px;min-height:64vh}
+#main>.hero{margin-top:0}
+.page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;padding:10px 2px 23px}
+.page-heading-copy{max-width:790px}
+.page-eyebrow{font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#d9b16e;margin-bottom:8px;font-family:'Exo 2',sans-serif}
+.page-heading h1{font-family:'Exo 2',sans-serif;font-size:clamp(27px,3.4vw,40px);letter-spacing:-1px;line-height:1.12;margin:0 0 10px;color:#fff0d1}
+.page-heading p{font-size:13px;line-height:1.6;color:#bdb1c5;margin:0;max-width:720px}
+.page-heading-status{white-space:nowrap;flex-shrink:0}
+.page-subnav{display:flex;align-items:center;gap:8px;overflow:auto;padding:0 2px 15px;margin-bottom:10px;scrollbar-width:thin;scrollbar-color:#846a58 transparent;max-width:100%}
+.page-subnav button{font-size:12px;font-weight:750;white-space:nowrap;padding:10px 13px;border:1px solid #574663;background:#211b2b;color:#dacde1;border-radius:10px;transition:background .16s,color .16s}
+.page-subnav button.active,.page-subnav button[aria-current="page"]{background:linear-gradient(125deg,#4d3921,#382638);border-color:#bb9652;color:#ffe9ad}
+.page-subnav button:hover{background:#38263d;color:#fff4dd}
+.panel{margin-bottom:16px}
+.panel>.sectiontitle{margin-bottom:15px}
+.panel>p.smalltext{max-width:890px}
+.readable{max-width:870px;line-height:1.7}
+.launch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.launch-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+.launch-card{width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:9px;text-align:left;padding:20px;min-height:144px;border-radius:15px;border:1px solid #58475e;background:linear-gradient(145deg,#25202e,#15121c);color:#efe9f1;transition:transform .18s,border-color .18s,background .18s;position:relative}
+.launch-card:hover{transform:translateY(-2px);border-color:#d7aa5c;background:linear-gradient(145deg,#30253a,#201925)}
+.launch-card:focus-visible{outline:2px solid #ffe49a;outline-offset:3px}
+.launch-icon{display:grid;place-items:center;background:#3d2b3c;border:1px solid #70517d;border-radius:11px;width:40px;height:40px;font-size:21px}
+.launch-title{display:block;color:#ffe6ac;font-weight:850;font-size:15px;line-height:1.2;font-family:'Exo 2',sans-serif}
+.launch-description{font-size:12px;line-height:1.55;color:#b9afc2;max-width:310px}
+.launch-card::after{content:"›";position:absolute;right:17px;top:14px;color:#eac471;font-size:25px;font-weight:300}
+.dashboard-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.dashboard-head h2{margin:0;font-size:20px}
+.dashboard-status{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;background:linear-gradient(115deg,#1e1725,#18251d);border:1px solid #785d4e;border-radius:17px;padding:21px 24px;margin:18px 0 16px}
+.dashboard-status-label{color:#c6b5c4;font-size:11px;font-weight:850;letter-spacing:1.2px;text-transform:uppercase}
+.dashboard-status-title{font-family:'Exo 2',sans-serif;color:#ffe3a2;font-weight:850;font-size:23px;margin:5px 0}
+.dashboard-status-description{font-size:12px;color:#c4b8c5;line-height:1.6}
+.dashboard-status .btn{white-space:nowrap}
+.overview-progress{margin-top:10px}
+.overview-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.quick-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.quick-metric{background:#1d1823;border:1px solid #514052;padding:15px;border-radius:12px}
+.quick-metric b{display:block;color:#f9d99c;font-size:19px;font-family:'Exo 2',sans-serif}
+.quick-metric span{font-size:11px;color:#b9adbe}
+.round-filter-bar{display:flex;gap:7px;overflow-x:auto;padding:12px 0 16px;align-items:center;margin:8px 0 6px;border-top:1px solid #4f3a50;scrollbar-width:thin}
+.round-filter-label{font-size:11px;color:#ab9db0;white-space:nowrap;font-weight:800;padding-right:7px}
+.round-filter-btn{border:1px solid #62516a;background:#201a28;color:#d9cadd;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:750;white-space:nowrap}
+.round-filter-btn.active{color:#241c13;background:linear-gradient(120deg,#fce6a6,#d3a44d);border-color:#f1cb84}
+.round-filter-btn:not(.active):hover{border-color:#c69b61;color:#ffe6b0}
+.roundgroup{margin-bottom:20px}
+.roundgroup:last-child{margin-bottom:5px}
+.roundgroup>.grouphead,.roundgroup>.headingline{background:#251c2a;border:1px solid #634d61;border-radius:11px;padding:12px 15px;margin:0 0 10px}
+.roundgroup>.grouphead .headingline{background:none;border:none;padding:0;margin:0}
+.roundgroup>.headingline{font-size:14px;color:#ffe5b1}
+.roundgroup>.grouphead h3{font-size:14px}
+.roundgroup .infoitem.matchadmin{padding:15px 18px}
+.matchadmin .line{gap:9px;flex-wrap:wrap}
+.matchadmin .selectwinner{padding-top:2px}
+.scheduleline{grid-template-columns:minmax(0,1.6fr) minmax(135px,.58fr) auto}
+.scheduleline .when{min-width:0}
+.scheduleline strong{line-height:1.6}
+.help-details{background:#17121e;border:1px solid #594960;padding:12px 15px;border-radius:11px;margin:0 0 20px}
+.help-details summary{cursor:pointer;color:#e3c487;font-size:13px;font-weight:800}
+.help-details p{line-height:1.7;margin:13px 0 0;color:#bdb0c5}
+.panel-intro{max-width:860px;line-height:1.7;color:#bdb0c5;font-size:13px;margin-bottom:16px}
+.player-search{max-width:480px;margin:6px 0 20px}
+.admin-banner{display:flex;justify-content:space-between;align-items:center;gap:15px;background:#2b1d2c;border:1px solid #6e5368;padding:16px 20px;border-radius:13px;margin-bottom:15px}
+.admin-banner strong{color:#ffe3ad}
+.admin-banner p{margin:5px 0 0;font-size:12px;color:#bdafc3}
+.admin-subtle{font-size:12px;line-height:1.7;color:#ad9faf}
+.admin-page-actions{margin:13px 0 20px}
+.admin-lottery-status{padding:18px 20px;border:1px solid #695073;border-radius:14px;background:#1a1725;margin-bottom:15px}
+.admin-lottery-status h3{margin:0 0 8px;color:#ffdfad}
+.admin-lottery-status p{line-height:1.7;font-size:13px;color:#c4b5c9}
+.admin-lottery-status .btnbar{margin-top:14px}
+.management-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.management-grid .launch-card{min-height:136px}
+.formgrid .field{min-width:0}
+.tablewrap{width:100%;overflow:auto}
+.table th,.table td{vertical-align:middle}
+.table td{overflow-wrap:anywhere}
+.tablewrap .table{min-width:560px}
+#main>.panel,.main-section>.panel{scroll-margin-top:110px}
+#ohcResults{scroll-margin-top:150px}
+.footer{margin-top:16px}
+@media(max-width:960px){
+ .launch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .topinner{padding-bottom:14px}
+ .scheduleline{grid-template-columns:minmax(0,1.5fr) minmax(110px,.6fr)}
+ .scheduleline>div:last-child{grid-column:1/-1}
+ .management-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+ #main{padding-top:18px}
+ .page-heading{flex-direction:column;align-items:flex-start;gap:10px;padding:4px 0 18px}
+ .page-heading h1{font-size:29px;margin-bottom:7px}
+ .page-heading p{font-size:12px}
+ .page-heading-status{white-space:normal}
+ .page-subnav{margin:0 -1px 14px;padding-bottom:13px}
+ .page-subnav button{font-size:11px;padding:9px 11px}
+ .launch-grid,.launch-grid.compact,.management-grid{grid-template-columns:1fr}
+ .launch-card,.management-grid .launch-card{min-height:112px;padding:16px 16px 16px 63px;gap:5px}
+ .launch-icon{position:absolute;left:13px;top:17px;width:36px;height:36px;font-size:18px}
+ .launch-card::after{top:9px}
+ .dashboard-status{grid-template-columns:1fr;padding:17px}
+ .dashboard-status .btn{justify-self:start}
+ .dashboard-status-title{font-size:20px}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .stat{min-height:115px}
+ .quick-metrics{grid-template-columns:1fr 1fr}
+ .admin-banner{flex-direction:column;align-items:flex-start}
+ .round-filter-bar{margin-right:-7px}
+ .panel{padding:17px}
+ .scheduleline{grid-template-columns:1fr;gap:8px}
+ .scheduleline>div:last-child{grid-column:auto}
+ .roundgroup>.grouphead{align-items:flex-start}
+ .roundgroup>.grouphead .pill{white-space:normal}
+ .matchadmin .line{flex-direction:column;align-items:flex-start}
+}
+@media print {
+ .page-subnav,.round-filter-bar,.admin-banner,.launch-grid,.management-grid,.dashboard-status .btn{display:none!important}
+ .roundgroup.hidden{display:block!important}
+ .page-heading h1{color:#111}
+ .page-heading p{color:#555}
+}
