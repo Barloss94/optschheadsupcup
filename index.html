@@ -1070,11 +1070,208 @@ function adminPlanningPage(){
  if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">📅</div><strong>Nog geen wedstrijden</strong><p>Maak eerst de loting om speeldata te kunnen vaststellen.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
  return withRoundFilter(adminScheduleView(),'planning');
 }
+
+function isoWeekMonday(value){
+ const m=/^(\d{4})-W(\d{2})$/.exec(String(value||''));
+ if(!m)return null;
+ const year=Number(m[1]),week=Number(m[2]);
+ if(year<2020||year>2100||week<1||week>53)return null;
+ const jan4=new Date(Date.UTC(year,0,4));
+ const monday=new Date(jan4);
+ monday.setUTCDate(jan4.getUTCDate()-(jan4.getUTCDay()+6)%7+(week-1)*7);
+ const thursday=new Date(monday);thursday.setUTCDate(monday.getUTCDate()+3);
+ if(thursday.getUTCFullYear()!==year)return null;
+ const last=new Date(monday);
+ last.setUTCDate(monday.getUTCDate()+6);
+ return {start:monday.toISOString().slice(0,10),end:last.toISOString().slice(0,10)};
+}
+function weekValueFromDate(isoDate){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(isoDate||''))return '';
+ const d=new Date(isoDate+'T12:00:00Z');
+ if(Number.isNaN(d.getTime()))return '';
+ d.setUTCDate(d.getUTCDate()+3-(d.getUTCDay()+6)%7);
+ const year=d.getUTCFullYear();
+ const jan4=new Date(Date.UTC(year,0,4));
+ jan4.setUTCDate(jan4.getUTCDate()-(jan4.getUTCDay()+6)%7);
+ const week=1+Math.round((Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())-jan4.getTime())/604800000);
+ return year+'-W'+String(week).padStart(2,'0');
+}
+function windowLabel(start,end){
+ const f=iso=>new Date(iso+'T12:00:00Z').toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+ return f(start)+' t/m '+f(end);
+}
+function collectRoundWindows(){
+ const windows=[],problems=[];
+ let lastStart='',lastEnd='';
+ for(let i=0;i<5;i++){
+  const firstWeek=$('ohcWeekFrom'+i)?.value;
+  const lastWeek=$('ohcWeekUntil'+i)?.value;
+  const first=isoWeekMonday(firstWeek),last=isoWeekMonday(lastWeek);
+  if(!first||!last){problems.push('Ronde '+(i+1)+': vul een geldige eerste en laatste ISO-week in.');continue}
+  if(first.start>last.end){problems.push('Ronde '+(i+1)+': de eindweek ligt voor de beginweek.');continue}
+  const count=1+Math.round((Date.parse(last.end+'T00:00:00Z')-Date.parse(first.start+'T00:00:00Z'))/604800000);
+  if(count>14){problems.push('Ronde '+(i+1)+': maximaal 14 weken per speelperiode.');continue}
+  if(lastStart&&(first.start<lastStart||last.end<lastEnd))
+   problems.push('Ronde '+(i+1)+': de speelperiodes moeten per ronde chronologisch doorlopen.');
+  const exclusionRaw=$('ohcWeekExcluded'+i)?.value||'';
+  const exclusionDays=exclusionRaw.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
+  const exclusions=[...new Set(exclusionDays)];
+  for(const d of exclusions){
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||Number.isNaN(Date.parse(d+'T12:00:00Z'))||
+      d<first.start||d>last.end)
+    problems.push('Ronde '+(i+1)+': uitgesloten dag "'+d+'" valt buiten de periode.');
+  }
+  windows.push({
+   weeks:firstWeek+(firstWeek===lastWeek?'':' t/m '+lastWeek),
+   start:first.start,end:last.end,
+   exclusions,label:windowLabel(first.start,last.end)
+  });
+  lastStart=first.start;lastEnd=last.end;
+ }
+ return {windows,problems};
+}
+function roundWeekEditor(){
+ const existing=getRoundWindows();
+ return '<section class="panel"><div class="sectiontitle"><h2>Speelperiodes per ISO-week</h2><span class="pill '+(existing.length===5?'ok':'warn')+'">'+(existing.length===5?'Ingesteld':'Nog instellen')+'</span></div>'+
+ '<p class="panel-intro">Stel voor iedere ronde de eerste en laatste kalenderweek in, inclusief het jaartal. De website rekent automatisch van maandag tot zondag. Aaneengesloten rondes mogen qua speelperiode overlappen; geplande wedstrijden van verschillende rondes nooit.</p>'+
+ '<div class="notice">Bijvoorbeeld: 2027-W01 tot en met 2027-W02. Dat is maandag 4 t/m zondag 17 januari 2027. In het veld uitgesloten dagen kun je desgewenst datums invoeren waarop niet gespeeld mag worden.</div>'+
+ '<div class="week-editor">'+Array.from({length:5},(_,i)=>{
+  const w=existing[i];
+  const start=w?weekValueFromDate(w.start):'',end=w?weekValueFromDate(w.end):'';
+  return '<div class="week-editor-row"><div class="week-editor-number"><b>Ronde '+(i+1)+'</b>'+(i===4?'<span class="tag">Finale en brons</span>':'')+'</div>'+
+   '<div class="field"><label for="ohcWeekFrom'+i+'">Vanaf week</label><input type="week" id="ohcWeekFrom'+i+'" min="2020-W01" max="2100-W52" value="'+esc(start)+'"></div>'+
+   '<div class="field"><label for="ohcWeekUntil'+i+'">Tot en met week</label><input type="week" id="ohcWeekUntil'+i+'" min="2020-W01" max="2100-W52" value="'+esc(end)+'"></div>'+
+   '<div class="field"><label for="ohcWeekExcluded'+i+'">Uitgesloten datums (optioneel)</label><input type="text" id="ohcWeekExcluded'+i+'" placeholder="2027-01-01, 2027-01-02" value="'+esc(w?.exclusions?.join(', ')||'')+'"></div>'+
+   '</div>';
+ }).join('')+'</div>'+
+ '<div class="btnbar" style="margin-top:18px">'+button('Speelperiodes opslaan','saveRoundWeeks()','')+
+ button('Bekijk speelperiodes',"setTab('periodes')",'ghost')+'</div>'+
+ (data.draw.length?'<div class="notice orange">De loting is uitgevoerd. De website controleert bij het wijzigen van weken of bestaande speeldata geldig blijven; vaste afspraken kunnen niet stilzwijgend buiten een periode vallen.</div>':'')+
+ '</section>';
+}
+async function saveRoundWeeks(){
+ if(!isAdmin)return;
+ const {windows,problems}=collectRoundWindows();
+ if(problems.length){notify(problems[0]);return}
+ if(windows.length!==5){notify('Stel voor alle vijf rondes een geldige periode in.');return}
+ const scheduled=Object.entries(data.schedule||{});
+ for(const [id,s] of scheduled){
+  if(!s?.date)continue;
+  const i=Number(id.split(':')[0]),w=windows[i];
+  if(!w||s.date<w.start||s.date>w.end||w.exclusions.includes(s.date)){
+   notify('Niet opgeslagen: duel '+id+' staat op '+s.date+' buiten de nieuwe speelperiode. Pas de wedstrijdplanning eerst aan.');
+   return;
+  }
+ }
+ if(data.draw.length&&!confirm('De speelweken van een al geloot toernooi wijzigen? Alle voorstellen worden opnieuw doorgerekend; bevestigde afspraken blijven bewaard.'))return;
+ const prior=structuredClone(data.settings.roundWindows||[]),priorSchedule=structuredClone(data.schedule);
+ data.settings.roundWindows=windows;
+ ensureRoundSettings();
+ if(data.draw.length){
+  const plan=autoPlanMatches(false);
+  if(plan.conflicts.length){
+   data.settings.roundWindows=prior;data.schedule=priorSchedule;ensureRoundSettings();
+   notify('Niet opgeslagen: gewijzigde speelweken conflicteren met bestaande vaste speeldagen.');
+   return;
+  }
+ }
+ const result=await save();
+ render();
+ if(result)notify('De speelperiodes voor alle vijf rondes zijn opgeslagen.');
+}
+function localDeadlineInput(iso){
+ if(!iso)return '';
+ const date=new Date(iso);
+ if(Number.isNaN(date.getTime()))return '';
+ const parts=new Intl.DateTimeFormat('sv-SE',{
+  year:'numeric',month:'2-digit',day:'2-digit',
+  hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Europe/Amsterdam'
+ }).format(date);
+ return parts.replace(' ','T');
+}
+function generalSettingsPanel(){
+ return '<section class="panel"><h2>Algemene toernooi-instellingen</h2>'+
+ '<p class="panel-intro">Stel een herkenbare naam en inschrijfdeadline in voor het actieve toernooi. De start van een nieuwe competitie heeft geen vaste deadline.</p>'+
+ '<div class="formgrid"><div class="field"><label for="ohcEventTitle">Toernooinaam</label><input type="text" maxlength="100" id="ohcEventTitle" value="'+esc(data.settings.title||'OPTSCH HEADS-UP CUP')+'"></div>'+
+ '<div class="field"><label for="ohcRegistrationClose">Uiterste inschrijfdatum (Nederlandse tijd)</label><input type="datetime-local" id="ohcRegistrationClose" value="'+esc(localDeadlineInput(data.settings.registrationClosesAt))+'"></div></div>'+
+ '<div class="formgrid"><div class="field"><label for="eventStatus">Toernooistatus</label><select id="eventStatus">'+
+ ['Inschrijving open','Inschrijving gesloten','Loting uitgevoerd','Toernooi bezig','Toernooi afgerond'].map(x=>'<option '+(x===data.settings.status?'selected':'')+'>'+x+'</option>').join('')+'</select></div>'+
+ '<div class="field"><label>Toernooivorm</label><input value="Directe knock-out (maximaal 32 spelers)" disabled></div></div>'+
+ '<div class="btnbar">'+button('Instellingen opslaan','saveGeneralSettings()','')+'</div>'+
+ '</section>';
+}
+async function saveGeneralSettings(){
+ if(!isAdmin)return;
+ const title=($('ohcEventTitle')?.value||'').trim();
+ if(!title||title.length>100){notify('Voer een toernooinaam van maximaal 100 tekens in.');return}
+ const raw=$('ohcRegistrationClose')?.value||'';
+ const deadline=raw?new Date(raw).toISOString():null;
+ if(raw&&Number.isNaN(Date.parse(raw))){notify('Vul een geldige inschrijfdeadline in.');return}
+ const newStatus=$('eventStatus')?.value;
+ const old=structuredClone(data.settings);
+ data.settings.title=title;
+ data.settings.registrationClosesAt=deadline;
+ if(newStatus)data.settings.status=newStatus;
+ const success=await save();
+ render();
+ if(success)notify('Algemene toernooi-instellingen opgeslagen.');
+ else data.settings=old;
+}
 function adminConfigPage(){
- return splitPanelAt(adminSettingsView(),'<hr class="divider"><h3>Export, back-up en herstellen</h3>',true,'');
+ return generalSettingsPanel()+roundWeekEditor();
 }
 function adminFilesPage(){
- return splitPanelAt(adminSettingsView(),'<hr class="divider"><h3>Export, back-up en herstellen</h3>',false,'Export, back-up en herstellen');
+ const hasData=data.players.length>0||data.draw.length>0||Object.keys(data.results).length>0||Object.keys(data.schedule).length>0;
+ return '<section class="panel"><h2>Export en back-up</h2><p class="panel-intro">Exporteer de gegevens of maak een back-up voordat je grote wijzigingen uitvoert.</p>'+
+ '<div class="btnbar">'+button('Back-up (JSON)','exportJson()','alt',true)+
+ button('Speelschema (CSV)','exportMatchesCsv()','ghost',true)+
+ button('Toernooiboom (PNG)','exportBracketPng()','ghost',true)+
+ button('Afdrukken / PDF','window.print()','ghost',true)+'</div>'+
+ '<div class="field" style="max-width:440px;margin-top:18px"><label for="backupfile">Back-up terugzetten</label><input id="backupfile" type="file" accept=".json,application/json" onchange="importBackup(event)"></div></section>'+
+ '<section class="panel"><h2>Alleen de loting wissen</h2><p class="panel-intro">Wis de loting, uitslagen en speeldata, maar behoud alle deelnemers, verhinderingen en ingestelde speelperiodes.</p>'+
+ '<div class="btnbar">'+button('Alleen loting en resultaten wissen','resetAll()','ghost',true)+'</div></section>'+
+ '<section class="panel danger-zone"><div class="sectiontitle"><h2>Toernooi beëindigen</h2><span class="pill warn">Onomkeerbare acties</span></div>'+
+ '<div class="management-grid">'+
+ '<div class="danger-action"><h3>Volledig resetten</h3><p>Verwijder alle data van het actieve toernooi, inclusief deelnemers, loting, resultaten, planning, speelperiodes en instellingen. Er wordt <strong>geen archief</strong> gemaakt.</p>'+
+ '<div class="btnbar">'+button('Toernooi volledig resetten','resetCurrentTournament()','danger')+'</div></div>'+
+ '<div class="danger-action"><h3>Archiveren en opnieuw starten</h3><p>Bewaar eerst de volledige gegevens in een alleen-lezen archief en start daarna met een volledig lege nieuwe competitie.</p>'+
+ '<div class="field"><label for="archiveTitle">Naam in het archief</label><input type="text" id="archiveTitle" maxlength="100" placeholder="Bijv. OHC 2026–2027" value="'+esc(data.settings.title||'')+'"></div>'+
+ '<div class="btnbar"><button type="button" class="btn" onclick="archiveAndStartNew()" '+(!hasData?'disabled title="Dit toernooi is nog leeg"':'')+'>Archiveren en nieuw toernooi starten</button></div>'+
+ '</div></div></section>';
+}
+async function refreshCurrentAfterLifecycle(){
+ mutationToken++;
+ editPlayer=null;
+ await fetchPublic();
+ await fetchPrivate();
+ archiveRecord=null;
+ archivesCache=null;
+ tab='overzicht';
+ location.hash='overzicht';
+ render();
+}
+async function resetCurrentTournament(){
+ if(!isAdmin)return;
+ if(prompt('Let op: alle huidige OHC-gegevens inclusief spelers verdwijnen definitief. Er wordt GEEN archief gemaakt.\n\nTyp RESET om te bevestigen:')!=='RESET')return;
+ if(!confirm('Definitief het volledige actieve toernooi resetten? Deze actie kan niet ongedaan worden gemaakt.'))return;
+ await saveQueue.catch(()=>false);
+ const response=await sb.rpc('ohc_reset_current',{p_event_id:eventId,p_expected_version:currentVersion});
+ if(response.error){notify('Reset mislukt: '+response.error.message);await fetchPublic();await fetchPrivate();render();return}
+ currentVersion=Number(response.data);
+ try{await refreshCurrentAfterLifecycle();notify('Het actieve toernooi is volledig leeggemaakt.')}catch(e){notify('Reset is opgeslagen, maar het verversen mislukte: '+e.message)}
+}
+async function archiveAndStartNew(){
+ if(!isAdmin)return;
+ const title=($('archiveTitle')?.value||data.settings.title||'OPTSCH HEADS-UP CUP').trim();
+ if(!title||title.length>100){notify('Voer een archiefnaam van maximaal 100 tekens in.');return}
+ if(!confirm('Het huidige toernooi archiveren als "'+title+'" en een nieuwe, volledig lege competitie starten?\n\nSpelers, uitslagen, loting en speeldata van dit toernooi blijven alleen in het archief bestaan.'))return;
+ await saveQueue.catch(()=>false);
+ const response=await sb.rpc('ohc_archive_and_start_new',{
+  p_event_id:eventId,p_expected_version:currentVersion,p_archive_title:title
+ });
+ if(response.error){notify('Archiveren mislukt: '+response.error.message);await fetchPublic();await fetchPrivate();render();return}
+ currentVersion=Number(response.data?.version||currentVersion+1);
+ try{await refreshCurrentAfterLifecycle();notify('Toernooi gearchiveerd. De nieuwe competitie is helemaal leeg.')}catch(e){notify('Archiveren is opgeslagen, maar het verversen mislukte: '+e.message)}
 }
 function firstUnplayedRound(){
  const r=bracket();
