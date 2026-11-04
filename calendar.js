@@ -154,7 +154,7 @@ function ohcCalendarView(){
    '</button>';
  }).join('');
  const selected=perDate.get(ohcCalendarSelectedDate)||[];
- const action='<div class="btnbar ohc-calendar-sharebar">'+
+ const action=archiveReadonly?'':'<div class="btnbar ohc-calendar-sharebar">'+
   (monthEntries.length?button('📸 Deel deze maand',"openCalendarShare('month')",'alt'):'')+
   (entries.length?button('📤 Deel volledige speelkalender',"openCalendarShare('all')",'ghost'):'')+
   '</div>';
