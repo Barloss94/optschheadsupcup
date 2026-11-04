@@ -35,6 +35,8 @@ jobs:
           Path('/tmp/ohc-inline.js').write_text(scripts[0], encoding='utf-8')
           PY
           node --check /tmp/ohc-inline.js
+      - name: Test eerste-ronde-lotingswissels
+        run: node --test tests/lottery-swaps.test.cjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload static site
