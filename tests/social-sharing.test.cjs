@@ -131,7 +131,7 @@ test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op éé
   "width:canvas.width,height:canvas.height,geometry:g,filename:shareFileLabel(info)}");
  assert.equal(result.rounds,5);
  assert.equal(result.openings,16);
- assert.ok(result.width>=3400&&result.width<=4300);
+ assert.ok(result.width>=2900&&result.width<=3300);
  assert.ok(result.height>=1450&&result.height<=1650);
  assert.match(result.filename,/toernooiboom\.png$/);
  for(let n=1;n<=16;n++)
@@ -146,8 +146,8 @@ test('Alleen in de PNG zijn de duelkaarten compacter; de website behoudt zijn af
  seed(32);
  const result=run("const g=bracketPosterGeometry(bracket()),web=bracketMirrorLayout(bracket());"+
   "return {pngW:g.cardW,pngH:g.cardH,webH:web.cardHeight,columns:g.layout.columns};");
- assert.equal(result.pngW,312);
- assert.equal(result.pngH,108);
+ assert.equal(result.pngW,276);
+ assert.equal(result.pngH,101);
  assert.equal(result.webH,156);
  assert.equal(result.columns,9);
  const page=run("return bracketView()");
@@ -166,6 +166,31 @@ test('De datum staat onder de twee namen, links uitgelijnd in de compacte PNG-ka
  assert.ok(first.y<second.y&&second.y<date.y,'Datum moet onder beide spelers staan');
  assert.equal(date.x,first.x,'Datum moet links gelijkstaan met de spelersnamen');
  assert.ok(date.y-second.y>=20,'Datum moet voldoende leesruimte krijgen');
+});
+
+test('Compacte PNG heeft minder breedte nodig zonder rondekolommen te schrappen',()=>{
+ seed(32);
+ const result=run("const rounds=bracket(),g=bracketPosterGeometry(rounds);"+
+  "return {columns:g.layout.columns,cardWidth:g.cardW,cardHeight:g.cardH,"+
+  "gap:g.colGap,fullWidth:g.width,firstCount:rounds[0].length};");
+ assert.equal(result.columns,9);
+ assert.equal(result.cardWidth,276);
+ assert.equal(result.cardHeight,101);
+ assert.equal(result.firstCount,16);
+ // Voorheen 3422 px breed; de afbeelding wordt smaller zonder minder duels.
+ assert.ok(result.fullWidth<3150);
+});
+test('Elke kaart toont de speeldatum of Datum volgt onder de spelers',()=>{
+ seed(4);
+ run("data.schedule['0:0']={date:'2026-12-04',time:'20:00'};ohcShareType='boom';"+
+  "buildOhcSharePoster(shareActiveInfo(),null)");
+ assert.ok(drawn.includes('DATUM VOLGT'),'Open duels moeten datum volgt tonen');
+ assert.ok(drawn.some(x=>x.includes('20:00 uur')),'Een geplande wedstrijd toont zijn tijd');
+ const date=drawCalls.find(c=>c.text.includes('20:00 uur'));
+ const names=drawCalls.filter(c=>c.text.includes('Deelnemer 1')||c.text.includes('Deelnemer 2'));
+ assert.ok(date&&names.length>=2);
+ assert.ok(names.slice(0,2).every(c=>c.y<date.y));
+ assert.ok(names.some(c=>c.x===date.x),'Datum blijft links onder de namen staan');
 });
 
 test('De bracketconnectoren koppelen werkelijk op basis van vaste matchroutes',()=>{
