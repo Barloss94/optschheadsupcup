@@ -26,8 +26,9 @@ h1,h2,h3{font-weight:800}
 .identity{gap:14px}
 .identity b{color:#ffe5a8;font-size:15px;font-weight:900;letter-spacing:.85px;text-shadow:0 0 17px #dfad473d}
 .identity span{color:#c8b8c6;letter-spacing:1.3px;font-size:10px}
-.mark.brand-emblem{height:66px;width:84px;min-width:84px;border:0;border-radius:0;transform:none;box-shadow:none;background:none}
-.brand-emblem,.hero-crest,.login-crest{
+.identity img.brand-emblem{display:block;height:66px;width:84px;min-width:84px;flex:0 0 84px;object-fit:contain;border:0;border-radius:0;transform:none;box-shadow:none;background:transparent;filter:drop-shadow(0 0 12px #e2a63840)}
+.identity .identity-copy{min-width:0}
+.hero-crest,.login-crest{
  background-image:url("./assets/ohc-logo.avif");background-size:contain;background-repeat:no-repeat;background-position:center;
  filter:drop-shadow(0 0 17px #e2a63840)
 }
@@ -129,7 +130,7 @@ h1,h2,h3{font-weight:800}
 @media(max-width:1000px){.hero{gap:8px;padding:38px}.hero-visual{min-width:180px}.hero h1{font-size:clamp(40px,5.5vw,64px)}}
 @media(max-width:690px){
  .topinner{padding:12px 0 9px;gap:8px}
- .mark.brand-emblem{width:66px;min-width:66px;height:57px}
+ .identity img.brand-emblem{width:66px;min-width:66px;flex-basis:66px;height:57px}
  .identity{gap:8px}.identity b{font-size:12px;letter-spacing:.3px}.identity span{font-size:9px;letter-spacing:.45px}
  .nav{margin-top:8px}
  .hero{flex-direction:column;text-align:center;min-height:0;padding:29px 19px 25px}
