@@ -114,7 +114,7 @@ test('Volledige kalender bevat alle datums, duels en tijden',()=>{
  assert.ok(drawn.some(x=>x.includes('dec 2026')));
  assert.ok(drawn.some(x=>x.includes('jan 2027')));
  assert.ok(drawn.includes('22:00'));
- assert.ok(drawn.some(x=>x.includes('FINALE'))||drawn.some(x=>x.includes('Ronde 2')));
+ assert.ok(drawn.some(x=>/finale/i.test(x))||drawn.some(x=>x.includes('Ronde 2')));
 });
 test('Op een toekomstige nieuwe editie zonder loting zijn er geen fictieve duels',()=>{
  seed();
