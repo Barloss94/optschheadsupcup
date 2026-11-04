@@ -343,27 +343,43 @@ function autoPlanMatches(showNotice=true){
   (conflicts.length?' '+conflicts.length+' vastgestelde datums hebben een conflict.':''));
  return result;
 }
+function registrationDeadlineConfigured(){
+ const deadline=data.settings?.registrationClosesAt;
+ return typeof deadline==='string'&&Number.isFinite(Date.parse(deadline));
+}
 function registrationDeadlineLabel(){
- const value=data.settings?.registrationClosesAt;
- if(!value)return 'Geen uiterste inschrijfdatum ingesteld';
- const dt=new Date(value);
- return Number.isNaN(dt.getTime())?'Nog niet ingesteld':
-  dt.toLocaleString('nl-NL',{timeZone:'Europe/Amsterdam',dateStyle:'long',timeStyle:'short'})+' uur';
+ if(!registrationDeadlineConfigured())return 'Nog niet ingesteld';
+ return new Date(data.settings.registrationClosesAt).toLocaleString('nl-NL',{
+  timeZone:'Europe/Amsterdam',dateStyle:'long',timeStyle:'short'
+ })+' uur';
 }
 function registrationClosed(){
- const deadline=data.settings?.registrationClosesAt;
- return !!deadline&&!Number.isNaN(Date.parse(deadline))&&Date.now()>=Date.parse(deadline);
+ if(!registrationDeadlineConfigured())return true;
+ if(data.draw.length)return true;
+ if(data.settings.status!=='Inschrijving open')return true;
+ return Date.now()>=Date.parse(data.settings.registrationClosesAt);
+}
+function registrationIsOpen(){
+ return registrationDeadlineConfigured()&&!registrationClosed();
+}
+function registrationDisplayStatus(){
+ if(!registrationDeadlineConfigured())return 'Inschrijfdeadline nog instellen';
+ return registrationClosed()?'Inschrijving gesloten':'Inschrijving open';
 }
 function effectiveStatus(){
  const status=data.settings?.status||'Inschrijving open';
- return status==='Inschrijving open'&&registrationClosed()?'Inschrijving gesloten':status;
+ return status==='Inschrijving open'?registrationDisplayStatus():status;
 }
 function registrationBanner(){
- const closed=registrationClosed(),hasDeadline=!!data.settings?.registrationClosesAt;
- return '<section class="panel"><div class="sectiontitle"><h2>Inschrijving</h2><span class="pill '+(closed?'warn':hasDeadline?'ok':'blue')+'">'+(closed?'GESLOTEN':hasDeadline?'OPEN':'DEADLINE VOLGT')+'</span></div>'+
- '<p class="smalltext">'+(closed?'De inschrijftermijn is verstreken.':'Inschrijvingen worden verwerkt door de organisatie.')+'</p>'+
- '<p class="muted smalltext">'+(hasDeadline?'Uiterste inschrijfdatum: '+esc(registrationDeadlineLabel()):'De inschrijfdeadline is nog niet ingesteld.')+'</p></section>';
+ const ready=registrationDeadlineConfigured(),closed=registrationClosed();
+ return '<section class="panel"><div class="sectiontitle"><h2>Inschrijving</h2><span class="pill '+
+  (!ready?'warn':closed?'warn':'ok')+'">'+(!ready?'NOG INSTELLEN':closed?'GESLOTEN':'OPEN')+'</span></div>'+
+  '<p class="smalltext">'+(!ready?'De organisatie moet eerst een inschrijfdeadline vastleggen.':
+   closed?'Nieuwe handmatige aanmeldingen zijn gesloten.':'Inschrijvingen worden door de organisatie verwerkt.')+'</p>'+
+  '<p class="muted smalltext">Uiterste inschrijfdatum: '+esc(registrationDeadlineLabel())+'</p>'+
+  (!ready&&isAdmin?'<div class="btnbar">'+button('Deadline instellen',"setTab('beheer-instellingen')",'alt')+'</div>':'')+'</section>';
 }
+
 function load(){return structuredClone(DEFAULT)}
 let data=load();let tab=location.hash.slice(1)||'overzicht';let editPlayer=null;
 const $=(id)=>document.getElementById(id);
@@ -565,7 +581,7 @@ function overview(){
   '<section class="panel"><div class="dashboard-head"><h2>Waar wil je naartoe?</h2><span class="tag">KIES EEN ONDERDEEL</span></div>'+tileGrid(links,'launch-grid')+'</section>'+
   progress+championBlock;
 }
-function playersView(){const sorted=[...data.players].sort((a,b)=>a.name.localeCompare(b.name,'nl'));return `<div class="panel">${heading('Deelnemers',`<span class="pill blue">${sorted.length} inschrijvingen</span>`)}<p class="smalltext" style="color:var(--orange)">Inschrijfdeadline: ${esc(registrationDeadlineLabel())}. ${registrationClosed()?'De inschrijving is nu gesloten.':'De inschrijving is geopend.'}</p><p class="smalltext muted">Na inloggen worden de volledige voor- en achternamen getoond. Persoonlijke beschikbaarheid blijft uitsluitend zichtbaar voor beheerders.</p>${sorted.length?`<div class="field player-search"><label for="playerSearch">Zoek een deelnemer</label><input id="playerSearch" type="search" placeholder="Zoek op naam…" oninput="filterParticipants(this.value)" autocomplete="off"></div><p id="noPlayerMatches" class="muted smalltext hidden">Geen deelnemers gevonden met deze naam.</p><div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Speler</th><th>Status</th></tr></thead><tbody>${sorted.map(p=>`<tr data-player-name="${esc(p.name.toLocaleLowerCase('nl'))}"><td class="muted">${participantNumber(p.id)}</td><td><div class="pair"><div class="circle" style="width:33px;height:33px">${esc(p.name[0]?.toUpperCase()||'?')}</div><strong>${esc(name(p.id))}</strong></div></td><td>${badge('Ingeschreven')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><div class="bigicon">♠</div><strong>Nog geen inschrijvingen</strong></div>`}</div>`}
+function playersView(){const sorted=[...data.players].sort((a,b)=>a.name.localeCompare(b.name,'nl'));return `<div class="panel">${heading('Deelnemers',`<span class="pill blue">${sorted.length} inschrijvingen</span>`)}<p class="smalltext" style="color:var(--orange)">Inschrijfdeadline: ${esc(registrationDeadlineLabel())}. ${!registrationDeadlineConfigured()?'De inschrijving is nog niet geopend.':registrationClosed()?'De inschrijving is gesloten.':'De inschrijving is geopend.'}</p><p class="smalltext muted">Na inloggen worden de volledige voor- en achternamen getoond. Persoonlijke beschikbaarheid blijft uitsluitend zichtbaar voor beheerders.</p>${sorted.length?`<div class="field player-search"><label for="playerSearch">Zoek een deelnemer</label><input id="playerSearch" type="search" placeholder="Zoek op naam…" oninput="filterParticipants(this.value)" autocomplete="off"></div><p id="noPlayerMatches" class="muted smalltext hidden">Geen deelnemers gevonden met deze naam.</p><div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Speler</th><th>Status</th></tr></thead><tbody>${sorted.map(p=>`<tr data-player-name="${esc(p.name.toLocaleLowerCase('nl'))}"><td class="muted">${participantNumber(p.id)}</td><td><div class="pair"><div class="circle" style="width:33px;height:33px">${esc(p.name[0]?.toUpperCase()||'?')}</div><strong>${esc(name(p.id))}</strong></div></td><td>${badge('Ingeschreven')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><div class="bigicon">♠</div><strong>Nog geen inschrijvingen</strong></div>`}</div>`}
 function matchStatus(m){if(m.resolved&&m.winner)return m.isBye?'Vrijloting':'Gespeeld';if(data.schedule[m.id]?.date)return data.schedule[m.id].provisional?'Voorstel':'Gepland';return m.a&&m.b?'Nog te plannen':'Wacht op tegenstander'}
 function scheduleView(){
  const b=bracket();
@@ -663,7 +679,7 @@ function drawBracketConnections(){
  svg.setAttribute('viewBox','0 0 '+root.scrollWidth+' '+root.scrollHeight);
  svg.innerHTML=paths.join('');
 }
-function adminPlayerView(){return `<section class="panel">${heading('Deelnemers beheren',`<span class="pill blue">${data.players.length} spelers</span>`)}<div class="notice">Deelnemersnamen zijn zichtbaar voor alle ingelogde gebruikers. Beschikbaarheid en verhinderingen zijn uitsluitend voor beheerders zichtbaar.</div><div class="notice ${registrationClosed()?'orange':''}">Deadline: ${esc(registrationDeadlineLabel())}. ${registrationClosed()?'De inschrijftermijn is verstreken.':'Deelnemers kunnen door de beheerder worden toegevoegd.'} Bestaande gegevens blijven corrigeerbaar.</div>${data.draw.length?'<div class="notice orange">Het deelnemersveld is geloot. Namen en beschikbaarheid kunnen worden aangepast; spelers toevoegen of verwijderen is geblokkeerd totdat de loting opnieuw wordt ingesteld.</div>':''}<div class="tablewrap"><table class="table"><thead><tr><th>Naam</th><th>Niet beschikbaar</th><th></th></tr></thead><tbody>${data.players.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td class="muted">${p.blocked.length?p.blocked.map(d=>DAYS.find(x=>x.id===d)?.name||'').join(', '):'Geen verhinderingen opgegeven'}</td><td><div class="btnbar">${button('Bewerk',`selectEdit('${p.id}')`,'alt',true)}${!data.draw.length?button('Verwijder',`removePlayer('${p.id}')`,'danger',true):''}</div></td></tr>`).join('')||'<tr><td colspan="3">Nog geen deelnemers</td></tr>'}</tbody></table></div><hr class="divider"><h3 id="personformtitle">${editPlayer?'Deelnemer bewerken':'Deelnemer toevoegen'}</h3><div class="field"><label for="playerName">Volledige naam (alleen beheer)</label><input id="playerName" type="text" placeholder="Voornaam Achternaam" value="${esc(editPlayer?player(editPlayer)?.name||'':'')}" maxlength="100" ${(data.draw.length||registrationClosed())&&!editPlayer?'disabled':''}></div><div class="field"><label>Op welke dagen is deze speler verhinderd?</label><div class="checkdays">${DAYS.map(d=>`<label class="day"><input type="checkbox" class="blockday" value="${d.id}" ${editPlayer&&player(editPlayer)?.blocked.includes(d.id)?'checked':''}> ${d.name}</label>`).join('')}</div></div><div class="btnbar">${(editPlayer||!registrationClosed())?button(editPlayer?'Wijzigingen opslaan':'Deelnemer toevoegen','savePlayer()',''):''}${editPlayer?button('Annuleren','selectEdit(null)','ghost'):''}</div><hr class="divider"><h3>Inschrijvingen verwerken</h3><div class="notice">Alleen voor de beheerder. Importeer de CSV met ontvangen inschrijvingen. Na de loting kunnen alleen bestaande deelnemers worden bijgewerkt.</div><p class="smalltext muted">Ondersteunt het Google Forms CSV-bestand met kolommen <span class="kbd">Naam</span> en <span class="kbd">Welke weekdagen kan jij echt niet spelen?</span>. Bestaande spelers kunnen worden bijgewerkt. De inschrijfdeadline wordt per toernooi ingesteld via Beheer → Instellingen. Na de officiële loting worden nieuwe deelnemersregels overgeslagen.</p><input type="file" id="csvfile" accept=".csv,text/csv" aria-label="Inschrijvingen CSV" onchange="importCsv(event)"></section>`}
+function adminPlayerView(){return `<section class="panel">${heading('Deelnemers beheren',`<span class="pill blue">${data.players.length} spelers</span>`)}<div class="notice">Deelnemersnamen zijn zichtbaar voor alle ingelogde gebruikers. Beschikbaarheid en verhinderingen zijn uitsluitend voor beheerders zichtbaar.</div><div class="notice ${registrationClosed()?'orange':''}">Inschrijfdeadline: ${esc(registrationDeadlineLabel())}. ${!registrationDeadlineConfigured()?'Stel eerst de deadline in via Instellingen.':registrationClosed()?'De inschrijving is gesloten.':'Deelnemers kunnen door de beheerder worden toegevoegd.'} Bestaande gegevens blijven corrigeerbaar.</div>${data.draw.length?'<div class="notice orange">Het deelnemersveld is geloot. Namen en beschikbaarheid kunnen worden aangepast; spelers toevoegen of verwijderen is geblokkeerd totdat de loting opnieuw wordt ingesteld.</div>':''}<div class="tablewrap"><table class="table"><thead><tr><th>Naam</th><th>Niet beschikbaar</th><th></th></tr></thead><tbody>${data.players.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td class="muted">${p.blocked.length?p.blocked.map(d=>DAYS.find(x=>x.id===d)?.name||'').join(', '):'Geen verhinderingen opgegeven'}</td><td><div class="btnbar">${button('Bewerk',`selectEdit('${p.id}')`,'alt',true)}${!data.draw.length?button('Verwijder',`removePlayer('${p.id}')`,'danger',true):''}</div></td></tr>`).join('')||'<tr><td colspan="3">Nog geen deelnemers</td></tr>'}</tbody></table></div><hr class="divider"><h3 id="personformtitle">${editPlayer?'Deelnemer bewerken':'Deelnemer toevoegen'}</h3><div class="field"><label for="playerName">Volledige naam (alleen beheer)</label><input id="playerName" type="text" placeholder="Voornaam Achternaam" value="${esc(editPlayer?player(editPlayer)?.name||'':'')}" maxlength="100" ${(data.draw.length||registrationClosed())&&!editPlayer?'disabled':''}></div><div class="field"><label>Op welke dagen is deze speler verhinderd?</label><div class="checkdays">${DAYS.map(d=>`<label class="day"><input type="checkbox" class="blockday" value="${d.id}" ${editPlayer&&player(editPlayer)?.blocked.includes(d.id)?'checked':''}> ${d.name}</label>`).join('')}</div></div><div class="btnbar">${(editPlayer||!registrationClosed())?button(editPlayer?'Wijzigingen opslaan':'Deelnemer toevoegen','savePlayer()',''):''}${editPlayer?button('Annuleren','selectEdit(null)','ghost'):''}</div><hr class="divider"><h3>Inschrijvingen verwerken</h3><div class="notice">Alleen voor de beheerder. Importeer de CSV met ontvangen inschrijvingen. Na de loting kunnen alleen bestaande deelnemers worden bijgewerkt.</div><p class="smalltext muted">Ondersteunt het Google Forms CSV-bestand met kolommen <span class="kbd">Naam</span> en <span class="kbd">Welke weekdagen kan jij echt niet spelen?</span>. Bestaande spelers kunnen worden bijgewerkt. De inschrijfdeadline wordt per toernooi ingesteld via Beheer → Instellingen. Na de officiële loting worden nieuwe deelnemersregels overgeslagen.</p><input type="file" id="csvfile" accept=".csv,text/csv" aria-label="Inschrijvingen CSV" onchange="importCsv(event)"></section>`}
 function drawAvailabilityNotice(){
  if(data.draw.length)
   return '<div class="notice">De bracket ligt vast. De loting heeft mogelijke ontmoetingen zonder gezamenlijke speeldag zo laat mogelijk geplaatst. Komen zulke spelers toch tegen elkaar uit, dan spreken zij zelf een dag af binnen de rondeperiode.</div>';
@@ -1468,7 +1484,8 @@ function savePlayer(){
   }
   p.name=n;p.blocked=blocked;
  }else{
-  if(registrationClosed()){notify('De inschrijfdeadline is verstreken.');return}
+  if(!registrationDeadlineConfigured()){notify('Stel eerst een inschrijfdeadline in via Beheer → Instellingen.');return}
+  if(registrationClosed()){notify('De inschrijving is gesloten.');return}
   if(data.draw.length){notify('Na de loting kunnen geen nieuwe spelers worden toegevoegd.');return}
   if(data.players.length>=MAX_PLAYERS){notify('De OHC heeft maximaal 32 plaatsen.');return}
   data.players.push({id:safeId(),name:n,blocked});
@@ -1675,6 +1692,7 @@ function compatibleDraw(players=data.players){
 }
 function createDraw(){
  if(!isAdmin){notify('Alleen beheerders kunnen loten.');return}
+ if(!registrationDeadlineConfigured()){notify('Stel eerst de inschrijfdeadline van dit toernooi in via Beheer → Instellingen.');return}
  if(getRoundWindows().length!==5){notify('Stel eerst alle vijf speelperiodes in via Beheer → Instellingen.');return}
  if(data.draw.length){notify('De bracket is al geloot: alle routes staan vast. Voor een volledige herstart moet de beheerder eerst de loting wissen.');return}
  const result=compatibleDraw(data.players);
