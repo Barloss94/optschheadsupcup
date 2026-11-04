@@ -210,3 +210,16 @@
 .share-poster-preview canvas{display:block;width:100%;height:auto;aspect-ratio:auto}
 #ohcShareStatus{margin-top:16px;text-align:center;line-height:1.6}
 @media(max-width:680px){.share-controls{grid-template-columns:1fr}.share-actions{display:grid;grid-template-columns:1fr}.share-actions .btn{width:100%}.share-poster-preview{max-width:100%}}
+
+/* Voorbereiding van nieuwe OHC-edities en inschrijfdeadlines */
+.tournament-setup{border:1px solid #99794a;background:linear-gradient(118deg,rgba(38,33,36,.98),rgba(23,26,25,.98));box-shadow:inset 0 1px 0 #f1c77730}
+.tournament-setup .sectiontitle{flex-wrap:wrap}
+.tournament-setup .sectiontitle h2{color:#ffe4af}
+.setup-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.setup-step{display:flex;align-items:flex-start;gap:12px;border:1px solid #6d5762;border-radius:12px;padding:14px;background:rgba(25,21,30,.75)}
+.setup-step-icon{flex:0 0 32px;display:grid;place-items:center;height:32px;width:32px;color:#ffe7b8;font-weight:900;border-radius:9px;border:1px solid #a28250;background:#443523}
+.setup-step strong{font-size:13px;color:#ffe0b0}
+.setup-step p{font-size:12px;line-height:1.55;color:#c8bdc9;margin:5px 0 0}
+#registrationSettings .field input[type=datetime-local]{width:100%;min-width:0;min-height:45px;color:#ffefcf}
+#registrationSettings .field .hint{font-size:12px;line-height:1.6;margin:8px 0 0}
+@media(max-width:680px){.setup-steps{grid-template-columns:1fr}.tournament-setup .btnbar .btn{width:100%}}
