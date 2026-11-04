@@ -16,7 +16,7 @@ let drawn=[];
 const makeGradient=()=>({addColorStop(){}});
 const makeContext=()=>({
  fillStyle:'',strokeStyle:'',lineWidth:1,font:'',textAlign:'',textBaseline:'',
- fillRect(){},beginPath(){},moveTo(){},arcTo(){},closePath(){},fill(){},stroke(){},
+ fillRect(){},beginPath(){},moveTo(){},lineTo(){},arcTo(){},closePath(){},fill(){},stroke(){},
  createRadialGradient:makeGradient,createLinearGradient:makeGradient,
  drawImage(){},scale(){},save(){},restore(){},
  measureText(s){return {width:String(s).length*13}},
@@ -106,4 +106,63 @@ test('Zonder loting kan geen rondeposter worden opgebouwd',()=>{
  seed(0);
  const result=run("ohcShareType='loting';return shareActiveInfo();");
  assert.equal(result,null);
+});
+
+test('De volledige toernooiboom staat als afzonderlijke deeloptie op de website',()=>{
+ seed();
+ const markup=run("ohcShareType='boom';return shareView()");
+ assert.match(markup,/Volledige toernooiboom/);
+ assert.match(markup,/LIGGEND/);
+ assert.match(markup,/bracket-poster-preview/);
+ assert.match(markup,/Download als PNG/);
+ assert.match(markup,/Deel afbeelding/);
+ assert.doesNotMatch(markup,/id="ohcShareRound"/);
+ assert.match(html,/openShare\('boom'\)/);
+ assert.match(html,/function exportBracketPng\(\)\{if\(!authUser\|\|archiveReadonly\)return;openShare\('boom'\)\}/);
+});
+test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op één PNG',()=>{
+ seed(32);
+ const result=run("ohcShareType='boom';const info=shareActiveInfo();"+
+  "const canvas=buildOhcSharePoster(info,null);const g=bracketPosterGeometry(info.rounds);"+
+  "return {rounds:info.rounds.length,openings:info.rounds[0].length,"+
+  "width:canvas.width,height:canvas.height,geometry:g,filename:shareFileLabel(info)}");
+ assert.equal(result.rounds,5);
+ assert.equal(result.openings,16);
+ assert.ok(result.width>=2400&&result.width<=3200);
+ assert.ok(result.height>=1900);
+ assert.match(result.filename,/toernooiboom\.png$/);
+ for(let n=1;n<=16;n++)
+  assert.ok(drawn.includes('DUEL '+n),'Duel '+n+' ontbreekt in de export');
+ assert.ok(drawn.some(t=>t.includes('Deelnemer 1 Achternaam')));
+ assert.ok(drawn.some(t=>t.includes('Deelnemer 32 Achternaam')));
+ assert.ok(drawn.includes('TOERNOOIBOOM')||drawn.includes('VOLLEDIGE TOERNOOIBOOM'));
+ assert.ok(drawn.includes('BRONSFINALE'),'Bronsfinale ontbreekt');
+ assert.ok(drawn.includes('FINALE'),'Finale ontbreekt');
+});
+test('De bracketconnectoren koppelen werkelijk op basis van vaste matchroutes',()=>{
+ seed(32);
+ const boxes=run("const rounds=bracket(),g=bracketPosterGeometry(rounds);"+
+  "return {semis:g.centers[3],champ:g.centers[4][0],bronze:g.centers[4][1],"+
+  "first:g.centers[0],c0:g.centers[1][0]};");
+ assert.ok(boxes.first.length===16);
+ assert.ok(boxes.semis.length===2);
+ assert.ok(Math.abs(boxes.champ-(boxes.semis[0]+boxes.semis[1])/2)<.01);
+ assert.ok(boxes.bronze>boxes.champ);
+ assert.ok(Math.abs(boxes.c0-(boxes.first[0]+boxes.first[1])/2)<.01);
+});
+test('Zonder loting is de complete bracketexport uitgeschakeld',()=>{
+ seed(0);
+ const result=run("ohcShareType='boom';return {info:shareActiveInfo(),markup:shareView()};");
+ assert.equal(result.info,null);
+ assert.match(result.markup,/disabled/);
+ assert.match(result.markup,/Er zijn nog geen gegevens/);
+});
+test('Deelbare boom behoudt de zichtbare chronologische duelnummering',()=>{
+ seed(4);
+ run("data.schedule={'0:0':{date:'2026-12-04',time:'20:00'},"+
+  "'0:1':{date:'2026-12-01',time:'20:00'}};ohcShareType='boom';"+
+  "buildOhcSharePoster(shareActiveInfo(),null)");
+ assert.ok(drawn.includes('DUEL 1'));
+ assert.ok(drawn.includes('DUEL 2'));
+ assert.ok(drawn.some(t=>t==='Deelnemer 1 Achternaam'));
 });
