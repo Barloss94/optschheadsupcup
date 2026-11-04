@@ -25,7 +25,7 @@ function seed(count=4){
    blocked:[0,1,2,3,4,5,6].filter(n=>n!==day)
  }));
  context.testRoster=roster;
- run("isAdmin=true;data=structuredClone(DEFAULT);data.players=structuredClone(testRoster);data.draw=['0','1','2','3'];");
+ run("isAdmin=true;data=structuredClone(DEFAULT);data.players=structuredClone(testRoster);data.draw=['0','1','2','3'];data.settings.roundWindows=structuredClone(LEGACY_ROUND_WINDOWS);");
 }
 
 test('Nieuwe onverenigbare duels worden gewaarschuwd vóór opslaan',()=>{
