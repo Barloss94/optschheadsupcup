@@ -57,20 +57,19 @@ async function initialize(){
  try{
    if(!window.supabase?.createClient)throw new Error('De Supabase-client is niet geladen. Controleer de internetverbinding.');
    if(!sb)sb=window.supabase.createClient(PROJECT_URL,PUBLISHABLE_KEY);
-   await fetchPublic();
    const {data:sessionData,error:sessionError}=await sb.auth.getSession();
    if(sessionError)throw sessionError;
    authUser=sessionData.session?.user||null;
-   if(authUser)await fetchPrivate();
+   if(authUser){await fetchPublic();await fetchPrivate();}
    if(!window.ohcAuthListener){
      const {data:listener}=sb.auth.onAuthStateChange((event,session)=>{
        authUser=session?.user||null;
-       if(event==='SIGNED_OUT'){isAdmin=false;data=structuredClone(publicState);render()}
-       else if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')setTimeout(async()=>{await fetchPrivate();render()},0);
+       if(event==='SIGNED_OUT'){isAdmin=false;eventId=null;publicState=null;data=structuredClone(DEFAULT);if(window.ohcRealtime){sb.removeChannel(window.ohcRealtime);window.ohcRealtime=null}tab='overzicht';render()}
+       else if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')setTimeout(async()=>{try{await fetchPublic();await fetchPrivate();loadError=null;render()}catch(e){loadError=String(e?.message||e);render()}},0);
      });
      window.ohcAuthListener=listener;
    }
-   if(!window.ohcRealtime){
+   if(authUser&&!window.ohcRealtime){
      window.ohcRealtime=sb.channel('ohc-public-updates')
        .on('postgres_changes',{event:'UPDATE',schema:'public',table:'ohc_public_events'},
          async payload=>{
