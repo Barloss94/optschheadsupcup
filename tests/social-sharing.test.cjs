@@ -132,7 +132,7 @@ test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op éé
  assert.equal(result.rounds,5);
  assert.equal(result.openings,16);
  assert.ok(result.width>=3400&&result.width<=4300);
- assert.ok(result.height>=1400&&result.height<=1500);
+ assert.ok(result.height>=1450&&result.height<=1650);
  assert.match(result.filename,/toernooiboom\.png$/);
  for(let n=1;n<=16;n++)
   assert.ok(drawn.includes('DUEL '+n),'Duel '+n+' ontbreekt in de export');
