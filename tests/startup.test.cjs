@@ -79,3 +79,16 @@ test('Kleine goudgele labels gebruiken leesbare lettervormen zonder gloed',()=>{
  assert.match(html,/<div class="number status-number">\$\{esc\(effectiveStatus\(\)\)\}/);
  assert.doesNotMatch(html,/font-size:16px;margin-top:16px;color:var\(--orange\)/);
 });
+
+
+test('Op desktop staat het menu onder het OHC-logo en de titel in een aparte rij',()=>{
+ const brand=fs.readFileSync(path.join(root,'brand.css'),'utf8');
+ const header=html.match(/<header class="top">[\s\S]*?<\/header>/)?.[0];
+ assert.ok(header,'Websiteheader ontbreekt');
+ assert.ok(header.indexOf('class="identity"')<header.indexOf('id="nav"'));
+ assert.match(brand,/@media\(min-width:1001px\)\{/);
+ assert.match(brand,/\.topinner\{\s*flex-direction:column;\s*align-items:stretch;/);
+ assert.match(brand,/\.topinner \.nav\{\s*width:100%;\s*margin-top:9px;/);
+ assert.match(brand,/\.topinner \.nav\{[^}]*justify-content:center;/);
+ assert.match(brand,/@media\(max-width:690px\)/,'Mobiele CSS blijft afzonderlijk bestaan');
+});
