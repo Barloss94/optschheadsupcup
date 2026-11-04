@@ -37,7 +37,7 @@ jobs:
           node --check /tmp/ohc-inline.js
           node --check calendar.js
           node --check share.js
-      - name: Test eerste-ronde-lotingswissels
+      - name: Test toernooilogica, kalender en exports
         run: node --test tests/*.test.cjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
