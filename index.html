@@ -265,6 +265,74 @@ function fixtureAvailability(m,date,possible){
  return {supported,total,homeAvailable:atHome,awayAvailable:atAway,
   universal:total>0&&supported===total};
 }
+
+/* De finale en bronsfinale worden bij voorkeur op dezelfde speeldag of twee
+   aangrenzende dagen ingepland. Bevestigde afspraken blijven bindend. */
+function finalPairMatches(rounds=bracket()){
+ if(rounds.length<2)return null;
+ const matches=rounds[rounds.length-1]||[];
+ const main=matches.find(m=>!m.isBronze&&!m.isBye);
+ const bronze=matches.find(m=>m.isBronze&&!m.isBye);
+ return main&&bronze?[main,bronze]:null;
+}
+function fixedMatchDate(m,old){
+ const saved=old[m.id];
+ return saved?.date&&(saved.provisional===false||(m.resolved&&!!m.winner))?
+  saved.date:null;
+}
+function pairedFinalDates(rounds,old,planned,potentialMemo){
+ const finals=finalPairMatches(rounds);
+ if(!finals)return null;
+ const dates=roundDays(rounds.length-1);
+ if(!dates.length)return null;
+ const candidates=finals.map(m=>{
+  const existing=old[m.id],locked=fixedMatchDate(m,old);
+  const possible=possibleFixturePlayers(m,rounds,potentialMemo);
+  if(locked)return [{date:locked,...fixtureAvailability(m,locked,possible)}];
+  const eligible=dates.filter(date=>possibleDate(m,date,planned,existing))
+   .map(date=>({date,...fixtureAvailability(m,date,possible)}));
+  const full=eligible.filter(x=>x.universal);
+  const partial=eligible.filter(x=>x.supported>0);
+  const home=eligible.filter(x=>x.homeAvailable>0);
+  return full.length?full:partial.length?partial:home;
+ });
+ if(candidates.some(list=>!list.length))return null;
+ const [main,bronze]=finals;
+ const oldMain=old[main.id]?.date||'',oldBronze=old[bronze.id]?.date||'';
+ const choices=[];
+ for(const a of candidates[0])for(const b of candidates[1]){
+  if(a.date===b.date&&[main.a,main.b].filter(Boolean)
+   .some(id=>id===bronze.a||id===bronze.b))continue;
+  const gap=Math.abs(dateDifference(a.date,b.date));
+  const movement=(oldMain?Math.abs(dateDifference(a.date,oldMain)):0)+
+   (oldBronze?Math.abs(dateDifference(b.date,oldBronze)):0);
+  const last=a.date>b.date?a.date:b.date;
+  choices.push({main:a.date,bronze:b.date,gap,movement,last,
+   support:a.supported+b.supported});
+ }
+ if(!choices.length)return null;
+ choices.sort((a,b)=>a.gap-b.gap||a.movement-b.movement||
+  b.support-a.support||b.last.localeCompare(a.last));
+ const best=choices[0];
+ return {[main.id]:best.main,[bronze.id]:best.bronze};
+}
+function finalDaysNotice(){
+ const pair=finalPairMatches();
+ if(!pair)return '';
+ const [main,bronze]=pair;
+ const finale=data.schedule[main.id],third=data.schedule[bronze.id];
+ if(!finale?.date||!third?.date)
+  return '<div class="notice"><strong>Finaledagen:</strong> de finale en bronsfinale worden bij voorkeur op één dag of twee opeenvolgende dagen gespeeld. Nog niet beide duels hebben een speeldatum.</div>';
+ const gap=Math.abs(dateDifference(finale.date,third.date));
+ if(gap<=1)
+  return '<div class="notice"><strong>Finaledagen:</strong> finale '+esc(prettyDate(finale.date))+
+   ' en bronsfinale '+esc(prettyDate(third.date))+'. '+
+   (gap?'Twee opeenvolgende dagen.':'Dezelfde speeldag.')+
+   (finale.provisional||third.provisional?' Eén of beide datums zijn nog voorlopig.':'')+'</div>';
+ return '<div class="notice orange"><strong>Finale en bronsfinale liggen '+gap+
+  ' dagen uit elkaar.</strong> De planning probeert ze op dezelfde of aangrenzende dagen te plaatsen, maar beschikbaarheid of bestaande vastgestelde afspraken laten dat nu niet toe. Bevestigde speeldagen worden niet automatisch verplaatst.</div>';
+}
+
 function autoPlanMatches(showNotice=true){
  const rounds=bracket();
  if(!rounds.length)return{total:0,assigned:0,missing:[],agreementNeeded:[],conditional:[],conflicts:[]};
@@ -277,6 +345,8 @@ function autoPlanMatches(showNotice=true){
   const prevRound=rounds[r-1]||[];
   const previousRoundReady=r===0||prevRound.filter(m=>!m.isBye).every(m=>
     next[m.id]?.date&&next[m.id].provisional===false);
+  const finalsPair=r===rounds.length-1?
+    pairedFinalDates(rounds,old,next,potentialMemo):null;
   for(let i=0;i<fixtures.length;i++){
    const m=fixtures[i],existing=old[m.id],possible=possibleFixturePlayers(m,rounds,potentialMemo);
    const desired=days[Math.min(days.length-1,Math.floor((i+0.5)*days.length/fixtures.length))];
@@ -308,7 +378,8 @@ function autoPlanMatches(showNotice=true){
    const maxHome=Math.max(...optimal.map(d=>d.homeAvailable));
    const best=optimal.filter(d=>d.homeAvailable===maxHome);
    const kept=best.find(d=>d.date===existing?.date);
-   const selected=kept||best.slice().sort((a,b)=>
+   const preferred=finalsPair?.[m.id];
+   const selected=(preferred?evaluated.find(d=>d.date===preferred):null)||kept||best.slice().sort((a,b)=>
      (loads.get(a.date)||0)-(loads.get(b.date)||0) ||
      Math.abs(dateDifference(a.date,desired))-Math.abs(dateDifference(b.date,desired)) ||
      a.date.localeCompare(b.date))[0];
@@ -617,6 +688,7 @@ function scheduleView(){
  if(!b.length)return calendar+'<div class="panel">'+heading('Wedstrijden')+'<div class="empty"><div class="bigicon">📅</div><strong>De loting is nog niet uitgevoerd</strong><p>De officiële speelperiodes liggen vast. Zodra de loting is uitgevoerd, worden alle duels automatisch over de beschikbare dagen verspreid.</p></div></div>';
  return '<div class="btnbar share-shortcut">'+button('📸 Deel speelschema',"openShare('schema')",'alt')+button('📅 Bekijk kalender',"setTab('kalender')",'ghost')+'</div>'+calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
  '<p class="muted smalltext">Alle duels van een ronde moeten gespeeld zijn voordat de volgende ronde begint. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur, mits alle eerdere speeldagen vaststaan. Bij een conflict staat er een voorlopig voorstel. Verplaatsen kan alleen in onderling overleg, binnen de rondeperiode.</p>'+
+ finalDaysNotice()+
  (archiveReadonly?'':'<div class="btnbar" style="margin-bottom:18px">'+button('Wedstrijden exporteren (CSV)','exportMatchesCsv()','ghost',true)+'</div>')+
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
  sortedRoundMatches(r,b).map(m=>{
@@ -720,6 +792,7 @@ function adminScheduleView(){
  const b=bracket();if(!b.length)return'';
  return '<section class="panel">'+heading('Wedstrijden plannen')+
  '<p class="smalltext muted">De website rekent voor toekomstige duels alle mogelijke winnaars per bracketvak door. Als een speeldag voor iedereen past, krijgt die voorrang; anders volgt een voorlopig voorstel dat na uitslagen wordt herzien. Zonder gezamenlijke beschikbaarheid is de op papier thuisspelende speler leidend. Standaard 20:00 uur; wijzigingen binnen de rondeperiode na onderling akkoord.</p>'+
+ finalDaysNotice()+
  '<div class="btnbar" style="margin-bottom:16px">'+button('Alle duels automatisch verdelen','runAutoPlanning()','',true)+'</div>'+
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
  sortedRoundMatches(r,b).map(m=>{
