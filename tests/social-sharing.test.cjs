@@ -22,7 +22,7 @@ const makeContext=()=>({
  fillRect(){},beginPath(){},moveTo(){},lineTo(){},arcTo(){},closePath(){},fill(){},stroke(){},
  createRadialGradient:makeGradient,createLinearGradient:makeGradient,
  drawImage(){},scale(){},save(){},restore(){},
- measureText(s){return {width:String(s).length*13}},
+ measureText(s){const size=Number((this.font.match(/(\d+)px/)||[])[1]||18);return {width:String(s).length*size*.52}},
  fillText(str,x,y){drawn.push(String(str));drawCalls.push({text:String(str),x,y})}
 });
 const context=vm.createContext({
@@ -146,8 +146,8 @@ test('Alleen in de PNG zijn de duelkaarten compacter; de website behoudt zijn af
  seed(32);
  const result=run("const g=bracketPosterGeometry(bracket()),web=bracketMirrorLayout(bracket());"+
   "return {pngW:g.cardW,pngH:g.cardH,webH:web.cardHeight,columns:g.layout.columns};");
- assert.equal(result.pngW,324);
- assert.equal(result.pngH,100);
+ assert.equal(result.pngW,312);
+ assert.equal(result.pngH,108);
  assert.equal(result.webH,156);
  assert.equal(result.columns,9);
  const page=run("return bracketView()");
@@ -158,14 +158,14 @@ test('De datum staat onder de twee namen, links uitgelijnd in de compacte PNG-ka
  seed(4);
  run("data.schedule['0:0']={date:'2026-12-04',time:'20:00'};ohcShareType='boom';"+
   "buildOhcSharePoster(shareActiveInfo(),null);");
- const dateText=run("return prettyDate('2026-12-04')");
+ const dateText=run("return prettyDate('2026-12-04')")+' · 20:00 uur';
  const first=drawCalls.find(c=>c.text==='Deelnemer 1 Achternaam');
  const second=drawCalls.find(c=>c.text==='Deelnemer 2 Achternaam');
  const date=drawCalls.find(c=>c.text===dateText);
  assert.ok(first&&second&&date,'Namen of datum ontbreken op de poster');
  assert.ok(first.y<second.y&&second.y<date.y,'Datum moet onder beide spelers staan');
  assert.equal(date.x,first.x,'Datum moet links gelijkstaan met de spelersnamen');
- assert.ok(date.y-second.y>=14,'Datum moet voldoende leesruimte krijgen');
+ assert.ok(date.y-second.y>=20,'Datum moet voldoende leesruimte krijgen');
 });
 
 test('De bracketconnectoren koppelen werkelijk op basis van vaste matchroutes',()=>{
