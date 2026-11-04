@@ -353,15 +353,15 @@
 .bracketscroll{scrollbar-gutter:stable}
 .bracket.mirrored-bracket{
  display:grid;
- grid-template-columns:repeat(var(--mirrored-columns),236px);
+ grid-template-columns:repeat(var(--mirrored-columns),var(--card-width,236px));
  gap:36px;
  align-items:start;
  width:max-content;
  min-width:max-content;
 }
 .mirrored-bracket .bracketcolumn{
- width:236px;
- min-width:236px;
+ width:var(--card-width,236px);
+ min-width:var(--card-width,236px);
  min-height:0;
  position:relative;
 }
@@ -415,6 +415,7 @@
  color:#fff0d9;
  text-shadow:none;
 }
+.mirrored-bracket .slot .name{overflow:visible;text-overflow:clip;white-space:nowrap}
 .mirrored-bracket .matchcard .slot{min-height:28px;padding:5px 8px}
 .mirrored-bracket .matchcard .matchdetails{font-size:10px;margin-top:1px}
 .mirrored-bracket .mirrored-column.center .bracketround{
