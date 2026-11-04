@@ -25,6 +25,7 @@
 <footer class="container footer"><div>© OPTSCH • Heads-Up Cup</div><span>Live gegevens • OPTSCH Ranking-database</span></footer>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.0"></script>
+<script src="./share.js?v=2"></script>
 <script>
 'use strict';
 const STORAGE='ohc.online.v1';
@@ -1433,7 +1434,7 @@ function render(){
   beheer:adminView,'beheer-deelnemers':adminPlayersPage,'beheer-import':adminImportPage,
   'beheer-loting':adminLotteryPage,'beheer-resultaten':adminResultsPage,
   'beheer-planning':adminPlanningPage,'beheer-instellingen':adminConfigPage,
-  'beheer-bestanden':adminFilesPage,archief:archiveView,delen:shareView
+  'beheer-bestanden':adminFilesPage,archief:archiveView,delen:typeof shareView==='function'?shareView:()=>'<section class="panel"><h2>Delen tijdelijk niet beschikbaar</h2><p class="muted">Laad deze pagina opnieuw om de deelfunctie te gebruiken.</p></section>'
  };
  if(!routes[tab])tab='overzicht';
  if(!isAdmin&&tab.startsWith('beheer'))tab='overzicht';
@@ -1764,6 +1765,5 @@ addEventListener('resize',()=>{if(tab==='boom')requestAnimationFrame(drawBracket
 addEventListener('hashchange',()=>{const next=location.hash.slice(1);if(next!==tab){tab=next;render()}});
 initialize();
 </script>
-<script src="./share.js?v=1"></script>
 </body>
 </html>
