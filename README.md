@@ -6,7 +6,7 @@ De besloten website voor de **OPTSCH Heads-Up Cup**, met directe knock-out (sing
 
 - **Volledig resetten:** Beheer → Toernooi beheren → Toernooi volledig resetten. Bevestig tweemaal (waaronder het intypen van `RESET`). Alle actieve deelnemers, verhinderingen, loting, uitslagen, planning en weekinstellingen worden gewist, zonder archief te maken. Bestaande archieven blijven bewaard.
 - **Archiveren en nieuw starten:** vanuit hetzelfde beheerscherm kan de beheerder een archiefnaam invoeren, het huidige toernooi bewaren en een nieuwe, volledig lege competitie starten. Dit is één database-transactie: bij een fout blijft het huidige toernooi intact.
-- **Beveiligd archief:** volledige originele snapshots blijven in `ohc_archives` (uitsluitend beheerders), een kopie zonder verhinderingen in `ohc_archive_public` (alleen ingelogde gebruikers). De archiefpagina toont deelnemers, wedstrijden, toernooiboom, speelperiodes en prijzen als alleen-lezen.
+- **Beveiligd archief:** volledige originele snapshots blijven in `ohc_archives` (uitsluitend beheerders), een kopie zonder verhinderingen in `ohc_archive_public` (alleen ingelogde gebruikers). De archiefpagina toont deelnemers, wedstrijden, toernooischema, speelperiodes en prijzen als alleen-lezen.
 - **Instelbare ISO-weeknummers:** Beheer → Instellingen. Vul bij elke ronde de eerste en laatste ISO-week met weekjaar in, bijvoorbeeld `2027-W01` t/m `2027-W02`. De beginweek start op maandag en de eindweek eindigt op zondag. Optionele geblokkeerde kalenderdatums zijn instelbaar. Bestaande vaste afspraken mogen niet buiten de nieuwe perioden worden geplaatst.
 - **Nieuwe competitie is blanco:** geen deelnemers, loting, resultaten, speelschema, speelweken of inschrijfdeadline. Titel en deadline worden door de beheerder ingesteld.
 - **Veiligheid:** alleen beheerders kunnen resetten of archiveren; acties gebruiken een version-check. Reeds bestaande toernooidata wordt niet automatisch gewijzigd.
@@ -51,7 +51,7 @@ Open `index.html` in een browser via een HTTP-server of gebruik GitHub Pages. De
 
 - Besloten overzicht en deelnemerslijst voor ingelogde gebruikers
 - Speelschema en volledige voor- en achternamen achter inlog
-- Automatische knock-outtoernooiboom, vrijloten en voortgang
+- Automatische knock-outtoernooischema, vrijloten en voortgang
 - Inloggen met bestaande OPTSCH-/Supabase-accounts; alleen beheerders krijgen extra beheerfuncties
 - Deelnemersbeheer en import van de Google Forms-inschrijvings-CSV
 - Loting, winnaars, automatisch doorschuiven en wedstrijdplanning
@@ -107,7 +107,7 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 - De **twee verliezers van de halve finales** spelen een extra wedstrijd om het brons. De winnaar wordt **3e**, de verliezer **4e**.
 - Dit is **geen extra knock-outronde**: de bronsfinale wordt tegelijk met de gewone finale in de vijfde speelperiode gehouden (**18 t/m 31 januari 2027** bij vijf ronden).
 - De twee deelnemers worden automatisch bepaald zodra beide halve finales zijn beslist. Er is geen extra loting.
-- De bronsfinale heeft een eigen uitslag, wedstrijddatum, planning en vermelding in de toernooiboom en CSV/PNG-exports. Bij een veranderde halvefinale-uitslag vervalt de bronzuitslag automatisch, zodat nooit de verkeerde spelers de derde en vierde prijs krijgen.
+- De bronsfinale heeft een eigen uitslag, wedstrijddatum, planning en vermelding in de toernooischema en CSV/PNG-exports. Bij een veranderde halvefinale-uitslag vervalt de bronzuitslag automatisch, zodat nooit de verkeerde spelers de derde en vierde prijs krijgen.
 - Het toernooi wordt pas als afgerond aangemerkt als zowel de gewone finale als de bronsfinale een winnaar heeft.
 - De bronsfinale verbindt, net als de gewone finale, spelers uit **verschillende brackethelften**. Als zij geen gezamenlijke opgegeven speeldag hebben, mogen zij in onderling overleg een andere toegestane datum kiezen. De beheerder legt dit vast zonder de oorspronkelijke verhinderingen aan te passen.
 - Bij **32 spelers** zijn er **32 aparte knock-outduels** (31 voor de titel plus één om het brons). De aantallen *heads-ups* bij eventueel meerdere games per duel kunnen hiervan afwijken.
