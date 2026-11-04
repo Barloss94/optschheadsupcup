@@ -87,13 +87,28 @@ async function login(){
  const r=await sb.auth.signInWithPassword({email,password});
  if(r.error){notify('Inloggen mislukt: '+r.error.message);return}
  authUser=r.data.user;
- await fetchPrivate();render();
- if(!isAdmin)notify('Dit account heeft geen Ranking-beheerrechten.');
+ try{
+  loading=true;render();
+  await fetchPublic();
+  await fetchPrivate();
+  loadError=null;
+  tab='overzicht';location.hash='overzicht';
+  if(!window.ohcRealtime){
+   window.ohcRealtime=sb.channel('ohc-public-updates')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'ohc_public_events'},async payload=>{
+     if(!authUser||payload.new?.event_id!==eventId)return;
+     publicState=normalizeState(payload.new.state);
+     if(!isAdmin){data=structuredClone(publicState);render();}
+    }).subscribe();
+  }
+ }catch(e){loadError=String(e?.message||e)}
+ finally{loading=false;render();}
+ if(!loadError)notify('Je bent ingelogd.');
 }
 async function logout(){
  const r=await sb.auth.signOut();
  if(r.error){notify('Uitloggen mislukt: '+r.error.message);return}
- authUser=null;isAdmin=false;data=structuredClone(publicState);tab='overzicht';location.hash='overzicht';render();
+ authUser=null;isAdmin=false;eventId=null;publicState=null;data=structuredClone(DEFAULT);tab='overzicht';location.hash='overzicht';render();
 }
 
 const SHORT_DAYS=['Zo','Ma','Di','Wo','Do','Vr','Za'];
@@ -431,7 +446,7 @@ function scheduleConflict(m,s){
 }
 function button(label,fn,kind='alt',small=false){return `<button type="button" class="btn ${kind} ${small?'small':''}" onclick="${fn}">${label}</button>`}
 function badge(s){return `<span class="pill ${s==='Gespeeld'?'ok':s==='Gepland'?'blue':'warn'}">${esc(s)}</span>`}
-function nav(){if(!authUser){$('nav').innerHTML='';return;}const tabs=[['overzicht','Overzicht'],['deelnemers','Deelnemers'],['schema','Speelschema'],['boom','Toernooiboom'],['reglement','Reglement'],['beheer','Beheer']];$('nav').innerHTML=tabs.map(([k,v])=>`<button class="${tab===k?'active':''}" onclick="setTab('${k}')">${v}</button>`).join('')}
+function nav(){if(!authUser){$('nav').innerHTML='';return;}const tabs=[['overzicht','Overzicht'],['deelnemers','Deelnemers'],['schema','Speelschema'],['boom','Toernooiboom'],['reglement','Reglement']];if(isAdmin)tabs.push(['beheer','Beheer']);$('nav').innerHTML=tabs.map(([k,v])=>`<button class="${tab===k?'active':''}" onclick="setTab('${k}')">${v}</button>`).join('')+'<button onclick="logout()" type="button">Uitloggen</button>'}
 function heading(title,aside=''){return `<div class="sectiontitle"><h2>${title}</h2>${aside}</div>`}
 function hero(){return `<section class="hero"><div class="heroinner"><span class="eyebrow"><i class="dot"></i> OPTSCH • Nieuw toernooi</span><h1>HEADS-UP<br><em>CUP</em></h1><p>Geen volle tafels, geen teamgenoten. Slechts twee spelers tegenover elkaar. Win je duel, dan ga je door. Wie bereikt de finale?</p><div class="btnbar">${button('Bekijk deelnemers →',"setTab('deelnemers')",'')}${button('Toernooiboom bekijken',"setTab('boom')",'ghost')}</div></div></section>`}
 
