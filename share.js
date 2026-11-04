@@ -206,7 +206,7 @@ function shareBase(ctx,height,logo,info,itemsCount){
  shareText(ctx,subtitle,84,274,912,C.pale,25,650);
  ctx.fillStyle='rgba(236,192,128,.5)';ctx.fillRect(84,304,912,2);
  ctx.fillStyle='rgba(236,192,128,.4)';ctx.fillRect(84,height-142,912,2);
- shareText(ctx,'WIN JE DUEL. GA DOOR. PAK DE TITEL.',w/2,height-91,840,C.lightGold,23,850,'center');
+ shareText(ctx,'Duelleer. Overwin & Pak die titel!',w/2,height-91,840,C.lightGold,23,850,'center');
  shareText(ctx,'OPTSCH • HEADS-UP CUP',w/2,height-63,700,C.purple,16,800,'center');
 }
 function shareCard(ctx,m,info,x,y,w,h){
@@ -469,7 +469,7 @@ function buildOhcBracketPoster(logo,rounds){
  if(champ){
   shareText(ctx,'🏆 KAMPIOEN: '+name(champ),g.width/2,g.height-65,
    g.width-170,C.lightGold,29,900,'center');
- }else shareText(ctx,'IEDERE WINNAAR EEN STAP DICHTER BIJ DE TITEL',
+ }else shareText(ctx,'Duelleer. Overwin & Pak die titel!',
   g.width/2,g.height-65,g.width-180,C.lightGold,23,850,'center');
  return canvas;
 }
