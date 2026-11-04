@@ -16,7 +16,7 @@
     .bracketwires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible}.bracketwires path{fill:none;stroke:#ff9b49;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.67}.bracketwires path.bronze-wire{stroke:#b6c1d1;stroke-width:1.4;stroke-dasharray:4 5;opacity:.5}.bracketroute{font-size:10px;color:#ffab68;letter-spacing:.2px;border-top:1px solid #304158;margin-top:5px;padding-top:7px}
   </style>
   <link rel="stylesheet" href="./brand.css?v=4" />
-  <link rel="stylesheet" href="./layout.css?v=8" />
+  <link rel="stylesheet" href="./layout.css?v=9" />
   <link rel="icon" href="./assets/ohc-logo.avif" type="image/avif" />
 </head>
 <body>
@@ -712,73 +712,115 @@ function bracketRouteText(r,index,total){
  if(r===total-2)return 'Winnaar → finale · Verliezer → bronsfinale';
  return '→ R'+(r+2)+' · duel '+displayDuelNumber(r+1,Math.floor(index/2));
 }
+/* Eén spiegelende bracketgeometrie voor scherm én PNG.
+   Match-ID's blijven identiek; alleen de plaats op het scherm verandert. */
+function bracketMirrorLayout(rounds,{cardHeight=156,pitch=178,top=30,bronzeGap=210}={}){
+ if(!rounds?.length)return {columns:0,height:0,positions:[],centerColumn:0};
+ const last=rounds.length-1,half=Math.max(1,Math.ceil((rounds[0]?.length||1)/2));
+ const middle=top+cardHeight/2+(half-1)*pitch/2;
+ const positions=rounds.map((matches,r)=>matches.map((m,i)=>{
+  const central=r===last;
+  const sideCount=central?0:Math.ceil(matches.length/2);
+  const right=!central&&i>=sideCount;
+  const local=right?i-sideCount:i;
+  const column=central?last:right?2*last-r:r;
+  const cy=central?(m.isBronze?middle+bronzeGap:middle):
+   top+cardHeight/2+(((local+.5)*2**r)-.5)*pitch;
+  return {column,cy,y:cy-cardHeight/2,side:central?'center':right?'right':'left'};
+ }));
+ const bottom=Math.max(...positions.flat().map(p=>p.y+cardHeight));
+ return {columns:last*2+1,height:Math.ceil(bottom+top),positions,
+  centerColumn:last,centerY:middle,cardHeight};
+}
+
 function bracketView(){
- const rounds=bracket();
- return (rounds.length&&!archiveReadonly?'<div class="btnbar share-shortcut">'+button('🏆 Deel volledige toernooiboom',"openShare('boom')",'alt')+button('📸 Deel ronde-indeling',"openShare('loting')",'ghost')+'</div>':'')+'<section class="panel">'+
- heading('Vaste knock-outbracket',rounds.length?'<span class="pill blue">'+data.players.length+' spelers · '+rounds.length+' rondes</span>':'')+
- '<details class="help-details"><summary>Hoe lees ik de toernooiboom?</summary><p class="smalltext muted">De loting gebruikt de beschikbaarheid om lastige ontmoetingen zo laat mogelijk in de bracket te plaatsen. Als spelers zonder gezamenlijke speeldag elkaar toch ontmoeten, regelen ze onderling een datum binnen hun rondeperiode. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Daardoor verschijnt een winnende speler in meerdere opeenvolgende rondes, maar in de loting zelf staat iedereen slechts eenmaal. Bij identieke verkorte namen staat een uniek deelnemersnummer (#). Er wordt niet opnieuw geloot.</p></details>'+
- (rounds.length?
-  '<div class="bracketscroll"><div class="bracket" id="ohcBracket"><svg id="ohcBracketLines" class="bracketwires" aria-hidden="true"></svg>'+
-  rounds.map((matches,r)=>'<div class="bracketcolumn" data-round="'+r+'"><div class="bracketround">'+esc(roundLabel(r,rounds.length))+'</div><div class="bracketcards">'+
-  matches.map(m=>
-   '<div class="matchcard" data-duel="'+m.id+'">'+
-   '<div class="matchid">'+(m.isBronze?'🥉 Bronsfinale':r===rounds.length-1?'🏆 Finale':displayDuelLabel(m,rounds))+(m.isBye?' · Vrijloting':'')+'</div>'+
+ const rounds=bracket(),mirror=bracketMirrorLayout(rounds);
+ function card(m,r){
+  const label=m.isBronze?'🥉 Bronsfinale':r===rounds.length-1?'🏆 Finale':displayDuelLabel(m,rounds);
+  const p=mirror.positions[r][m.index];
+  return '<div class="matchcard'+(m.isBronze?' bronze-match':r===rounds.length-1?' final-match':'')+
+   '" data-duel="'+m.id+'" style="top:'+p.y+'px;height:'+mirror.cardHeight+'px">'+
+   '<div class="matchid">'+label+(m.isBye?' · Vrijloting':'')+'</div>'+
    [m.a,m.b].map((id,slot)=>
     '<div class="slot '+(id&&id===m.winner?'winner':'')+(id?'':' pending')+'">'+
-    '<span class="name" title="'+esc(bracketSlotText(r,m.index,slot,id))+'">'+esc(bracketSlotText(r,m.index,slot,id))+'</span>'+
+    '<span class="name" title="'+esc(bracketSlotText(r,m.index,slot,id))+'">'+
+    esc(bracketSlotText(r,m.index,slot,id))+'</span>'+
     (id&&id===m.winner?'<span class="winnericon">✓</span>':'')+'</div>'
    ).join('')+
    '<div class="matchdetails">'+(m.isBye?'Automatisch door wegens vrijloting':m.resolved?'Uitslag verwerkt':data.schedule[m.id]?.date?esc(prettyDate(data.schedule[m.id].date)):'Nog te spelen')+'</div>'+
    '<div class="bracketroute">'+esc(bracketRouteText(r,m.index,rounds.length))+'</div>'+
-   '</div>'
-  ).join('')+'</div></div>').join('')+'</div></div>':
-  '<div class="empty"><div class="bigicon">🏆</div><strong>De bracket is nog niet geloot</strong><p>De beheerder loot de deelnemers na sluiting van de inschrijving. Vanaf dat moment zijn alle routes naar de finale vastgelegd.</p>'+(isAdmin?button('Naar beheer',"setTab('beheer')",'alt',true):'')+'</div>'
- )+'</section>'+
- (champion()?'<div class="panel" style="text-align:center"><span class="eyebrow">🏆 KAMPIOEN</span><h2 style="font-size:30px;margin:13px 0 0">'+esc(name(champion()))+'</h2></div>':'')+
- (bronzeWinner()?'<div class="panel" style="text-align:center"><span class="eyebrow">🥉 BRONS</span><h2 style="font-size:25px;margin:13px 0 0">'+esc(name(bronzeWinner()))+'</h2><p class="muted">4e plaats: '+esc(name(fourthPlace()))+'</p></div>':'');
+   '</div>';
+ }
+ const columns=[];
+ for(let col=0;col<mirror.columns;col++){
+  const matches=rounds.flat().filter(m=>mirror.positions[m.round][m.index].column===col);
+  const r=matches[0]?.round??mirror.centerColumn;
+  const side=col<mirror.centerColumn?'left':col>mirror.centerColumn?'right':'center';
+  const heading=side==='center'?'🏆 Finale en bronsfinale':roundLabel(r,rounds.length);
+  columns.push('<div class="bracketcolumn mirrored-column '+side+'" data-round="'+r+
+   '" style="grid-column:'+(col+1)+'"><div class="bracketround">'+esc(heading)+
+   '</div><div class="bracketcards">'+matches.map(m=>card(m,m.round)).join('')+'</div></div>');
+ }
+ return (rounds.length&&!archiveReadonly?'<div class="btnbar share-shortcut">'+
+  button('🏆 Deel volledige toernooiboom',"openShare('boom')",'alt')+
+  button('📸 Deel ronde-indeling',"openShare('loting')",'ghost')+'</div>':'')+
+  '<section class="panel">'+
+  heading('Vaste knock-outbracket',rounds.length?'<span class="pill blue">'+data.players.length+' spelers · '+rounds.length+' rondes</span>':'')+
+  '<details class="help-details"><summary>Hoe lees ik de toernooiboom?</summary>'+
+  '<p class="smalltext muted">De linker- en rechterhelft van de loting spelen naar het midden. De finale staat centraal, met de bronsfinale eronder. Volg de gouden lijnen om te zien welke winnaars naar elkaar doorschuiven; de gestippelde lijnen geven de route naar de bronsfinale aan. De oorspronkelijke loting en vaste routes blijven ongewijzigd.</p></details>'+
+  (rounds.length?
+   '<p class="muted smalltext bracket-guide">← Linkerhelft · Finale en bronsfinale in het midden · Rechterhelft →</p>'+
+   '<div class="bracketscroll" id="ohcBracketScroll"><div class="bracket mirrored-bracket" id="ohcBracket" style="--mirrored-height:'+mirror.height+'px;--mirrored-columns:'+mirror.columns+'">'+
+   '<svg id="ohcBracketLines" class="bracketwires" aria-hidden="true"></svg>'+
+   columns.join('')+'</div></div>':
+   '<div class="empty"><div class="bigicon">🏆</div><strong>De bracket is nog niet geloot</strong><p>De beheerder loot de deelnemers na sluiting van de inschrijving. Vanaf dat moment zijn alle routes naar de finale vastgelegd.</p>'+(isAdmin?button('Naar beheer',"setTab('beheer')",'alt',true):'')+'</div>'
+  )+'</section>'+
+  (champion()?'<div class="panel" style="text-align:center"><span class="eyebrow">🏆 KAMPIOEN</span><h2 style="font-size:30px;margin:13px 0 0">'+esc(name(champion()))+'</h2></div>':'')+
+  (bronzeWinner()?'<div class="panel" style="text-align:center"><span class="eyebrow">🥉 BRONS</span><h2 style="font-size:25px;margin:13px 0 0">'+esc(name(bronzeWinner()))+'</h2><p class="muted">4e plaats: '+esc(name(fourthPlace()))+'</p></div>':'');
 }
 function drawBracketConnections(){
  const root=$('ohcBracket'),svg=$('ohcBracketLines');
  if(!root||!svg)return;
- const cols=[...root.querySelectorAll('.bracketcolumn')];
- if(cols.length<2)return;
- const rootRect=root.getBoundingClientRect(),paths=[];
- const center=(el)=>{
-  const rect=el.getBoundingClientRect();
-  return {left:rect.left-rootRect.left,right:rect.right-rootRect.left,y:(rect.top+rect.bottom)/2-rootRect.top};
- };
- for(let r=1;r<cols.length;r++){
-  const previous=[...cols[r-1].querySelectorAll('.matchcard')];
-  const current=[...cols[r].querySelectorAll('.matchcard')];
-  for(let i=0;i<current.length;i++){
-   const left=previous[i*2],right=previous[i*2+1];
-   if(!left||!right)continue;
-   const a=center(left),b=center(right),dest=center(current[i]);
-   const branch=Math.round((a.right+dest.left)/2),middle=Math.round((a.y+b.y)/2);
-   const v=x=>Math.round(x);
-   paths.push('<path d="M'+v(a.right)+' '+v(a.y)+' H'+branch+
-     ' M'+v(b.right)+' '+v(b.y)+' H'+branch+
-     ' M'+branch+' '+v(a.y)+' V'+v(b.y)+
-     ' M'+branch+' '+middle+' H'+v(dest.left)+'"/>');
-  }
+ const rounds=bracket(),last=rounds.length-1;
+ const nodes=new Map([...root.querySelectorAll('.matchcard')].map(node=>[node.dataset.duel,node]));
+ const origin=root.getBoundingClientRect(),paths=[];
+ function pos(m){
+  const el=nodes.get(m.id);
+  if(!el)return null;
+  const box=el.getBoundingClientRect();
+  return {left:box.left-origin.left,right:box.right-origin.left,
+   top:box.top-origin.top,bottom:box.bottom-origin.top,y:(box.top+box.bottom)/2-origin.top};
  }
- if(cols.length>1){
-    const semis=[...cols[cols.length-2].querySelectorAll('.matchcard')];
-    const bronze=[...cols[cols.length-1].querySelectorAll('.matchcard')][1];
-    if(semis.length===2&&bronze){
-      const dest=center(bronze),trunk=Math.round(dest.left-15);
-      for(const semi of semis){
-        const src=center(semi);
-        paths.push('<path class="bronze-wire" d="M'+Math.round(src.right)+' '+Math.round(src.y)+
-          ' H'+trunk+' V'+Math.round(dest.y)+' H'+Math.round(dest.left)+'"/>');
-      }
-    }
-  }
-  svg.setAttribute('width',String(root.scrollWidth));
+ function wire(src,dest,bronze=false){
+  const a=pos(src),b=pos(dest);if(!a||!b)return;
+  const left=a.left<b.left;
+  const sx=left?a.right:a.left,tx=left?b.left:b.right;
+  const x=Math.round((sx+tx)/2);
+  const y=bronze?a.y+28:a.y;
+  const path='M'+Math.round(sx)+' '+Math.round(y)+' H'+x+
+   ' V'+Math.round(b.y)+' H'+Math.round(tx);
+  paths.push('<path'+(bronze?' class="bronze-wire"':'')+' d="'+path+'"/>');
+ }
+ for(let r=0;r<last;r++)for(const m of rounds[r]){
+  const next=rounds[r+1][Math.floor(m.index/2)];
+  if(next)wire(m,next);
+ }
+ const semis=rounds[last-1]||[];
+ const bronze=rounds[last]?.find(m=>m.isBronze);
+ if(bronze&&semis.length===2)for(const m of semis)wire(m,bronze,true);
+ svg.setAttribute('width',String(root.scrollWidth));
  svg.setAttribute('height',String(root.scrollHeight));
  svg.setAttribute('viewBox','0 0 '+root.scrollWidth+' '+root.scrollHeight);
  svg.innerHTML=paths.join('');
 }
+function centerBracketOnFinal(){
+ const scroll=$('ohcBracketScroll'),root=$('ohcBracket');
+ if(!scroll||!root)return;
+ const col=root.querySelector('.mirrored-column.center');
+ if(!col)return;
+ scroll.scrollLeft=Math.max(0,col.offsetLeft+col.offsetWidth/2-scroll.clientWidth/2);
+}
+
 function adminPlayerView(){return `<section class="panel">${heading('Deelnemers beheren',`<span class="pill blue">${data.players.length} spelers</span>`)}<div class="notice">Deelnemersnamen zijn zichtbaar voor alle ingelogde gebruikers. Beschikbaarheid en verhinderingen zijn uitsluitend voor beheerders zichtbaar.</div><div class="notice ${registrationClosed()?'orange':''}">Inschrijfdeadline: ${esc(registrationDeadlineLabel())}. ${!registrationDeadlineConfigured()?'Stel eerst de deadline in via Instellingen.':registrationClosed()?'De inschrijving is gesloten.':'Deelnemers kunnen door de beheerder worden toegevoegd.'} Bestaande gegevens blijven corrigeerbaar.</div>${data.draw.length?'<div class="notice orange">Het deelnemersveld is geloot. Namen en beschikbaarheid kunnen worden aangepast; spelers toevoegen of verwijderen is geblokkeerd totdat de loting opnieuw wordt ingesteld.</div>':''}<div class="tablewrap"><table class="table"><thead><tr><th>Naam</th><th>Niet beschikbaar</th><th></th></tr></thead><tbody>${data.players.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td class="muted">${p.blocked.length?p.blocked.map(d=>DAYS.find(x=>x.id===d)?.name||'').join(', '):'Geen verhinderingen opgegeven'}</td><td><div class="btnbar">${button('Bewerk',`selectEdit('${p.id}')`,'alt',true)}${!data.draw.length?button('Verwijder',`removePlayer('${p.id}')`,'danger',true):''}</div></td></tr>`).join('')||'<tr><td colspan="3">Nog geen deelnemers</td></tr>'}</tbody></table></div><hr class="divider"><h3 id="personformtitle">${editPlayer?'Deelnemer bewerken':'Deelnemer toevoegen'}</h3><div class="field"><label for="playerName">Volledige naam (alleen beheer)</label><input id="playerName" type="text" placeholder="Voornaam Achternaam" value="${esc(editPlayer?player(editPlayer)?.name||'':'')}" maxlength="100" ${(data.draw.length||registrationClosed())&&!editPlayer?'disabled':''}></div><div class="field"><label>Op welke dagen is deze speler verhinderd?</label><div class="checkdays">${DAYS.map(d=>`<label class="day"><input type="checkbox" class="blockday" value="${d.id}" ${editPlayer&&player(editPlayer)?.blocked.includes(d.id)?'checked':''}> ${d.name}</label>`).join('')}</div></div><div class="btnbar">${(editPlayer||!registrationClosed())?button(editPlayer?'Wijzigingen opslaan':'Deelnemer toevoegen','savePlayer()',''):''}${editPlayer?button('Annuleren','selectEdit(null)','ghost'):''}</div><hr class="divider"><h3>Inschrijvingen verwerken</h3><div class="notice">Alleen voor de beheerder. Importeer de CSV met ontvangen inschrijvingen. Na de loting kunnen alleen bestaande deelnemers worden bijgewerkt.</div><p class="smalltext muted">Ondersteunt het Google Forms CSV-bestand met kolommen <span class="kbd">Naam</span> en <span class="kbd">Welke weekdagen kan jij echt niet spelen?</span>. Bestaande spelers kunnen worden bijgewerkt. De inschrijfdeadline wordt per toernooi ingesteld via Beheer → Instellingen. Na de officiële loting worden nieuwe deelnemersregels overgeslagen.</p><input type="file" id="csvfile" accept=".csv,text/csv" aria-label="Inschrijvingen CSV" onchange="importCsv(event)"></section>`}
 function drawAvailabilityNotice(){
  if(data.draw.length)
@@ -1616,7 +1658,7 @@ function render(){
  $('main').innerHTML=(tab==='overzicht'?'':pageHead(tab))+
   (info?subNavigation(infoNavigation,tab):admin?subNavigation(adminNavigation,tab):'')+
   routes[tab]();
- if(tab==='boom'||(tab==='archief'&&archiveRecord&&archiveSection==='boom'))requestAnimationFrame(drawBracketConnections);
+ if(tab==='boom'||(tab==='archief'&&archiveRecord&&archiveSection==='boom'))requestAnimationFrame(()=>{drawBracketConnections();centerBracketOnFinal()});
  if(tab==='delen')requestAnimationFrame(()=>void updateSharePreview());
 }
 function selectEdit(id){editPlayer=id;render();$('personformtitle')?.scrollIntoView({behavior:'smooth',block:'center'})}
