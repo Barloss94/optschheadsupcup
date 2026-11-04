@@ -25,7 +25,8 @@
 <footer class="container footer"><div>© OPTSCH • Heads-Up Cup</div><span>Live gegevens • OPTSCH Ranking-database</span></footer>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.0"></script>
-<script src="./share.js?v=2"></script>
+<script src="./calendar.js?v=1"></script>
+<script src="./share.js?v=3"></script>
 <script>
 'use strict';
 const STORAGE='ohc.online.v1';
@@ -486,7 +487,7 @@ function navGroup(t){
 function nav(){
  const root=$('nav');
  if(!authUser){root.innerHTML='';return}
- const items=[['overzicht','Overzicht'],['schema','Wedstrijden'],['boom','Toernooiboom'],['deelnemers','Deelnemers'],['reglement','Informatie'],['delen','Delen'],['archief','Archief']];
+ const items=[['overzicht','Overzicht'],['schema','Wedstrijden'],['kalender','Kalender'],['boom','Toernooiboom'],['deelnemers','Deelnemers'],['reglement','Informatie'],['delen','Delen'],['archief','Archief']];
  if(isAdmin)items.push(['beheer','Beheer']);
  const active=navGroup(tab);
  root.innerHTML=items.map(x=>'<button type="button" data-tab="'+x[0]+'" class="'+(active===x[0]?'active':'')+'" '+(active===x[0]?'aria-current="page"':'')+' onclick="setTab(this.dataset.tab)">'+x[1]+'</button>').join('')+
@@ -566,6 +567,7 @@ function overview(){
  const label=champion()?'Toernooi afgerond':esc(effectiveStatus());
  const links=[
   ['schema','calendar-days','Wedstrijden','Alle duels, uitslagen en geplande speeldata.'],
+  ['kalender','calendar-clock','Speelkalender','Bekijk per datum welke duels worden gespeeld.'],
   ['boom','network','Toernooiboom','Volg de route naar de finale.'],
   ['deelnemers','users','Deelnemers','Bekijk het ingeschreven spelersveld.'],
   ['periodes','clock','Speelperiodes','Per ronde de speelweken en uitzonderingen.'],
@@ -587,7 +589,7 @@ function scheduleView(){
  const b=bracket();
  const calendar='';
  if(!b.length)return calendar+'<div class="panel">'+heading('Wedstrijden')+'<div class="empty"><div class="bigicon">📅</div><strong>De loting is nog niet uitgevoerd</strong><p>De officiële speelperiodes liggen vast. Zodra de loting is uitgevoerd, worden alle duels automatisch over de beschikbare dagen verspreid.</p></div></div>';
- return '<div class="btnbar share-shortcut">'+button('📸 Deel speelschema',"openShare('schema')",'alt')+'</div>'+calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
+ return '<div class="btnbar share-shortcut">'+button('📸 Deel speelschema',"openShare('schema')",'alt')+button('📅 Bekijk kalender',"setTab('kalender')",'ghost')+'</div>'+calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
  '<p class="muted smalltext">Alle duels van een ronde moeten gespeeld zijn voordat de volgende ronde begint. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur, mits alle eerdere speeldagen vaststaan. Bij een conflict staat er een voorlopig voorstel. Verplaatsen kan alleen in onderling overleg, binnen de rondeperiode.</p>'+
  (archiveReadonly?'':'<div class="btnbar" style="margin-bottom:18px">'+button('Wedstrijden exporteren (CSV)','exportMatchesCsv()','ghost',true)+'</div>')+
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
@@ -806,6 +808,7 @@ const adminNavigation=[
 const pageInfo={
  deelnemers:['Deelnemers','Het complete deelnemersveld van de OHC.','TOERNOOI'],
  schema:['Wedstrijden','Bekijk per ronde de wedstrijdindeling, speeldata en uitslagen.','TOERNOOI'],
+ kalender:['Speelkalender','Alle ingeplande duels per datum, in een overzichtelijke maandkalender.','TOERNOOI'],
  boom:['Toernooiboom','Iedere route naar de finale in één overzicht.','TOERNOOI'],
  reglement:['Reglement','Alle vastgestelde afspraken en regels voor het toernooi.','INFORMATIE'],
  periodes:['Speelperiodes','Speelweken, uitgesloten dagen en de volgorde van de rondes.','INFORMATIE'],
@@ -1123,7 +1126,7 @@ function adminResultsPage(){
 }
 function adminPlanningPage(){
  if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">📅</div><strong>Nog geen wedstrijden</strong><p>Maak eerst de loting om speeldata te kunnen vaststellen.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
- return withRoundFilter(adminScheduleView(),'planning');
+ return '<div class="btnbar share-shortcut">'+button('📅 Speelkalender bekijken',"setTab('kalender')",'alt')+'</div>'+withRoundFilter(adminScheduleView(),'planning');
 }
 
 function isoWeekMonday(value){
@@ -1452,6 +1455,7 @@ function archivedReadOnlyView(section){
   const views={
    boom:bracketView,
    schema:scheduleView,
+   kalender:ohcCalendarView,
    deelnemers:playersView,
    periodes:roundCalendar,
    prijzen:prizePanel
@@ -1479,7 +1483,7 @@ function archiveView(){
  }
  const selected=archiveSection;
  const tabs=[
-  ['boom','Toernooiboom'],['schema','Wedstrijden'],['deelnemers','Deelnemers'],
+  ['boom','Toernooiboom'],['schema','Wedstrijden'],['kalender','Kalender'],['deelnemers','Deelnemers'],
   ['periodes','Speelperiodes'],['prijzen','Prijzen']
  ];
  return '<section class="archive-intro"><div><span class="eyebrow">ALLEEN LEZEN • GEARCHIVEERD</span>'+
@@ -1495,6 +1499,7 @@ function loginScreen(){return `<section class="panel auth-panel"><div class="log
 function render(){
  const routes={
   overzicht:overview,deelnemers:playersView,schema:function(){return withRoundFilter(scheduleView(),'schema')},
+  kalender:typeof ohcCalendarView==='function'?ohcCalendarView:()=>'<section class="panel">Kalender niet beschikbaar.</section>',
   boom:bracketView,reglement:rulesPage,periodes:periodsPage,prijzen:prizesPage,
   beheer:adminView,'beheer-deelnemers':adminPlayersPage,'beheer-import':adminImportPage,
   'beheer-loting':adminLotteryPage,'beheer-resultaten':adminResultsPage,
