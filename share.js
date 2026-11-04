@@ -280,20 +280,114 @@ function sharePrizesPoster(ctx){
  if(!exact)shareText(ctx,'Bij minder dan 17 spelers is deze verdeling nog niet vastgesteld.',
   90,1294,890,C.warning,18,700);
 }
+
+function shareCalendarGroupedDates(entries){
+ const groups=[];
+ for(const entry of entries){
+  let group=groups[groups.length-1];
+  if(!group||group.date!==entry.date){
+   group={date:entry.date,matches:[]};
+   groups.push(group);
+  }
+  group.matches.push(entry);
+ }
+ return groups;
+}
+function shareCalendarGridRows(month){
+ return Math.ceil(ohcCalendarMonthDates(month).length/7);
+}
+function shareCalendarAgendaStart(info){
+ if(info.type!=='kalender')return 347;
+ return 403+shareCalendarGridRows(info.month)*102+63;
+}
+function shareCalendarPosterHeight(info){
+ const groups=shareCalendarGroupedDates(info.entries).length;
+ const start=shareCalendarAgendaStart(info);
+ return Math.max(1440,start+groups*59+info.entries.length*120+200);
+}
+function shareCalendarGrid(ctx,info){
+ const C=OHC_SHARE_COLORS,dates=ohcCalendarMonthDates(info.month);
+ const groups=new Map();
+ info.entries.forEach(e=>{
+  if(!groups.has(e.date))groups.set(e.date,[]);
+  groups.get(e.date).push(e);
+ });
+ const origin=86,gap=8,cellW=(908-gap*6)/7,cellH=93,rowH=102;
+ const weekdays=['MA','DI','WO','DO','VR','ZA','ZO'];
+ weekdays.forEach((day,i)=>
+  shareText(ctx,day,origin+i*(cellW+gap)+cellW/2,365,cellW,C.muted,18,800,'center'));
+ const top=390;
+ dates.forEach((day,i)=>{
+  const x=origin+(i%7)*(cellW+gap),y=top+Math.floor(i/7)*rowH;
+  const matches=groups.get(day.iso)||[],isInMonth=day.iso.startsWith(info.month);
+  const allPlayed=matches.length&&matches.every(m=>m.status==='Gespeeld');
+  const fill=!isInMonth?'rgba(19,19,27,.58)':
+    matches.length?'rgba(51,43,62,.98)':'rgba(28,26,37,.95)';
+  shareFillRound(ctx,x,y,cellW,cellH,10,fill,
+   matches.length?allPlayed?'#368455':'#d4a85e':'rgba(107,86,109,.45)',matches.length?2:1);
+  shareText(ctx,String(day.day),x+10,y+29,cellW-20,
+   isInMonth?C.white:C.muted,22,isInMonth?800:500);
+  if(matches.length){
+   shareText(ctx,String(matches.length)+(matches.length===1?' DUEL':' DUELS'),
+    x+10,y+52,cellW-20,allPlayed?C.green:C.gold,15,850);
+   shareText(ctx,matches.length===1?'20:00 / TIJD VOLGT':'BEKIJK LIJST',
+    x+10,y+74,cellW-20,C.muted,11,650);
+  }
+ });
+}
+function shareCalendarAgenda(ctx,info){
+ const C=OHC_SHARE_COLORS,groups=shareCalendarGroupedDates(info.entries);
+ const x=86,w=908,headerH=45,cardH=110,gap=10;
+ let y=shareCalendarAgendaStart(info);
+ shareText(ctx,info.type==='kalender'?'WEDSTRIJDEN IN DEZE MAAND':'ALLE GEPLANDE DUELS',
+  x,y-19,w,C.lightGold,25,900);
+ for(const group of groups){
+  shareFillRound(ctx,x,y,w,headerH,11,'rgba(100,72,49,.65)','rgba(224,178,105,.46)',1);
+  shareText(ctx,prettyDate(group.date),x+18,y+31,w-180,C.lightGold,23,850);
+  shareText(ctx,group.matches.length+(group.matches.length===1?' DUEL':' DUELS'),
+   x+w-19,y+30,165,C.pale,16,800,'right');
+  y+=headerH+10;
+  for(const entry of group.matches){
+   shareFillRound(ctx,x,y,w,cardH,12,'rgba(35,30,45,.95)','rgba(128,99,138,.58)',1.5);
+   shareFillRound(ctx,x+12,y+11,130,87,10,'rgba(65,51,66,.86)');
+   shareText(ctx,entry.time,x+77,y+51,117,C.lightGold,25,900,'center');
+   shareText(ctx,'UUR',x+77,y+77,110,C.muted,14,800,'center');
+   shareText(ctx,entry.left,x+159,y+35,w-192,C.white,25,800);
+   shareText(ctx,'VS '+entry.right,x+159,y+67,w-192,C.white,25,800);
+   const status=entry.status==='Gespeeld'?'GESPEELD':
+     entry.provisional?'VOORLOPIG':entry.status.toUpperCase();
+   shareText(ctx,ohcCalendarMatchLabel(entry)+'   •   '+status+
+    (entry.score&&entry.winner?'   •   '+entry.score:''),
+    x+159,y+96,w-196,entry.status==='Gespeeld'?C.green:C.purple,17,750);
+   y+=cardH+10;
+  }
+  y+=7;
+ }
+}
+
 function buildOhcSharePoster(info,logo){
- const n=info.round!==null?info.matches.length:
+ const isCalendar=['kalender','kalender-volledig'].includes(info.type);
+ const n=isCalendar?info.entries.length:info.round!==null?info.matches.length:
   info.type==='deelnemers'?data.players.length:8;
  const rows=info.round!==null?Math.ceil(n/(n===1?1:2)):
   info.type==='deelnemers'?Math.ceil(n/(n===1?1:2)):4;
- const height=Math.max(1440,339+rows*(info.round!==null?229:64)+220);
+ const height=isCalendar?shareCalendarPosterHeight(info):
+  Math.max(1440,339+rows*(info.round!==null?229:64)+220);
+ // Very tall full-tournament posters use native 1080px resolution to stay
+ // within memory limits of mobile browsers; monthly posters remain 2160px wide.
+ const scale=info.type==='kalender-volledig'?1:OHC_SHARE_SCALE;
  const canvas=document.createElement('canvas');
- canvas.width=OHC_SHARE_W*OHC_SHARE_SCALE;
- canvas.height=height*OHC_SHARE_SCALE;
+ canvas.width=OHC_SHARE_W*scale;
+ canvas.height=height*scale;
  const ctx=canvas.getContext('2d');
  if(!ctx)throw Error('Canvas niet beschikbaar');
- ctx.scale(OHC_SHARE_SCALE,OHC_SHARE_SCALE);
+ ctx.scale(scale,scale);
  shareBase(ctx,height,logo,info,n);
- if(info.round!==null)shareCardPosters(ctx,info);
+ if(isCalendar){
+  if(info.type==='kalender')shareCalendarGrid(ctx,info);
+  shareCalendarAgenda(ctx,info);
+ }
+ else if(info.round!==null)shareCardPosters(ctx,info);
  else if(info.type==='deelnemers')sharePlayersPoster(ctx,info);
  else if(info.type==='prijzen')sharePrizesPoster(ctx);
  return canvas;
