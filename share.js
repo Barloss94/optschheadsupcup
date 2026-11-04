@@ -4,6 +4,7 @@
    choose an export type and round, preview a complete portrait PNG,
    download it or hand the image to the device share sheet. */
 const OHC_SHARE_TYPES={
+ boom:{label:'Volledige toernooiboom',title:'TOERNOOIBOOM'},
  loting:{label:'Ronde-indeling / loting',title:'LOTING'},
  schema:{label:'Speelschema',title:'SPEELSCHEMA'},
  uitslagen:{label:'Uitslagen',title:'UITSLAGEN'},
@@ -38,7 +39,7 @@ function shareView(){
  const calendarMonths=[...new Set(calendarEntries.map(e=>e.date.slice(0,7)))];
  const selectedMonth=calendarMonths.includes(ohcShareMonth)?ohcShareMonth:
   (calendarMonths.includes(ohcCalendarMonth)?ohcCalendarMonth:calendarMonths[0]||'');
- const haveData=roundTypes?rounds>0:calendarTypes?
+ const haveData=(ohcShareType==='boom'||roundTypes)?rounds>0:calendarTypes?
   (ohcShareType==='kalender'?calendarEntries.some(e=>e.date.startsWith(selectedMonth)):calendarEntries.length>0):
   ohcShareType==='deelnemers'?data.players.length>0:true;
  const value=rounds?Math.min(ohcShareRound,rounds-1):0;
@@ -59,7 +60,8 @@ function shareView(){
       esc(ohcCalendarMonthName(m))+'</option>').join(''):'<option>Geen geplande duels</option>')+
     '</select></div>':
    '<div class="field"><label>Weergave</label><div class="share-selection-note">'+
-    (ohcShareType==='kalender-volledig'?'Alle geplande datums met duels, op één afbeelding':
+    (ohcShareType==='boom'?'Alle rondes en doorgangen in één liggende afbeelding':
+     ohcShareType==='kalender-volledig'?'Alle geplande datums met duels, op één afbeelding':
      'De volledige editie op één afbeelding')+'</div></div>')+
   '</div>'+
   (!haveData?'<div class="notice orange">Er zijn nog geen gegevens om dit overzicht te delen. Voer eerst de loting uit of voeg deelnemers toe.</div>':'')+
@@ -68,7 +70,7 @@ function shareView(){
   '<button type="button" class="btn alt" onclick="sharePosterNative()" '+(!haveData?'disabled':'')+'>Deel afbeelding (WhatsApp e.a.)</button>'+
   '</div>'+
   '<p class="muted smalltext share-advice">De afbeelding bevat volledige spelersnamen. Deel deze alleen in groepen waarvoor de informatie bedoeld is. Op een telefoon kun je WhatsApp kiezen vanuit het deelmenu; op andere apparaten kun je het PNG-bestand versturen.</p>'+
-  '<div class="share-preview-section"><div class="share-preview-head"><h3>Voorbeeld</h3><span class="tag">1080 PX • HOGE RESOLUTIE</span></div>'+
+  '<div class="share-preview-section"><div class="share-preview-head"><h3>Voorbeeld</h3><span class="tag">'+(ohcShareType==='boom'?'LIGGEND • HOGE RESOLUTIE':'1080 PX • HOGE RESOLUTIE')+'</span></div>'+
   '<div class="share-poster-preview" id="ohcSharePosterContainer">'+
   (haveData?'<canvas id="ohcSharePreview" aria-label="Voorbeeld van deelbare OHC-poster" role="img"></canvas>':
    '<div class="empty"><div class="bigicon">♠</div><strong>Nog geen voorbeeld beschikbaar</strong></div>')+'</div>'+
@@ -88,6 +90,7 @@ function changeShareRound(index){
 }
 function shareActiveInfo(){
  const type=ohcShareType,rounds=bracket();
+ if(type==='boom')return rounds.length?{type,round:null,matches:[],rounds,label:'Volledige toernooiboom'}:null;
  if(['loting','schema','uitslagen'].includes(type)){
   if(!rounds.length)return null;
   const round=Math.min(Math.max(0,ohcShareRound),rounds.length-1);
@@ -365,7 +368,114 @@ function shareCalendarAgenda(ctx,info){
  }
 }
 
+
+/* Volledige deelbare toernooiboom: één liggende afbeelding, inclusief routes.
+   Alleen de zichtbare nummering hangt af van de speeldagen; de match-ID's en
+   doorschuifkoppelingen blijven zoals vastgelegd bij de loting. */
+function bracketPosterGeometry(rounds){
+ const cardW=410,cardH=96,colGap=95,marginX=80;
+ const pitch=114,top=346;
+ const firstCount=Math.max(1,rounds[0]?.length||0);
+ const width=marginX*2+rounds.length*cardW+(rounds.length-1)*colGap;
+ const height=Math.max(1120,top+firstCount*pitch+170);
+ const centers=rounds.map(()=>[]);
+ for(let i=0;i<firstCount;i++)centers[0][i]=top+i*pitch+cardH/2;
+ for(let r=1;r<rounds.length;r++){
+  for(let i=0;i<rounds[r].length;i++){
+   if(rounds[r][i].isBronze){
+    const finalCenter=centers[r][0]??(top+pitch*firstCount/2);
+    centers[r][i]=finalCenter+pitch*1.38;
+   }else{
+    const one=centers[r-1][i*2],two=centers[r-1][i*2+1];
+    centers[r][i]=one!==undefined&&two!==undefined?(one+two)/2:
+     one!==undefined?one:two!==undefined?two:top+pitch*i+cardH/2;
+   }
+  }
+ }
+ return {cardW,cardH,colGap,marginX,pitch,top,width,height,centers,
+  x:r=>marginX+r*(cardW+colGap),
+  y:(r,i)=>centers[r][i]-cardH/2};
+}
+function bracketPosterConnections(ctx,rounds,g){
+ const C=OHC_SHARE_COLORS;
+ ctx.save();ctx.lineWidth=3;ctx.strokeStyle='rgba(226,181,108,.7)';
+ ctx.lineJoin='round';ctx.lineCap='round';
+ for(let r=1;r<rounds.length;r++)for(let i=0;i<rounds[r].length;i++){
+  if(rounds[r][i].isBronze)continue;
+  const parents=[i*2,i*2+1].filter(j=>j<rounds[r-1].length);
+  const x0=g.x(r-1)+g.cardW,x1=g.x(r),mid=(x0+x1)/2,dest=g.centers[r][i];
+  for(const j of parents){
+   const src=g.centers[r-1][j];
+   if(src===undefined)continue;
+   ctx.beginPath();
+   ctx.moveTo(x0,src);ctx.lineTo(mid,src);ctx.lineTo(mid,dest);ctx.lineTo(x1,dest);
+   ctx.stroke();
+  }
+ }
+ ctx.restore();
+}
+function bracketPosterCard(ctx,m,r,i,g,rounds){
+ const C=OHC_SHARE_COLORS,x=g.x(r),y=g.y(r,i),w=g.cardW,h=g.cardH;
+ const bronze=!!m.isBronze,decided=!!m.winner;
+ shareFillRound(ctx,x,y,w,h,15,bronze?'#2b2130':'#201b2b',
+  decided?'rgba(64,210,147,.83)':bronze?'rgba(205,160,105,.75)':'rgba(160,122,190,.7)',2);
+ shareFillRound(ctx,x+11,y+8,w-22,26,8,bronze?'#806240':'#493449');
+ shareText(ctx,displayDuelLabel(m,rounds).toUpperCase(),x+20,y+28,w-40,
+  bronze?C.lightGold:C.gold,16,900);
+ for(let slot=0;slot<2;slot++){
+  const id=slot===0?m.a:m.b;
+  const str=id?name(id):m.isBye&&slot===1?'Vrijloting':
+   bracketSlotText(r,m.index,slot,id);
+  const winner=id&&id===m.winner;
+  shareText(ctx,(winner?'✓ ':'')+str,x+20,y+56+slot*27,w-40,
+   winner?C.green:id?C.white:C.muted,20,winner?900:700);
+ }
+ const schedule=data.schedule[m.id];
+ if(schedule?.date&&!m.isBye){
+  const stamp=prettyDate(schedule.date);
+  shareText(ctx,stamp,x+w-12,y+28,180,C.pale,13,650,'right');
+ }
+}
+function buildOhcBracketPoster(logo,rounds){
+ if(!rounds?.length)throw Error('Er is nog geen loting om te exporteren.');
+ const C=OHC_SHARE_COLORS,g=bracketPosterGeometry(rounds);
+ const canvas=document.createElement('canvas');
+ canvas.width=g.width;canvas.height=g.height;
+ const ctx=canvas.getContext('2d');
+ if(!ctx)throw Error('Canvas is niet beschikbaar.');
+ ctx.fillStyle=C.bg;ctx.fillRect(0,0,g.width,g.height);
+ const glow=ctx.createRadialGradient(g.width/2,0,10,g.width/2,50,g.width*.72);
+ glow.addColorStop(0,'rgba(98,49,129,.3)');
+ glow.addColorStop(1,'rgba(9,9,18,0)');
+ ctx.fillStyle=glow;ctx.fillRect(0,0,g.width,g.height);
+ shareFillRound(ctx,20,20,g.width-40,g.height-40,28,
+  'rgba(12,12,23,.8)','rgba(221,174,104,.7)',3);
+ if(logo)ctx.drawImage(logo,72,58,145,145);
+ shareText(ctx,'OPTSCH HEADS-UP CUP',244,103,g.width-320,C.gold,32,900);
+ shareText(ctx,'VOLLEDIGE TOERNOOIBOOM',244,163,g.width-320,C.white,47,900);
+ shareText(ctx,(data.settings.title||'OHC')+'  •  '+data.players.length+
+  ' spelers  •  '+rounds.length+' rondes',244,204,g.width-320,C.purple,22,750);
+ ctx.fillStyle='rgba(236,192,128,.6)';ctx.fillRect(76,246,g.width-152,2);
+ for(let r=0;r<rounds.length;r++){
+  shareText(ctx,roundLabel(r,rounds.length).toUpperCase(),g.x(r),314,
+   g.cardW,C.lightGold,23,850);
+ }
+ bracketPosterConnections(ctx,rounds,g);
+ rounds.forEach((matches,r)=>matches.forEach((m,i)=>
+  bracketPosterCard(ctx,m,r,i,g,rounds)));
+ ctx.fillStyle='rgba(236,192,128,.5)';
+ ctx.fillRect(76,g.height-114,g.width-152,2);
+ const champ=champion();
+ if(champ){
+  shareText(ctx,'🏆 KAMPIOEN: '+name(champ),g.width/2,g.height-65,
+   g.width-170,C.lightGold,29,900,'center');
+ }else shareText(ctx,'IEDERE WINNAAR EEN STAP DICHTER BIJ DE TITEL',
+  g.width/2,g.height-65,g.width-180,C.lightGold,23,850,'center');
+ return canvas;
+}
+
 function buildOhcSharePoster(info,logo){
+ if(info.type==='boom')return buildOhcBracketPoster(logo,info.rounds);
  const isCalendar=['kalender','kalender-volledig'].includes(info.type);
  const n=isCalendar?info.entries.length:info.round!==null?info.matches.length:
   info.type==='deelnemers'?data.players.length:8;
