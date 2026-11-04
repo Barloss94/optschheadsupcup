@@ -142,6 +142,18 @@ test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op éé
  assert.ok(drawn.includes('BRONSFINALE'),'Bronsfinale ontbreekt');
  assert.ok(drawn.includes('FINALE'),'Finale ontbreekt');
 });
+test('Alleen in de PNG zijn de duelkaarten compacter; de website behoudt zijn afmetingen',()=>{
+ seed(32);
+ const result=run("const g=bracketPosterGeometry(bracket()),web=bracketMirrorLayout(bracket());"+
+  "return {pngW:g.cardW,pngH:g.cardH,webH:web.cardHeight,columns:g.layout.columns};");
+ assert.equal(result.pngW,324);
+ assert.equal(result.pngH,108);
+ assert.equal(result.webH,156);
+ assert.equal(result.columns,9);
+ const page=run("return bracketView()");
+ assert.match(page,/height:156px/);
+});
+
 test('De bracketconnectoren koppelen werkelijk op basis van vaste matchroutes',()=>{
  seed(32);
  const boxes=run("const rounds=bracket(),g=bracketPosterGeometry(rounds);"+
