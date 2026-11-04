@@ -476,7 +476,22 @@ function nav(){
   '<button type="button" class="nav-signout" onclick="logout()">Uitloggen</button>';
 }
 function heading(title,aside=''){return `<div class="sectiontitle"><h2>${title}</h2>${aside}</div>`}
-function hero(){return `<section class="hero"><div class="heroinner"><span class="eyebrow"><i class="dot"></i> OPTSCH • Heads-up knockout 2026–2027</span><h1>HEADS-UP<br><em>CUP</em></h1><p>Geen volle tafels, geen teamgenoten. Slechts twee spelers tegenover elkaar. Win je duel, dan ga je door. Wie bereikt de finale?</p><div class="btnbar">${button('Bekijk deelnemers →',"setTab('deelnemers')",'')}${button('Toernooiboom bekijken',"setTab('boom')",'ghost')}</div><div class="hero-bottomline"><span class="seasonchip first">SEIZOEN 2026</span><span class="seasondivider">✦</span><span class="seasonchip last">SEIZOEN 2027</span></div></div><div class="hero-visual" aria-hidden="true"><div class="hero-crest"></div></div></section>`}
+function seasonMarkers(){
+ const periods=getRoundWindows();
+ if(periods.length!==5)return '<span class="seasonchip first">NIEUWE EDITIE</span>';
+ const first=periods[0].start.slice(0,4),last=periods[4].end.slice(0,4);
+ return '<span class="seasonchip first">'+esc(first)+'</span>'+
+  (first===last?'':'<span class="seasondivider">✦</span><span class="seasonchip last">'+esc(last)+'</span>');
+}
+function hero(){
+ return '<section class="hero"><div class="heroinner"><span class="eyebrow"><i class="dot"></i> OPTSCH • HEADS-UP KNOCK-OUT</span>'+
+ '<h1>HEADS-UP<br><em>CUP</em></h1>'+
+ '<p>Geen volle tafels, geen teamgenoten. Slechts twee spelers tegenover elkaar. Win je duel, dan ga je door. Wie bereikt de finale?</p>'+
+ '<div class="btnbar">'+button('Bekijk deelnemers →',"setTab('deelnemers')",'')+
+ button('Toernooiboom bekijken',"setTab('boom')",'ghost')+'</div>'+
+ '<div class="hero-bottomline">'+seasonMarkers()+'</div></div>'+
+ '<div class="hero-visual" aria-hidden="true"><div class="hero-crest"></div></div></section>';
+}
 
 const BUY_IN_CENTS=1250,FIXED_COSTS_CENTS=5650,MAX_PLAYERS=32;
 const PRIZE_PERCENTAGES=[35,25,15.5,12.5,3,3,3,3];
@@ -1410,7 +1425,7 @@ function archiveView(){
  ).join('')+'</div>'+archivedReadOnlyView(selected);
 }
 
-function loginScreen(){return `<section class="panel auth-panel"><div class="login-brand"><div class="login-crest" role="img" aria-label="OPTSCH Heads-Up Cup logo"></div><div class="login-yearline"><span class="seasonchip first">2026</span><span class="seasondivider">✦</span><span class="seasonchip last">2027</span></div><h2>Welkom bij de Heads-Up Cup</h2><p class="muted smalltext">Deelnemers, toernooiboom, speelschema en uitslagen zijn uitsluitend zichtbaar voor ingelogde OPTSCH-spelers.</p></div><div class="field"><label for="loginEmail">E-mailadres</label><input id="loginEmail" type="email" autocomplete="username" placeholder="E-mailadres"></div><div class="field"><label for="loginPassword">Wachtwoord</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Wachtwoord" onkeydown="if(event.key===&#39;Enter&#39;)login()"></div><div class="btnbar"><button class="btn" onclick="login()">Inloggen</button></div><p class="muted smalltext">Geen inloggegevens? Vraag de organisatie om toegang.</p></section>`}
+function loginScreen(){return `<section class="panel auth-panel"><div class="login-brand"><div class="login-crest" role="img" aria-label="OPTSCH Heads-Up Cup logo"></div><div class="login-yearline"><span class="seasonchip first">OPTSCH</span><span class="seasondivider">✦</span><span class="seasonchip last">HEADS-UP CUP</span></div><h2>Welkom bij de Heads-Up Cup</h2><p class="muted smalltext">Deelnemers, toernooiboom, speelschema en uitslagen zijn uitsluitend zichtbaar voor ingelogde OPTSCH-spelers.</p></div><div class="field"><label for="loginEmail">E-mailadres</label><input id="loginEmail" type="email" autocomplete="username" placeholder="E-mailadres"></div><div class="field"><label for="loginPassword">Wachtwoord</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Wachtwoord" onkeydown="if(event.key===&#39;Enter&#39;)login()"></div><div class="btnbar"><button class="btn" onclick="login()">Inloggen</button></div><p class="muted smalltext">Geen inloggegevens? Vraag de organisatie om toegang.</p></section>`}
 function render(){
  const routes={
   overzicht:overview,deelnemers:playersView,schema:function(){return withRoundFilter(scheduleView(),'schema')},
