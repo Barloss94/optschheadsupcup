@@ -2,6 +2,15 @@
 
 De besloten website voor de **OPTSCH Heads-Up Cup**, met directe knock-out (single elimination). Alle toernooi-informatie is alleen toegankelijk na inloggen.
 
+## Resetten, archiveren en nieuwe toernooien (november 2026)
+
+- **Volledig resetten:** Beheer → Toernooi beheren → Toernooi volledig resetten. Bevestig tweemaal (waaronder het intypen van `RESET`). Alle actieve deelnemers, verhinderingen, loting, uitslagen, planning en weekinstellingen worden gewist, zonder archief te maken. Bestaande archieven blijven bewaard.
+- **Archiveren en nieuw starten:** vanuit hetzelfde beheerscherm kan de beheerder een archiefnaam invoeren, het huidige toernooi bewaren en een nieuwe, volledig lege competitie starten. Dit is één database-transactie: bij een fout blijft het huidige toernooi intact.
+- **Beveiligd archief:** volledige originele snapshots blijven in `ohc_archives` (uitsluitend beheerders), een kopie zonder verhinderingen in `ohc_archive_public` (alleen ingelogde gebruikers). De archiefpagina toont deelnemers, wedstrijden, toernooiboom, speelperiodes en prijzen als alleen-lezen.
+- **Instelbare ISO-weeknummers:** Beheer → Instellingen. Vul bij elke ronde de eerste en laatste ISO-week met weekjaar in, bijvoorbeeld `2027-W01` t/m `2027-W02`. De beginweek start op maandag en de eindweek eindigt op zondag. Optionele geblokkeerde kalenderdatums zijn instelbaar. Bestaande vaste afspraken mogen niet buiten de nieuwe perioden worden geplaatst.
+- **Nieuwe competitie is blanco:** geen deelnemers, loting, resultaten, speelschema, speelweken of inschrijfdeadline. Titel en deadline worden door de beheerder ingesteld.
+- **Veiligheid:** alleen beheerders kunnen resetten of archiveren; acties gebruiken een version-check. Reeds bestaande toernooidata wordt niet automatisch gewijzigd.
+
 ## Live database
 
 De applicatie gebruikt het bestaande Supabase-project **OPTSCH Ranking** (`lnlaqrljtwrxtfsyotnn`), maar beheert de OHC volledig in afzonderlijke tabellen:
