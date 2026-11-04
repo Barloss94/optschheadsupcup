@@ -1025,15 +1025,16 @@ function firstRoundSwapPanel(){
 function adminLotteryPage(){
  const drawn=data.draw.length>0;
  const byes=data.players.length>1?2**Math.ceil(Math.log2(data.players.length))-data.players.length:0;
- return '<section class="panel"><div class="sectiontitle"><h2>De officiële loting</h2><span class="pill '+(drawn?'ok':'warn')+'">'+(drawn?'Loting uitgevoerd':'Nog niet geloot')+'</span></div>'+
-  '<p class="panel-intro">Het toernooi gebruikt één vaste knock-outindeling. De loting houdt waar mogelijk rekening met verhinderingen en plaatst lastige ontmoetingen zo laat mogelijk. Iedereen wordt maximaal één keer ingeloot. Na de loting liggen alle routes vast.</p>'+
+ const introduction='<section class="panel"><div class="sectiontitle"><h2>De officiële loting</h2><span class="pill '+(drawn?'ok':'warn')+'">'+(drawn?'Loting uitgevoerd':'Nog niet geloot')+'</span></div>'+
+  '<p class="panel-intro">Het toernooi gebruikt één vaste knock-outindeling. De loting houdt waar mogelijk rekening met verhinderingen en plaatst lastige ontmoetingen zo laat mogelijk. Iedere speler wordt precies één keer ingeloot; de vervolgrondes volgen de vaste routes.</p>'+
   '<div class="quick-metrics"><div class="quick-metric"><b>'+data.players.length+'</b><span>Deelnemers</span></div><div class="quick-metric"><b>'+byes+'</b><span>Vrijlotingen</span></div><div class="quick-metric"><b>'+(drawn?howManyRounds():'—')+'</b><span>Rondes</span></div></div>'+
-  '<div class="admin-lottery-status"><h3>'+(drawn?'Toernooiboom vastgesteld':'Klaar om te loten?')+'</h3><p>'+(drawn?'De loting is vastgelegd. Uitslagen voer je in op de aparte resultatenpagina.':'Controleer vooraf alle deelnemers en hun verhinderingen. Iedere speler moet minimaal één mogelijke speeldag hebben.')+'</p>'+
+  '<div class="admin-lottery-status"><h3>'+(drawn?'Toernooiboom vastgesteld':'Klaar om te loten?')+'</h3><p>'+(drawn?'De oorspronkelijke loting is uitgevoerd. Totdat ronde 1 volledig klaar is, kun je hieronder nog twee eerste-rondeplaatsen wisselen. Uitslagen voer je in op de aparte resultatenpagina.':'Controleer vooraf alle deelnemers en hun verhinderingen. Iedere speler moet minimaal één mogelijke speeldag hebben.')+'</p>'+
   '<div class="btnbar">'+(!drawn?button('Eerste ronde loten','createDraw()',''):'')+
    button('Bekijk toernooiboom',"setTab('boom')",'alt')+
    (drawn?button('Uitslagen invoeren',"setTab('beheer-resultaten')",'ghost'):'')+'</div></div>'+
-  drawAvailabilityNotice()+firstRoundSwapPanel()+
-  '<p class="admin-subtle"Een dag die niet als verhinderd is geregistreerd, telt als beschikbaar. Controleer daarom alle zeven weekdagen voordat je de loting uitvoert.</p></section>';
+  drawAvailabilityNotice()+
+  '<p class="admin-subtle">Een dag die niet als verhinderd is geregistreerd, telt als beschikbaar. Controleer daarom alle zeven weekdagen voordat je de loting uitvoert.</p></section>';
+ return introduction+firstRoundSwapPanel();
 }
 function adminResultsPage(){
  if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">🏆</div><strong>Er is nog geen loting</strong><p>Voer eerst de officiële loting uit om uitslagen per duel in te kunnen voeren.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
