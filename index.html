@@ -1040,7 +1040,7 @@ function previewFirstRoundSwap(){
  catch(e){target.innerHTML='<div class="notice orange">De wisseling kon niet worden gecontroleerd: '+esc(e.message)+'</div>';return}
  if(preview.error){target.innerHTML='<div class="notice orange">'+esc(preview.error)+'</div>';return}
  let message='<div class="swap-preview"><h3>Voorbeeld van de nieuwe indeling</h3><div class="rows">'+
-  preview.modifications.map(x=>'<div class="swap-preview-row"><strong>Duel '+(x.index+1)+'</strong>'+
+  preview.modifications.map(x=>'<div class="swap-preview-row"><strong>Duel '+(displayDuelNumber(0,x.index)||'vrijloting')+'</strong>'+
    '<div class="smalltext muted">Was: '+swapPairText(x.oldA,x.oldB)+'</div>'+
    '<div class="smalltext">Wordt: '+swapPairText(x.newA,x.newB)+'</div></div>').join('')+
   '</div><hr class="divider">';
@@ -1049,7 +1049,7 @@ function previewFirstRoundSwap(){
   old+' → '+n+(n>old?' <span class="pill warn">+'+(n-old)+' extra</span>':n<old?' <span class="pill ok">'+(old-n)+' minder</span>':' <span class="pill ok">Ongewijzigd</span>')+'</div>';
  if(preview.addedDirect.length)
   message+='<div class="notice orange"><strong>Nieuwe conflicten:</strong><ul>'+
-   preview.addedDirect.map(x=>'<li>Duel '+(x.index+1)+': '+esc(name(x.a,true))+' – '+esc(name(x.b,true))+
+   preview.addedDirect.map(x=>'<li>Duel '+(displayDuelNumber(0,x.index)||'vrijloting')+': '+esc(name(x.a,true))+' – '+esc(name(x.b,true))+
     ' hebben geen gezamenlijke toegestane speeldag.</li>').join('')+'</ul></div>';
  if(preview.earlier.length){
   message+='<div class="notice orange"><strong>Let op:</strong> '+preview.earlier.length+
@@ -1060,7 +1060,7 @@ function previewFirstRoundSwap(){
  }
  if(preview.erasedResults.length)
   message+='<div class="notice orange"><strong>Uitslagen worden gewist:</strong> '+
-   preview.erasedResults.map(x=>'R'+(Number(x.split(':')[0])+1)+' duel '+(Number(x.split(':')[1])+1)).join(', ')+
+   preview.erasedResults.map(x=>'R'+(Number(x.split(':')[0])+1)+' duel '+(displayDuelNumber(Number(x.split(':')[0]),Number(x.split(':')[1]))||'vrijloting')).join(', ')+
    '. De deelnemers van die duels veranderen; ook hun afhankelijke resultaten vervallen.</div>';
  if(preview.erasedDates.length)
   message+='<div class="notice orange"><strong>Planning verandert:</strong> '+preview.erasedDates.length+
@@ -1115,7 +1115,7 @@ function firstRoundSwapPanel(){
   return '<section class="panel"><div class="sectiontitle"><h2>Handmatige wisselingen</h2><span class="pill warn">Vergrendeld</span></div>'+
    '<p class="muted smalltext">Alle duels van de eerste ronde zijn afgewerkt. De indeling kan niet meer worden gewijzigd.</p></section>';
  const options=data.draw.map((id,i)=>
-  '<option value="'+i+'">Duel '+(Math.floor(i/2)+1)+' · '+(i%2?'Speler B':'Speler A')+
+  '<option value="'+i+'">'+(displayDuelNumber(0,Math.floor(i/2))?'Duel '+displayDuelNumber(0,Math.floor(i/2)):'Vrijloting')+' · '+(i%2?'Speler B':'Speler A')+
   ' · '+esc(id?name(id,true):'Vrijloting')+'</option>').join('');
  return '<section class="panel" id="roundOneSwap"><div class="sectiontitle"><h2>Eerste ronde aanpassen</h2>'+
   '<span class="pill blue">'+finished+' / '+real+' duels gespeeld</span></div>'+
