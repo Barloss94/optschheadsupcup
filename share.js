@@ -4,7 +4,7 @@
    choose an export type and round, preview a complete portrait PNG,
    download it or hand the image to the device share sheet. */
 const OHC_SHARE_TYPES={
- boom:{label:'Volledige toernooischema',title:'TOERNOOISCHEMA'},
+ boom:{label:'Volledig toernooischema',title:'TOERNOOISCHEMA'},
  loting:{label:'Ronde-indeling / loting',title:'LOTING'},
  schema:{label:'Speelschema',title:'SPEELSCHEMA'},
  uitslagen:{label:'Uitslagen',title:'UITSLAGEN'},
@@ -69,7 +69,7 @@ function shareView(){
   '<button type="button" class="btn" onclick="downloadSharePoster()" '+(!haveData?'disabled':'')+'>📸 Download als PNG</button>'+
   '<button type="button" class="btn alt" onclick="sharePosterNative()" '+(!haveData?'disabled':'')+'>Deel afbeelding (WhatsApp e.a.)</button>'+
   '</div>'+
-  '<p class="muted smalltext share-advice">'+(ohcShareType==='boom'?'De complete toernooischema is een liggende afbeelding. Op je telefoon kun je horizontaal door het voorbeeld scrollen. ':'')+'De afbeelding bevat volledige spelersnamen. Deel deze alleen in groepen waarvoor de informatie bedoeld is. Op een telefoon kun je WhatsApp kiezen vanuit het deelmenu; op andere apparaten kun je het PNG-bestand versturen.</p>'+
+  '<p class="muted smalltext share-advice">'+(ohcShareType==='boom'?'Het complete toernooischema is een liggende afbeelding. Op je telefoon kun je horizontaal door het voorbeeld scrollen. ':'')+'De afbeelding bevat volledige spelersnamen. Deel deze alleen in groepen waarvoor de informatie bedoeld is. Op een telefoon kun je WhatsApp kiezen vanuit het deelmenu; op andere apparaten kun je het PNG-bestand versturen.</p>'+
   '<div class="share-preview-section"><div class="share-preview-head"><h3>Voorbeeld</h3><span class="tag">'+(ohcShareType==='boom'?'LIGGEND • HOGE RESOLUTIE':'1080 PX • HOGE RESOLUTIE')+'</span></div>'+
   '<div class="share-poster-preview'+(ohcShareType==='boom'?' bracket-poster-preview':'')+'" id="ohcSharePosterContainer">'+
   (haveData?'<canvas id="ohcSharePreview" aria-label="Voorbeeld van deelbare OHC-poster" role="img"></canvas>':
@@ -90,7 +90,7 @@ function changeShareRound(index){
 }
 function shareActiveInfo(){
  const type=ohcShareType,rounds=bracket();
- if(type==='boom')return rounds.length?{type,round:null,matches:[],rounds,label:'Volledige toernooischema'}:null;
+ if(type==='boom')return rounds.length?{type,round:null,matches:[],rounds,label:'Volledig toernooischema'}:null;
  if(['loting','schema','uitslagen'].includes(type)){
   if(!rounds.length)return null;
   const round=Math.min(Math.max(0,ohcShareRound),rounds.length-1);
@@ -513,7 +513,7 @@ function buildOhcBracketPoster(logo,rounds){
   'rgba(12,12,23,.8)','rgba(221,174,104,.7)',3);
  if(logo)ctx.drawImage(logo,72,58,145,145);
  shareText(ctx,'OPTSCH HEADS-UP CUP',244,103,g.width-320,C.gold,32,900);
- shareText(ctx,'VOLLEDIGE TOERNOOISCHEMA',244,163,g.width-320,C.white,47,900);
+ shareText(ctx,'VOLLEDIG TOERNOOISCHEMA',244,163,g.width-320,C.white,47,900);
  shareText(ctx,(data.settings.title||'OHC')+'  •  '+data.players.length+
   ' spelers  •  '+rounds.length+' rondes',244,204,g.width-320,C.purple,22,750);
  ctx.fillStyle='rgba(236,192,128,.6)';ctx.fillRect(76,246,g.width-152,2);
