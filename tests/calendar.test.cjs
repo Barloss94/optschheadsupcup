@@ -130,3 +130,51 @@ test('Gearchiveerde kalender toont geen deelknoppen',()=>{
  assert.doesNotMatch(markup,/openCalendarShare/);
  assert.match(markup,/Anna/);
 });
+
+test('Spelers zien één duelnummer per ronde in chronologische speelvolgorde',()=>{
+ seed();
+ // Bracketpositie 2 heeft een latere datum: zichtbaar duelnummer is niet het interne ID.
+ const result=run("return {"+
+  "early:displayDuelNumber(0,0),later:displayDuelNumber(0,1),"+
+  "earlyLabel:ohcCalendarMatchLabel(ohcCalendarEntries().find(m=>m.id==='0:0')),"+
+  "laterLabel:ohcCalendarMatchLabel(ohcCalendarEntries().find(m=>m.id==='0:1')),"+
+  "nextLeft:bracketSlotText(1,0,0,null),nextRight:bracketSlotText(1,0,1,null),"+
+  "originalId:bracket()[0][1].id};");
+ assert.equal(result.early,1);
+ assert.equal(result.later,2);
+ assert.equal(result.earlyLabel,'Ronde 1 · duel 1');
+ assert.equal(result.laterLabel,'Ronde 1 · duel 2');
+ assert.equal(result.nextLeft,'Winnaar ronde 1 duel 1');
+ assert.equal(result.nextRight,'Winnaar ronde 1 duel 2');
+ assert.equal(result.originalId,'0:1');
+});
+test('De vroegste speeldatum krijgt duel 1, ook bij een hogere bracketpositie',()=>{
+ seed();
+ const result=run("data.schedule['0:1']={date:'2026-12-29',time:'21:30',provisional:false};"+
+  "return {first:displayDuelNumber(0,1),second:displayDuelNumber(0,0),"+
+  "labelFirst:ohcCalendarMatchLabel(ohcCalendarEntries()[0]),"+
+  "reference:bracketSlotText(1,0,1,null)};");
+ assert.equal(result.first,1);
+ assert.equal(result.second,2);
+ assert.equal(result.labelFirst,'Ronde 1 · duel 1');
+ assert.equal(result.reference,'Winnaar ronde 1 duel 1');
+});
+test('Bij dezelfde datum bepaalt de begintijd de zichtbare duelvolgorde',()=>{
+ seed();
+ const result=run("data.schedule['0:0']={date:'2026-12-31',time:'22:00',provisional:false};"+
+  "data.schedule['0:1']={date:'2026-12-31',time:'19:00',provisional:false};"+
+  "return {first:displayDuelNumber(0,1),second:displayDuelNumber(0,0),"+
+  "sorted:sortedRoundMatches(0).map(x=>x.id).join(',')};");
+ assert.equal(result.first,1);
+ assert.equal(result.second,2);
+ assert.equal(result.sorted,'0:1,0:0');
+});
+test('Rondeposters houden dezelfde nummers aan als de kalender',()=>{
+ seed();
+ const nums=run("data.schedule['0:1']={date:'2026-12-29',time:'20:00',provisional:false};"+
+  "ohcShareType='schema';ohcShareRound=0;buildOhcSharePoster(shareActiveInfo(),null);"+
+  "return sortedRoundMatches(0).map(x=>displayDuelNumber(0,x.index));");
+ assert.deepEqual(Array.from(nums),[1,2]);
+ const labels=drawn.filter(x=>x==='DUEL 1'||x==='DUEL 2');
+ assert.deepEqual(labels,['DUEL 1','DUEL 2']);
+});
