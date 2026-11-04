@@ -1,13 +1,13 @@
 # OPTSCH Heads-Up Cup (OHC)
 
-De openbare website voor de **OPTSCH Heads-Up Cup**, met directe knock-out (single elimination).
+De besloten website voor de **OPTSCH Heads-Up Cup**, met directe knock-out (single elimination). Alle toernooi-informatie is alleen toegankelijk na inloggen.
 
 ## Live database
 
 De applicatie gebruikt het bestaande Supabase-project **OPTSCH Ranking** (`lnlaqrljtwrxtfsyotnn`), maar beheert de OHC volledig in afzonderlijke tabellen:
 
 - `public.ohc_events`: volledige deelnemersgegevens, verhinderingen, loting, uitslagen, wedstrijdplanning en versienummer. Alleen bestaande Ranking-beheerders kunnen deze tabel lezen en wijzigen.
-- `public.ohc_public_events`: beveiligd afgeleid publiek overzicht met afgekorte spelersnamen, loting en wedstrijduitslagen.
+- `public.ohc_public_events`: een met Supabase Auth afgeschermd spelersoverzicht met **volledige namen**, loting en wedstrijduitslagen. Beschikbaarheid wordt hier niet vrijgegeven. Alleen ingelogde gebruikers kunnen dit overzicht lezen; anonieme toegang is ingetrokken.
 - `public.ohc_save_state(...)`: bewaart een wijziging transactioneel, controleert de beheerrol en voorkomt overschrijven van nieuwere toernooiversies.
 
 De databasewijziging is geregistreerd onder de migratie `create_ohc_isolated_tournament_tables`. De bestaande Ranking-tabellen zijn niet aangepast.
@@ -18,10 +18,10 @@ De API-sleutel in `index.html` is uitsluitend een **publishable** sleutel. Bevei
 
 Open `index.html` in een browser via een HTTP-server of gebruik GitHub Pages. De website bevat:
 
-- Publiek overzicht en deelnemerslijst
-- Speelschema en afgekorte namen voor bezoekers
+- Besloten overzicht en deelnemerslijst voor ingelogde gebruikers
+- Speelschema en volledige voor- en achternamen achter inlog
 - Automatische knock-outtoernooiboom, vrijloten en voortgang
-- Beveiligde beheerlogin met het bestaande Ranking-adminaccount
+- Inloggen met bestaande OPTSCH-/Supabase-accounts; alleen beheerders krijgen extra beheerfuncties
 - Deelnemersbeheer en import van de Google Forms-inschrijvings-CSV
 - Loting, winnaars, automatisch doorschuiven en wedstrijdplanning
 - Rondedeadlines, CSV-export, PNG-export en JSON-back-up
@@ -49,7 +49,7 @@ De eerste twee deelnemers zijn op basis van het aangeleverde inschrijvingsbestan
 ### Planning en de op papier thuisspelende speler
 
 - De **eerstgenoemde speler in een duel** is de op papier thuisspelende speler.
-- In de openbare deelnemerslijst en bracket staat alleen de afgekorte naam. Als die afkorting bij meerdere verschillende spelers gelijk is, wordt **een uniek deelnemersnummer** getoond, bijvoorbeeld `Deelnemer 1. (#12)`. Zo worden afzonderlijke deelnemers niet als één speler weergegeven, zonder volledige achternamen openbaar te maken.
+- Alle ingelogde gebruikers zien de volledige voor- en achternamen. De naamafkorting uit de Game Tracker is niet van toepassing op de Heads-Up Cup.
 - Een speler die een duel wint, komt ook in de volgende ronde voor. Dit is **doorschuiven**, geen dubbele loting. De eerste-rondebracket bevat altijd iedere speler precies één keer.
 - De beschikbare weekdagen en verhinderingen van spelers worden **niet getoond in het publieke speelschema**. De beheerder kan ze gebruiken om de planning op te stellen.
 - Per ronde worden wedstrijden automatisch **gespreid over geschikte speeldagen** binnen de vastgestelde rondeperiode, met uitsluiting van de geblokkeerde feestdagen en met inachtneming van voorafgaande rondes.
@@ -135,10 +135,10 @@ Als de URL nog niet bereikbaar is, is GitHub Pages nog niet geactiveerd of is de
 
 ## Veiligheid en aandachtspunten
 
-- Bezoekers kunnen geen wijzigingen uitvoeren; de database bepaalt de rechten.
+- Zonder login is geen toernooidata zichtbaar of via de OHC-database opvraagbaar. De database bepaalt de rechten.
 - Wijzigingen worden online opgeslagen. Er is geen lokale opslag van persoonsgegevens.
-- De beheerders zien volledige namen en beschikbaarheid; de publieke tabellen tonen alleen de eerste voornaam en de eerste letter van de laatste achternaam.
+- Ingelogde gebruikers zien volledige namen, bracket, speeldata en uitslagen. Alleen beheerders mogen de persoonlijke beschikbaarheden bekijken en wedstrijden of inschrijvingen wijzigen.
 - De website biedt momenteel één OHC-evenement (`2026`). Meerdere seizoenen zijn een toekomstige uitbreiding.
 - Blindstructuur en forfaitregels zijn nog niet definitief vastgesteld. De derde en vierde plaats worden door de bronsfinale bepaald.
-- Gebruik het bestaande Ranking-adminaccount. Nieuwe OHC-beheeraccounts worden niet automatisch aangemaakt.
+- Gebruik een bestaand OPTSCH-account om de OHC te bekijken. Met een bestaand Ranking-adminaccount zijn ook de beheerdersfuncties toegankelijk. Nieuwe OHC-beheeraccounts worden niet automatisch aangemaakt.
 
