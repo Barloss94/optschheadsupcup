@@ -13,6 +13,7 @@ const context=vm.createContext({
  document:{getElementById:id=>nodes[id]},
  addEventListener(){},setTimeout(){},clearTimeout(){}
 });
+vm.runInContext(fs.readFileSync(path.join(__dirname,'..','calendar.js'),'utf8'),context,{filename:'calendar.js'});
 vm.runInContext(source.replace(/\ninitialize\(\);\s*$/,''),context);
 const run=code=>vm.runInContext('(()=>{'+code+'})()',context);
 function seedForm(periods,exclude={}){
