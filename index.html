@@ -1187,7 +1187,7 @@ function collectRoundWindows(){
 }
 function roundWeekEditor(){
  const existing=getRoundWindows();
- return '<section class="panel"><div class="sectiontitle"><h2>Speelperiodes per ISO-week</h2><span class="pill '+(existing.length===5?'ok':'warn')+'">'+(existing.length===5?'Ingesteld':'Nog instellen')+'</span></div>'+
+ return '<section class="panel"><div class="sectiontitle"><h2>2. Speelperiodes per ISO-week</h2><span class="pill '+(existing.length===5?'ok':'warn')+'">'+(existing.length===5?'Ingesteld':'Nog instellen')+'</span></div>'+
  '<p class="panel-intro">Stel voor iedere ronde de eerste en laatste kalenderweek in, inclusief het jaartal. De website rekent automatisch van maandag tot zondag. Aaneengesloten rondes mogen qua speelperiode overlappen; geplande wedstrijden van verschillende rondes nooit.</p>'+
  '<div class="notice">Bijvoorbeeld: 2027-W01 tot en met 2027-W02. Dat is maandag 4 t/m zondag 17 januari 2027. In het veld uitgesloten dagen kun je desgewenst datums invoeren waarop niet gespeeld mag worden.</div>'+
  '<div class="week-editor">'+Array.from({length:5},(_,i)=>{
@@ -1244,15 +1244,40 @@ function localDeadlineInput(iso){
  }).format(date);
  return parts.replace(' ','T');
 }
+function dutchLocalDeadlineIso(raw){
+ if(!raw)return null;
+ const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(raw));
+ if(!m)throw new Error('Vul een geldige datum en tijd in.');
+ const year=+m[1],month=+m[2],day=+m[3],hour=+m[4],minute=+m[5];
+ if(year<2020||year>2100||month<1||month>12||day<1||day>31||hour>23||minute>59)
+  throw new Error('De inschrijfdatum valt buiten de geldige periode.');
+ const midnight=Date.UTC(year,month-1,day,hour,minute);
+ // Europe/Amsterdam uses UTC+1 in winter and UTC+2 in summer.
+ // Validate round-tripping to avoid browser time zones and invalid DST hours.
+ const matches=[60,120].map(offset=>new Date(midnight-offset*60000).toISOString())
+  .filter(iso=>localDeadlineInput(iso)===raw);
+ if(matches.length===0)throw new Error('Deze Nederlandse datum of tijd bestaat niet.');
+ if(matches.length>1)throw new Error('Deze tijd valt in de wintertijdomschakeling. Kies een andere tijd.');
+ return matches[0];
+}
 function generalSettingsPanel(){
- return '<section class="panel"><h2>Algemene toernooi-instellingen</h2>'+
- '<p class="panel-intro">Stel een herkenbare naam en inschrijfdeadline in voor het actieve toernooi. De start van een nieuwe competitie heeft geen vaste deadline.</p>'+
- '<div class="formgrid"><div class="field"><label for="ohcEventTitle">Toernooinaam</label><input type="text" maxlength="100" id="ohcEventTitle" value="'+esc(data.settings.title||'OPTSCH HEADS-UP CUP')+'"></div>'+
- '<div class="field"><label for="ohcRegistrationClose">Uiterste inschrijfdatum (Nederlandse tijd)</label><input type="datetime-local" id="ohcRegistrationClose" value="'+esc(localDeadlineInput(data.settings.registrationClosesAt))+'"></div></div>'+
- '<div class="formgrid"><div class="field"><label for="eventStatus">Toernooistatus</label><select id="eventStatus">'+
- ['Inschrijving open','Inschrijving gesloten','Loting uitgevoerd','Toernooi bezig','Toernooi afgerond'].map(x=>'<option '+(x===data.settings.status?'selected':'')+'>'+x+'</option>').join('')+'</select></div>'+
+ const ready=registrationDeadlineConfigured();
+ return '<section class="panel" id="registrationSettings">'+
+ '<div class="sectiontitle"><h2>1. Toernooi en inschrijving instellen</h2>'+
+ '<span class="pill '+(ready?'ok':'warn')+'">'+(ready?'Deadline ingesteld':'Deadline ontbreekt')+'</span></div>'+
+ '<p class="panel-intro">Deze instellingen gelden alleen voor de huidige OHC-editie. Bij archiveren en opnieuw starten worden ze gewist. Bepaal eerst de toernooinaam en het uiterste moment waarop spelers zich mogen aanmelden.</p>'+
+ '<div class="formgrid"><div class="field"><label for="ohcEventTitle">Naam van deze editie</label>'+
+ '<input type="text" maxlength="100" id="ohcEventTitle" placeholder="Bijv. OHC 2027" value="'+esc(data.settings.title||'OPTSCH HEADS-UP CUP')+'"></div>'+
+ '<div class="field"><label for="ohcRegistrationClose">Uiterste inschrijfdatum en tijd (Nederland)</label>'+
+ '<input type="datetime-local" id="ohcRegistrationClose" step="60" value="'+
+ esc(localDeadlineInput(data.settings.registrationClosesAt))+'">'+
+ '<p class="hint">Tot dit moment kan de organisatie nieuwe spelers handmatig toevoegen. Na de deadline sluit dat automatisch. Eerder ontvangen CSV-inschrijvingen kunnen later nog worden verwerkt.</p></div></div>'+
+ '<div class="formgrid"><div class="field"><label for="eventStatus">Huidige inschrijf-/toernooistatus</label><select id="eventStatus">'+
+ ['Inschrijving open','Inschrijving gesloten','Loting uitgevoerd','Toernooi bezig','Toernooi afgerond'].map(x=>
+ '<option '+(x===data.settings.status?'selected':'')+'>'+x+'</option>').join('')+'</select>'+
+ '<p class="hint">Zolang er geen deadline is ingesteld, is de inschrijving niet geopend, ook niet bij de status “Inschrijving open”.</p></div>'+
  '<div class="field"><label>Toernooivorm</label><input value="Directe knock-out (maximaal 32 spelers)" disabled></div></div>'+
- '<div class="btnbar">'+button('Instellingen opslaan','saveGeneralSettings()','')+'</div>'+
+ '<div class="btnbar">'+button('Toernooi- en inschrijfgegevens opslaan','saveGeneralSettings()','')+'</div>'+
  '</section>';
 }
 async function saveGeneralSettings(){
@@ -1260,16 +1285,22 @@ async function saveGeneralSettings(){
  const title=($('ohcEventTitle')?.value||'').trim();
  if(!title||title.length>100){notify('Voer een toernooinaam van maximaal 100 tekens in.');return}
  const raw=$('ohcRegistrationClose')?.value||'';
- if(raw&&Number.isNaN(Date.parse(raw))){notify('Vul een geldige inschrijfdeadline in.');return}
- const deadline=raw?new Date(raw).toISOString():null;
+ let deadline;
+ try{deadline=dutchLocalDeadlineIso(raw)}
+ catch(err){notify('Inschrijfdeadline niet opgeslagen: '+err.message);return}
  const newStatus=$('eventStatus')?.value;
+ if(!['Inschrijving open','Inschrijving gesloten','Loting uitgevoerd','Toernooi bezig','Toernooi afgerond'].includes(newStatus)){
+  notify('Selecteer een geldige toernooistatus.');return;
+ }
  data.settings.title=title;
  data.settings.registrationClosesAt=deadline;
- if(newStatus)data.settings.status=newStatus;
+ data.settings.status=newStatus;
  const success=await save();
  render();
- if(success)notify('Algemene toernooi-instellingen opgeslagen.');
+ if(success)notify(deadline?'Toernooi opgeslagen. De inschrijfdeadline is '+registrationDeadlineLabel()+'.':
+  'Toernooinaam opgeslagen. Stel nog een inschrijfdeadline in voordat de inschrijving opent.');
 }
+
 function adminConfigPage(){
  return generalSettingsPanel()+roundWeekEditor();
 }
