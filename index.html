@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#070b16" />
+  <meta name="theme-color" content="#100f17" />
   <title>OPTSCH Heads-Up Cup — Directe Knock-out</title>
   <meta name="description" content="OPTSCH Heads-Up Cup: deelnemers, loting, speelschema en knock-outtoernooiboom." />
   <style>
@@ -16,6 +16,7 @@
     .bracketwires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible}.bracketwires path{fill:none;stroke:#ff9b49;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.67}.bracketwires path.bronze-wire{stroke:#b6c1d1;stroke-width:1.4;stroke-dasharray:4 5;opacity:.5}.bracketroute{font-size:10px;color:#ffab68;letter-spacing:.2px;border-top:1px solid #304158;margin-top:5px;padding-top:7px}
   </style>
   <link rel="stylesheet" href="./brand.css?v=2" />
+  <link rel="stylesheet" href="./layout.css?v=1" />
   <link rel="icon" href="./assets/ohc-logo.avif" type="image/avif" />
 </head>
 <body>
@@ -349,7 +350,7 @@ function participantNumber(id){const index=data.players.findIndex(p=>p.id===id);
 function name(id,admin=false){if(!id)return 'Nog niet bekend';const p=player(id);return p?p.name:'Onbekend'}
 function safeId(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function notify(msg){const t=$('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.add('hidden'),4200)}
-function setTab(t){tab=t;location.hash=t;render();window.scrollTo({top:0,behavior:'instant'})}
+function setTab(t){if(!authUser)return;if(t.startsWith('beheer')&&!isAdmin)t='overzicht';tab=t;location.hash=t;render();window.scrollTo({top:0,behavior:'instant'})}
 function roundLabel(r,n){return 'Ronde '+(r+1)+(r===n-1?(data.draw.length>=4?' · Finale en bronsfinale':' · Finale'):r===n-2?' · Halve finale':r===n-3?' · Kwartfinale':'')}
 function matchKey(r,i){return String(r)+':'+String(i)}
 function bracket(){
@@ -437,7 +438,20 @@ function scheduleConflict(m,s){
 }
 function button(label,fn,kind='alt',small=false){return `<button type="button" class="btn ${kind} ${small?'small':''}" onclick="${fn}">${label}</button>`}
 function badge(s){return `<span class="pill ${s==='Gespeeld'?'ok':s==='Gepland'?'blue':'warn'}">${esc(s)}</span>`}
-function nav(){if(!authUser){$('nav').innerHTML='';return;}const tabs=[['overzicht','Overzicht'],['deelnemers','Deelnemers'],['schema','Speelschema'],['boom','Toernooiboom'],['reglement','Reglement']];if(isAdmin)tabs.push(['beheer','Beheer']);$('nav').innerHTML=tabs.map(([k,v])=>`<button class="${tab===k?'active':''}" onclick="setTab('${k}')">${v}</button>`).join('')+'<button onclick="logout()" type="button">Uitloggen</button>'}
+function navGroup(t){
+ if(['reglement','periodes','prijzen'].includes(t))return 'reglement';
+ if(t==='beheer'||t.startsWith('beheer-'))return 'beheer';
+ return t;
+}
+function nav(){
+ const root=$('nav');
+ if(!authUser){root.innerHTML='';return}
+ const items=[['overzicht','Overzicht'],['schema','Wedstrijden'],['boom','Toernooiboom'],['deelnemers','Deelnemers'],['reglement','Informatie']];
+ if(isAdmin)items.push(['beheer','Beheer']);
+ const active=navGroup(tab);
+ root.innerHTML=items.map(x=>'<button type="button" data-tab="'+x[0]+'" class="'+(active===x[0]?'active':'')+'" '+(active===x[0]?'aria-current="page"':'')+' onclick="setTab(this.dataset.tab)">'+x[1]+'</button>').join('')+
+  '<button type="button" class="nav-signout" onclick="logout()">Uitloggen</button>';
+}
 function heading(title,aside=''){return `<div class="sectiontitle"><h2>${title}</h2>${aside}</div>`}
 function hero(){return `<section class="hero"><div class="heroinner"><span class="eyebrow"><i class="dot"></i> OPTSCH • Heads-up knockout 2026–2027</span><h1>HEADS-UP<br><em>CUP</em></h1><p>Geen volle tafels, geen teamgenoten. Slechts twee spelers tegenover elkaar. Win je duel, dan ga je door. Wie bereikt de finale?</p><div class="btnbar">${button('Bekijk deelnemers →',"setTab('deelnemers')",'')}${button('Toernooiboom bekijken',"setTab('boom')",'ghost')}</div><div class="hero-bottomline"><span class="seasonchip first">SEIZOEN 2026</span><span class="seasondivider">✦</span><span class="seasonchip last">SEIZOEN 2027</span></div></div><div class="hero-visual" aria-hidden="true"><div class="hero-crest"></div></div></section>`}
 
@@ -487,12 +501,35 @@ function prizePanel(){
  '</section>';
 }
 function stats(){const real=expectedMatches(), played=actualMatches().filter(m=>m.resolved).length, target=data.players.length>=2?2**Math.ceil(Math.log2(data.players.length)):0;return `<div class="stats"><article class="stat"><div class="label">Ingeschreven spelers</div><div class="number">${data.players.length}<span class="muted" style="font-size:15px"> / 32</span></div><div class="sub">${data.draw.length?'Deelnemersveld geloot':'Wacht op definitieve inschrijving'}</div></article><article class="stat"><div class="label">Toernooirondes</div><div class="number">${data.draw.length?howManyRounds():data.players.length>1?Math.ceil(Math.log2(data.players.length)):'—'}</div><div class="sub">${target&&target-data.players.length?`${target-data.players.length} vrijlotingen in de eerste ronde`:'Geen vrijlotingen nodig'}</div></article><article class="stat"><div class="label">Gespeelde duels</div><div class="number">${played}<span class="muted" style="font-size:15px"> / ${real||'—'}</span></div><div class="sub">${data.draw.length?Math.round(100*played/real)+'% van het toernooi afgewerkt':'Na de loting zichtbaar'}</div></article><article class="stat"><div class="label">Toernooistatus</div><div class="number" style="font-size:16px;margin-top:16px;color:var(--orange)">${esc(effectiveStatus())}</div><div class="sub">${champion()?'De kampioen is bekend':data.draw.length?'Wedstrijdschema beschikbaar':'Nog geen officiële loting'}</div></article></div>`}
-function overview(){const b=bracket(),last=champion(),played=actualMatches().filter(m=>m.resolved).length,real=expectedMatches();return `${hero()}${registrationBanner()}${stats()}${prizePanel()}${roundCalendar()}${b.length?`<section class="panel spotlight"><div class="sectiontitle"><h2>De route naar de titel</h2><span class="pill blue">${played} van ${real} duels gespeeld</span></div><div class="progressbar"><div style="width:${real?100*played/real:0}%"></div></div><div class="btnbar" style="margin-top:16px">${button('Bekijk de toernooiboom →',"setTab('boom')",'')}${button('Wedstrijdplanning',"setTab('schema')",'ghost')}</div></section>`:''}<div class="grid2"><section class="panel">${heading('Zo werkt de Heads-Up Cup',badge(effectiveStatus()))}<div class="steps"><div class="step"><div class="stepnum">01 / INSCHRIJVEN</div><h3>Iedereen begint gelijk</h3><p>De organisatie stelt het deelnemersveld vast. Spelers geven hun verhinderingen op.</p></div><div class="step"><div class="stepnum">02 / LOTEN</div><h3>Willekeurige duels</h3><p>De loting plaatst spelers in één vaste boom. Eventuele vrijloten vallen in de eerste ronde. De halvefinaleverliezers spelen om het brons.</p></div><div class="step"><div class="stepnum">03 / AFVALLEN</div><h3>Verlies = uitschakeling</h3><p>Elke winnaar schuift één ronde door. De verliezers van de halve finales spelen een bronsfinale om plaats 3 en 4. Wie de finale wint, is OHC-kampioen.</p></div></div><div class="notice orange">De regels voor blindstructuur, duellengte en uitstel zijn nog niet vastgesteld. De website presenteert ze daarom niet als feiten.</div></section><section class="panel">${heading('Laatste stand')}<div class="rows">${last?`<div class="infoitem"><div class="pair"><div class="circle">🏆</div><div><strong>${esc(name(last))}</strong><div class="muted smalltext">Winnaar OPTSCH Heads-Up Cup</div></div></div>${badge('Gespeeld')}</div>`:b.length?`<div class="infoitem"><div class="pair"><div class="circle">♠</div><div><strong>Toernooiboom beschikbaar</strong><div class="muted smalltext">Winnende spelers schuiven na het invoeren van de uitslag door.</div></div></div>${badge('Gepland')}</div>`:`<div class="infoitem"><div class="pair"><div class="circle">♠</div><div><strong>Loting nog niet uitgevoerd</strong><div class="muted smalltext">Het deelnemersveld wordt samengesteld.</div></div></div>${badge('In voorbereiding')}</div>`}<div class="infoitem"><div class="pair"><div class="circle">👥</div><div><strong>${data.players.length} speler${data.players.length===1?'':'s'} aangemeld</strong><div class="muted smalltext">Volledige namen zichtbaar voor ingelogde gebruikers.</div></div></div></div></div><div class="btnbar">${button('Bekijk deelnemers →',"setTab('deelnemers')",'alt',true)}${button('Lees het reglement',"setTab('reglement')",'ghost',true)}</div></section></div>`}
-function playersView(){const sorted=[...data.players].sort((a,b)=>a.name.localeCompare(b.name,'nl'));return `<div class="panel">${heading('Deelnemers',`<span class="pill blue">${sorted.length} inschrijvingen</span>`)}<p class="smalltext" style="color:var(--orange)">Inschrijven t/m 20 november 2026 (23:59 uur Nederlandse tijd). ${registrationClosed()?'De inschrijving is nu gesloten.':'De inschrijving is geopend.'}</p><p class="smalltext muted">Na inloggen worden de volledige voor- en achternamen getoond. Persoonlijke beschikbaarheid blijft uitsluitend zichtbaar voor beheerders.</p>${sorted.length?`<div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Speler</th><th>Status</th></tr></thead><tbody>${sorted.map(p=>`<tr><td class="muted">${participantNumber(p.id)}</td><td><div class="pair"><div class="circle" style="width:33px;height:33px">${esc(p.name[0]?.toUpperCase()||'?')}</div><strong>${esc(name(p.id))}</strong></div></td><td>${badge('Ingeschreven')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><div class="bigicon">♠</div><strong>Nog geen inschrijvingen</strong></div>`}</div>`}
+function overview(){
+ const played=actualMatches().filter(x=>x.resolved).length;
+ const total=expectedMatches(),ready=data.draw.length>0;
+ const next=ready?'schema':'deelnemers';
+ const tagline=champion()?'De kampioen is bekend. Bekijk de eindstand en toernooiboom.':ready?
+   'Het toernooi is geloot. Bekijk je wedstrijden, speeldata en uitslagen.':
+   'De deelnemers worden verzameld. Na de officiële loting verschijnt het speelschema.';
+ const label=champion()?'Toernooi afgerond':esc(effectiveStatus());
+ const links=[
+  ['schema','calendar-days','Wedstrijden','Alle duels, uitslagen en geplande speeldata.'],
+  ['boom','network','Toernooiboom','Volg de route naar de finale.'],
+  ['deelnemers','users','Deelnemers','Bekijk het ingeschreven spelersveld.'],
+  ['periodes','clock','Speelperiodes','Per ronde de speelweken en uitzonderingen.'],
+  ['prijzen','trophy','Prijzen','Buy-in, prijzenpot en uitbetalingen.'],
+  ['reglement','book-open','Reglement','De spelregels en gemaakte afspraken.']
+ ];
+ const intro='<div class="dashboard-status"><div><div class="dashboard-status-label">Huidige toernooistatus</div><div class="dashboard-status-title">'+label+'</div><div class="dashboard-status-description">'+tagline+'</div></div>'+
+  button(ready?'Bekijk het speelschema':'Bekijk deelnemers',"setTab('"+next+"')",'')+'</div>';
+ const progress=ready?'<section class="panel spotlight"><div class="sectiontitle"><h2>Voortgang van het toernooi</h2><span class="pill blue">'+played+' van '+total+' duels gespeeld</span></div><div class="progressbar"><div style="width:'+(total?Math.round(100*played/total):0)+'%"></div></div><div class="overview-foot" style="margin-top:15px">'+button('Open de toernooiboom',"setTab('boom')",'alt',true)+button('Alle wedstrijden',"setTab('schema')",'ghost',true)+'</div></section>':'';
+ const championBlock=champion()?'<section class="panel"><div class="sectiontitle"><h2>OHC-kampioen</h2><span class="pill ok">Uitslag definitief</span></div><div class="pair"><div class="circle">🏆</div><strong>'+esc(name(champion()))+'</strong></div></section>':'';
+ return hero()+intro+stats()+
+  '<section class="panel"><div class="dashboard-head"><h2>Waar wil je naartoe?</h2><span class="tag">KIES EEN ONDERDEEL</span></div>'+tileGrid(links,'launch-grid')+'</section>'+
+  progress+championBlock;
+}
+function playersView(){const sorted=[...data.players].sort((a,b)=>a.name.localeCompare(b.name,'nl'));return `<div class="panel">${heading('Deelnemers',`<span class="pill blue">${sorted.length} inschrijvingen</span>`)}<p class="smalltext" style="color:var(--orange)">Inschrijven t/m 20 november 2026 (23:59 uur Nederlandse tijd). ${registrationClosed()?'De inschrijving is nu gesloten.':'De inschrijving is geopend.'}</p><p class="smalltext muted">Na inloggen worden de volledige voor- en achternamen getoond. Persoonlijke beschikbaarheid blijft uitsluitend zichtbaar voor beheerders.</p>${sorted.length?`<div class="field player-search"><label for="playerSearch">Zoek een deelnemer</label><input id="playerSearch" type="search" placeholder="Zoek op naam…" oninput="filterParticipants(this.value)" autocomplete="off"></div><p id="noPlayerMatches" class="muted smalltext hidden">Geen deelnemers gevonden met deze naam.</p><div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Speler</th><th>Status</th></tr></thead><tbody>${sorted.map(p=>`<tr data-player-name="${esc(p.name.toLocaleLowerCase('nl'))}"><td class="muted">${participantNumber(p.id)}</td><td><div class="pair"><div class="circle" style="width:33px;height:33px">${esc(p.name[0]?.toUpperCase()||'?')}</div><strong>${esc(name(p.id))}</strong></div></td><td>${badge('Ingeschreven')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><div class="bigicon">♠</div><strong>Nog geen inschrijvingen</strong></div>`}</div>`}
 function matchStatus(m){if(m.resolved&&m.winner)return m.isBye?'Vrijloting':'Gespeeld';if(data.schedule[m.id]?.date)return data.schedule[m.id].provisional?'Voorstel':'Gepland';return m.a&&m.b?'Nog te plannen':'Wacht op tegenstander'}
 function scheduleView(){
  const b=bracket();
- const calendar=roundCalendar();
+ const calendar='';
  if(!b.length)return calendar+'<div class="panel">'+heading('Wedstrijden')+'<div class="empty"><div class="bigicon">📅</div><strong>De loting is nog niet uitgevoerd</strong><p>De officiële speelperiodes liggen vast. Zodra de loting is uitgevoerd, worden alle duels automatisch over de beschikbare dagen verspreid.</p></div></div>';
  return calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
  '<p class="muted smalltext">Alle duels van een ronde moeten gespeeld zijn voordat de volgende ronde begint. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur, mits alle eerdere speeldagen vaststaan. Bij een conflict staat er een voorlopig voorstel. Verplaatsen kan alleen in onderling overleg, binnen de rondeperiode.</p>'+
@@ -523,7 +560,7 @@ function bracketView(){
  const rounds=bracket();
  return '<section class="panel">'+
  heading('Vaste knock-outbracket',rounds.length?'<span class="pill blue">'+data.players.length+' spelers · '+rounds.length+' rondes</span>':'')+
- '<p class="smalltext muted">De loting gebruikt de beschikbaarheid om lastige ontmoetingen zo laat mogelijk in de bracket te plaatsen. Als spelers zonder gezamenlijke speeldag elkaar toch ontmoeten, regelen ze onderling een datum binnen hun rondeperiode. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Daardoor verschijnt een winnende speler in meerdere opeenvolgende rondes, maar in de loting zelf staat iedereen slechts eenmaal. Bij identieke verkorte namen staat een uniek deelnemersnummer (#). Er wordt niet opnieuw geloot.</p>'+
+ '<details class="help-details"><summary>Hoe lees ik de toernooiboom?</summary><p class="smalltext muted">De loting gebruikt de beschikbaarheid om lastige ontmoetingen zo laat mogelijk in de bracket te plaatsen. Als spelers zonder gezamenlijke speeldag elkaar toch ontmoeten, regelen ze onderling een datum binnen hun rondeperiode. Daarna ligt de route naar de finale vast: de winnaar van duel 1 en duel 2 gaat naar het eerste duel van de volgende ronde, duel 3 en duel 4 naar het tweede, enzovoort. Daardoor verschijnt een winnende speler in meerdere opeenvolgende rondes, maar in de loting zelf staat iedereen slechts eenmaal. Bij identieke verkorte namen staat een uniek deelnemersnummer (#). Er wordt niet opnieuw geloot.</p></details>'+
  (rounds.length?
   '<div class="bracketscroll"><div class="bracket" id="ohcBracket"><svg id="ohcBracketLines" class="bracketwires" aria-hidden="true"></svg>'+
   rounds.map((matches,r)=>'<div class="bracketcolumn" data-round="'+r+'"><div class="bracketround">'+esc(roundLabel(r,rounds.length))+'</div><div class="bracketcards">'+
@@ -539,7 +576,7 @@ function bracketView(){
    '<div class="bracketroute">'+esc(bracketRouteText(r,m.index,rounds.length))+'</div>'+
    '</div>'
   ).join('')+'</div></div>').join('')+'</div></div>':
-  '<div class="empty"><div class="bigicon">🏆</div><strong>De bracket is nog niet geloot</strong><p>De beheerder loot de deelnemers na sluiting van de inschrijving. Vanaf dat moment zijn alle routes naar de finale vastgelegd.</p>'+button('Naar beheer',"setTab('beheer')",'alt',true)+'</div>'
+  '<div class="empty"><div class="bigicon">🏆</div><strong>De bracket is nog niet geloot</strong><p>De beheerder loot de deelnemers na sluiting van de inschrijving. Vanaf dat moment zijn alle routes naar de finale vastgelegd.</p>'+(isAdmin?button('Naar beheer',"setTab('beheer')",'alt',true):'')+'</div>'
  )+'</section>'+
  (champion()?'<div class="panel" style="text-align:center"><span class="eyebrow">🏆 KAMPIOEN</span><h2 style="font-size:30px;margin:13px 0 0">'+esc(name(champion()))+'</h2></div>':'')+
  (bronzeWinner()?'<div class="panel" style="text-align:center"><span class="eyebrow">🥉 BRONS</span><h2 style="font-size:25px;margin:13px 0 0">'+esc(name(bronzeWinner()))+'</h2><p class="muted">4e plaats: '+esc(name(fourthPlace()))+'</p></div>':'');
@@ -658,17 +695,210 @@ function adminSettingsView(){
  '<div class="btnbar" style="margin-top:12px">'+button('Loting en uitslagen wissen','resetAll()','danger',true)+'</div>'+
  '<div class="notice orange">Wijzigingen worden opgeslagen in de Ranking-database. Ingelogde gebruikers zien de volledige namen, wedstrijden en speelperiodes. Alleen beheerders zien verhinderingen en kunnen gegevens wijzigen.</div></section>';
 }
-function jumpToResults(){if(!isAdmin)return;if(tab!=='beheer')setTab('beheer');requestAnimationFrame(()=>document.getElementById('ohcResults')?.scrollIntoView({behavior:'smooth',block:'start'}))}
-function adminView(){if(!isAdmin)return '<section class="panel auth-panel"><h2>Beheer OHC</h2><p class="muted smalltext">Log in met het bestaande beheerdersaccount van OPTSCH Ranking. Alleen beheerders kunnen deelnemers, loting, planning en uitslagen wijzigen.</p><div class="field"><label for="loginEmail">E-mailadres</label><input id="loginEmail" type="email" autocomplete="username" placeholder="E-mailadres"></div><div class="field"><label for="loginPassword">Wachtwoord</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Wachtwoord" onkeydown="if(event.key===&#39;Enter&#39;)login()"></div><div class="btnbar"><button class="btn" onclick="login()">Inloggen</button>'+(authUser?'<button class="btn ghost" onclick="logout()">Uitloggen (geen beheerrechten)</button>':'')+'</div></section>';return '<div class="sectiontitle"><h2 style="font-size:27px">Organisatiebeheer</h2><div class="btnbar">'+(data.draw.length?button('Uitslagen invoeren','jumpToResults()','alt'):'')+'<span class="pill ok">VERBONDEN MET RANKING</span><button type="button" class="btn ghost small" onclick="logout()">Uitloggen</button></div></div>'+adminPlayerView()+adminDrawView()+adminScheduleView()+adminSettingsView()}
+function jumpToResults(){if(!isAdmin)return;setTab('beheer-resultaten');requestAnimationFrame(()=>document.getElementById('ohcResults')?.scrollIntoView({behavior:'smooth',block:'start'}))}
+function adminView(){
+ if(!isAdmin)return '<section class="panel"><h2>Geen toegang</h2><p class="muted">Beheerdersrechten zijn vereist.</p></section>';
+ const drawn=data.draw.length>0,played=actualMatches().filter(x=>x.resolved).length;
+ const cards=[
+  ['beheer-deelnemers','users','Deelnemers beheren','Spelers en verhinderingen bekijken of wijzigen.'],
+  ['beheer-import','file-up','CSV inschrijvingen','Aanmeldingen importeren vanuit het formulier.'],
+  ['beheer-loting','shuffle','Officiële loting',drawn?'De loting is uitgevoerd; bekijk de vaste indeling.':'Het deelnemersveld loten en vaststellen.'],
+  ['beheer-resultaten','check-circle','Uitslagen invoeren','Winnaars en eventuele scores verwerken.'],
+  ['beheer-planning','calendar-clock','Wedstrijden plannen','Speeldagen bevestigen en afspraken aanpassen.'],
+  ['beheer-instellingen','sliders-horizontal','Toernooi-instellingen','Status, vaste speelperiodes en toernooivorm.'],
+  ['beheer-bestanden','folder-archive','Export en back-ups','CSV, PNG, JSON en herstelopties.']
+ ];
+ return '<div class="admin-banner"><div><strong>Beheeromgeving</strong><p>Wijzigingen worden opgeslagen in de OPTSCH Ranking-database. Alleen beheerders zien deze functies.</p></div><span class="pill ok">Verbonden</span></div>'+
+  '<div class="quick-metrics"><div class="quick-metric"><b>'+data.players.length+' / 32</b><span>Deelnemers</span></div><div class="quick-metric"><b>'+(drawn?'Uitgevoerd':'Nog niet')+'</b><span>Officiële loting</span></div><div class="quick-metric"><b>'+played+' / '+(expectedMatches()||'—')+'</b><span>Gespeelde duels</span></div></div>'+
+  '<section class="panel"><h2 style="margin-bottom:17px">Beheeronderdelen</h2>'+tileGrid(cards,'management-grid')+'</section>';
+}
 function deadlineBadge(r){const w=ROUND_WINDOWS[r];return w?`<span class="pill blue">W${w.weeks} · ${esc(w.label)}</span>`:'<span class="pill warn">Geen periode vastgelegd</span>'}
-function rulesView(){const total=data.players.length,byes=total>1?2**Math.ceil(Math.log2(total))-total:0;return `<section class="panel"><div class="sectiontitle"><h2>Toernooireglement</h2><span class="pill ok">Vastgestelde toernooivorm</span></div><div class="steps"><div class="step"><div class="stepnum">ARTIKEL 01</div><h3>Directe uitschakeling</h3><p>Een speler die een duel verliest, is uitgeschakeld. Een winnaar gaat door naar het volgende duel. Er is geen verliezersronde.</p></div><div class="step"><div class="stepnum">ARTIKEL 02</div><h3>Willekeurige loting</h3><p>Deelnemers worden zonder plaatsingslijst ingeloot. Zo nodig zijn er ${byes} vrijlotingen voor het huidige deelnemersaantal.</p></div><div class="step"><div class="stepnum">ARTIKEL 03</div><h3>Eén kampioen</h3><p>De twee overgebleven spelers spelen de finale. De twee verliezende halvefinalisten spelen de bronsfinale: de winnaar wordt derde en de verliezer vierde.</p></div></div><hr class="divider"><h3>Hoe werkt de planning?</h3><p class="smalltext muted">Iedere ronde heeft een eigen toegestane speelperiode. De periodes mogen overlappen, maar de daadwerkelijk ingeplande rondes nooit: eerst worden alle duels van ronde 1 afgewerkt, dan pas begint ronde 2, enzovoort. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur zodra alle eerdere rondes vaststaan. Bij ontbreken van gezamenlijke beschikbaarheid is de thuisspeler leidend voor het voorlopige schema; de spelers maken dan onderling een definitieve afspraak. In onderling overleg mogen beide spelers de speeldag binnen die periode en/of de starttijd wijzigen. De organisatie bevestigt zulke afspraken. De uitgesloten decemberdatums blijven verboden.</p>${data.draw.length?`<div class="deadlinegrid">${Array.from({length:howManyRounds()},(_,i)=>`<div class="infoitem"><strong>${roundLabel(i,howManyRounds())}</strong>${deadlineBadge(i)}</div>`).join('')}</div>`:''}</section>${roundCalendar()}${prizePanel()}<section class="panel"><div class="sectiontitle"><h2>Nog vast te stellen</h2><span class="pill warn">Geen definitieve afspraken</span></div><p class="muted smalltext">Deze onderwerpen moeten door de organisatie worden besloten voordat de site als officieel reglement gebruikt kan worden.</p><div class="rulesgrid">${['Eventuele bijkomende kosten','Pokerplatform en speelvariant','Startstack en blindstructuur','Duur en eventuele onderbrekingen per duel','Omgaan met afzeggingen binnen de speelperiode','Regels bij niet verschijnen of technische problemen','Eventuele trofeeën en bijkomende kosten','Aanvullende regels bij een onbespeelbare finale of bronsfinale'].map(x=>`<div class="rulepending"><span class="openbullet">○</span>${x}</div>`).join('')}</div></section>`}
+function rulesView(){const total=data.players.length,byes=total>1?2**Math.ceil(Math.log2(total))-total:0;return `<section class="panel"><div class="sectiontitle"><h2>Toernooireglement</h2><span class="pill ok">Vastgestelde toernooivorm</span></div><div class="steps"><div class="step"><div class="stepnum">ARTIKEL 01</div><h3>Directe uitschakeling</h3><p>Een speler die een duel verliest, is uitgeschakeld. Een winnaar gaat door naar het volgende duel. Er is geen verliezersronde.</p></div><div class="step"><div class="stepnum">ARTIKEL 02</div><h3>Willekeurige loting</h3><p>Deelnemers worden zonder plaatsingslijst ingeloot. Zo nodig zijn er ${byes} vrijlotingen voor het huidige deelnemersaantal.</p></div><div class="step"><div class="stepnum">ARTIKEL 03</div><h3>Eén kampioen</h3><p>De twee overgebleven spelers spelen de finale. De twee verliezende halvefinalisten spelen de bronsfinale: de winnaar wordt derde en de verliezer vierde.</p></div></div><hr class="divider"><h3>Hoe werkt de planning?</h3><p class="smalltext muted">Iedere ronde heeft een eigen toegestane speelperiode. De periodes mogen overlappen, maar de daadwerkelijk ingeplande rondes nooit: eerst worden alle duels van ronde 1 afgewerkt, dan pas begint ronde 2, enzovoort. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur zodra alle eerdere rondes vaststaan. Bij ontbreken van gezamenlijke beschikbaarheid is de thuisspeler leidend voor het voorlopige schema; de spelers maken dan onderling een definitieve afspraak. In onderling overleg mogen beide spelers de speeldag binnen die periode en/of de starttijd wijzigen. De organisatie bevestigt zulke afspraken. De uitgesloten decemberdatums blijven verboden.</p>${data.draw.length?`<div class="deadlinegrid">${Array.from({length:howManyRounds()},(_,i)=>`<div class="infoitem"><strong>${roundLabel(i,howManyRounds())}</strong>${deadlineBadge(i)}</div>`).join('')}</div>`:''}</section><section class="panel"><div class="sectiontitle"><h2>Nog vast te stellen</h2><span class="pill warn">Geen definitieve afspraken</span></div><p class="muted smalltext">Deze onderwerpen moeten door de organisatie worden besloten voordat de site als officieel reglement gebruikt kan worden.</p><div class="rulesgrid">${['Eventuele bijkomende kosten','Pokerplatform en speelvariant','Startstack en blindstructuur','Duur en eventuele onderbrekingen per duel','Omgaan met afzeggingen binnen de speelperiode','Regels bij niet verschijnen of technische problemen','Eventuele trofeeën en bijkomende kosten','Aanvullende regels bij een onbespeelbare finale of bronsfinale'].map(x=>`<div class="rulepending"><span class="openbullet">○</span>${x}</div>`).join('')}</div></section>`}
 function saveDeadlines(){notify('De vijf speelperiodes staan vast en kunnen niet worden gewijzigd.')}
 function downloadFile(text,filename,mime){const blob=new Blob([text],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
 function exportMatchesCsv(){const csvrow=(cells)=>cells.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(';');const rows=[csvrow(['Ronde','Duel','Speler 1','Speler 2','Status','Datum','Tijd','Onderling akkoord','Winnaar','Score','Rondedeadline'])];for(const match of allMatches()){const s=data.schedule[match.id]||{};rows.push(csvrow([roundLabel(match.round,howManyRounds()),match.isBronze?'Bronsfinale':match.round===howManyRounds()-1?'Finale':match.index+1,bracketSlotText(match.round,match.index,0,match.a),bracketSlotText(match.round,match.index,1,match.b),matchStatus(match),s.date||'',s.date?(s.time||DEFAULT_MATCH_TIME):'',matchHasAgreement(match,s)?'Ja':'Nee',match.winner?name(match.winner):'',data.settings.resultText[match.id]||'',data.settings.roundDeadlines[match.round]||'']))}downloadFile('\uFEFF'+rows.join('\r\n'),'OHC-speelschema.csv','text/csv;charset=utf-8')}
 async function importBackup(ev){const f=ev.target.files?.[0];if(!f)return;try{const obj=JSON.parse(await f.text());if(!obj||!Array.isArray(obj.players)||!Array.isArray(obj.draw)||typeof obj.results!=='object'||!obj.schedule||typeof obj.schedule!=='object')throw Error('Geen geldige OHC-back-up.');if(obj.players.some(p=>typeof p.id!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(p.id)||typeof p.name!=='string'||p.name.length>100||!Array.isArray(p.blocked)))throw Error('Ongeldige deelnemergegevens.');if(obj.players.length>MAX_PLAYERS)throw Error('De OHC heeft maximaal 32 plaatsen.');if(new Set(obj.players.map(p=>p.id)).size!==obj.players.length)throw Error('Dubbele deelnemers-ID.');if(obj.draw.length&&(obj.draw.length<2||(obj.draw.length&(obj.draw.length-1))!==0||obj.draw.some(x=>x!==null&&!obj.players.some(p=>p.id===x))))throw Error('Ongeldige toernooiloting.');if(obj.draw.length){const valid=checkDrawCompatibility(obj.draw,obj.players);if(!valid.valid)throw Error('Deze back-up schendt de beschikbaarheidsregels: '+valid.message)}if(!confirm('De huidige toernooigegevens vervangen door deze back-up?'))return;data={...structuredClone(DEFAULT),...obj,settings:{...structuredClone(DEFAULT.settings),...obj.settings,roundDeadlines:obj.settings?.roundDeadlines||{},resultText:obj.settings?.resultText||{}}};autoPlanMatches(false);save();render();notify('Back-up hersteld.')}catch(e){notify('Herstellen mislukt: '+e.message)}}
 async function exportBracketPng(){const rounds=bracket();if(!rounds.length){notify('Voer eerst de loting uit.');return}const width=Math.max(960,rounds.length*270+75),rowHeight=92,margin=46,colWidth=245;const height=Math.max(620,rounds[0].length*rowHeight+240);const canvas=document.createElement('canvas');const factor=Math.max(1,Math.min(2,3200/Math.max(width,height)));canvas.width=Math.round(width*factor);canvas.height=Math.round(height*factor);const ctx=canvas.getContext('2d');if(!ctx){notify('Afbeelding exporteren is niet beschikbaar.');return}ctx.scale(factor,factor);ctx.fillStyle='#07101e';ctx.fillRect(0,0,width,height);ctx.fillStyle='#ff8b3e';ctx.font='bold 15px Arial';ctx.fillText('OPTSCH  •  HEADS-UP CUP',margin,44);ctx.fillStyle='#f5f7fb';ctx.font='bold 32px Arial';ctx.fillText('TOERNOOIBOOM',margin,88);ctx.font='13px Arial';ctx.fillStyle='#a6b7cf';ctx.fillText(`${data.players.length} deelnemers  •  directe knock-out  •  ${rounds.length} rondes`,margin,116);const top=165;const clipName=(str,max)=>{let x=str;if(ctx.measureText(x).width<=max)return x;while(x.length>2&&ctx.measureText(x+'…').width>max)x=x.slice(0,-1);return x+'…'};rounds.forEach((matches,r)=>{const x=margin+r*270;ctx.fillStyle='#ffab68';ctx.font='bold 14px Arial';ctx.fillText(roundLabel(r,rounds.length).toUpperCase(),x,147);const spacing=(height-top-70)/matches.length;matches.forEach((m,i)=>{const y=top+(i+.5)*spacing-34;ctx.fillStyle='#16243b';ctx.fillRect(x,y,colWidth,71);if(m.isBronze){ctx.fillStyle='#ffad6b';ctx.font='bold 10px Arial';ctx.fillText('BRONSFINALE',x+5,y-7)}else if(r===rounds.length-1){ctx.fillStyle='#ffad6b';ctx.font='bold 10px Arial';ctx.fillText('FINALE',x+5,y-7)}ctx.strokeStyle='#39506f';ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,colWidth-1,70);[m.a,m.b].forEach((pid,j)=>{const yy=y+20+j*29;if(pid&&pid===m.winner){ctx.fillStyle='#1b4b3c';ctx.fillRect(x+6,yy-15,colWidth-12,24)}ctx.fillStyle=pid&&pid===m.winner?'#9af7bf':'#eff4fd';ctx.font=pid&&pid===m.winner?'bold 13px Arial':'13px Arial';ctx.fillText(clipName(name(pid),colWidth-27),x+13,yy+1)});});});const c=champion();if(c){ctx.fillStyle='#ffb56f';ctx.font='bold 20px Arial';ctx.fillText('🏆 KAMPIOEN: '+name(c),margin,height-29)}else{ctx.fillStyle='#8da2bd';ctx.font='12px Arial';ctx.fillText('OPTSCH Heads-Up Cup • voorlopige toernooiboom',margin,height-29)}canvas.toBlob(blob=>{if(!blob){notify('PNG genereren mislukt.');return}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='OHC-toernooiboom.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),4000)},'image/png')}
+
+const roundSelections={};
+const infoNavigation=[
+ ['reglement','Reglement'],['periodes','Speelperiodes'],['prijzen','Prijzen']
+];
+const adminNavigation=[
+ ['beheer','Overzicht'],['beheer-deelnemers','Deelnemers'],['beheer-import','CSV-import'],
+ ['beheer-loting','Loting'],['beheer-resultaten','Uitslagen'],['beheer-planning','Planning'],
+ ['beheer-instellingen','Instellingen'],['beheer-bestanden','Bestanden']
+];
+const pageInfo={
+ deelnemers:['Deelnemers','Het complete deelnemersveld van de OHC.','TOERNOOI'],
+ schema:['Wedstrijden','Bekijk per ronde de wedstrijdindeling, speeldata en uitslagen.','TOERNOOI'],
+ boom:['Toernooiboom','Iedere route naar de finale in één overzicht.','TOERNOOI'],
+ reglement:['Reglement','Alle vastgestelde afspraken en regels voor het toernooi.','INFORMATIE'],
+ periodes:['Speelperiodes','Speelweken, uitgesloten dagen en de volgorde van de rondes.','INFORMATIE'],
+ prijzen:['Prijzen en buy-in','De verdeling van de inleg en de prijzenpot.','INFORMATIE'],
+ beheer:['Organisatiebeheer','Kies welk onderdeel je wilt beheren.','ORGANISATIE'],
+ 'beheer-deelnemers':['Deelnemers beheren','Spelersnamen en persoonlijke verhinderingen wijzigen.','ORGANISATIE'],
+ 'beheer-import':['Inschrijvingen importeren','Verwerk de ontvangen inschrijvingen uit een CSV-bestand.','ORGANISATIE'],
+ 'beheer-loting':['Loting','Voer de officiële loting uit en bekijk de indeling.','ORGANISATIE'],
+ 'beheer-resultaten':['Uitslagen invoeren','Kies een ronde, noteer de score en selecteer de winnaar.','ORGANISATIE'],
+ 'beheer-planning':['Wedstrijden plannen','Bevestig speeldata, pas voorstellen aan en controleer conflicten.','ORGANISATIE'],
+ 'beheer-instellingen':['Toernooi-instellingen','Status, spelvorm en vaste speelperiodes.','ORGANISATIE'],
+ 'beheer-bestanden':['Bestanden en back-ups','Exporteer resultaten en herstel zo nodig een back-up.','ORGANISATIE']
+};
+function tileGrid(items,extraClass){
+ return '<div class="launch-grid '+(extraClass||'')+'">'+items.map(function(item){
+  return '<button type="button" class="launch-card" data-tab="'+item[0]+'" onclick="setTab(this.dataset.tab)">'+
+   '<span class="launch-icon" aria-hidden="true">'+tileIcon(item[1])+'</span>'+
+   '<span class="launch-title">'+esc(item[2])+'</span><span class="launch-description">'+esc(item[3])+'</span></button>';
+ }).join('')+'</div>';
+}
+function tileIcon(id){
+ const m={'calendar-days':'📅',network:'♠',users:'👥',clock:'🕒',trophy:'🏆',
+ 'book-open':'📖','file-up':'📥',shuffle:'🎲','check-circle':'✅',
+ 'calendar-clock':'🗓️','sliders-horizontal':'⚙️','folder-archive':'📁'};
+ return m[id]||'♠';
+}
+function pageHead(page){
+ const meta=pageInfo[page]||pageInfo.overzicht;
+ if(!meta)return '';
+ return '<header class="page-heading"><div class="page-heading-copy"><div class="page-eyebrow">'+meta[2]+'</div>'+
+  '<h1>'+esc(meta[0])+'</h1><p>'+esc(meta[1])+'</p></div>'+
+  (page.startsWith('beheer')?'<div class="page-heading-status"><span class="pill ok">Beheerder</span></div>':'')+'</header>';
+}
+function subNavigation(items,current){
+ return '<nav class="page-subnav" aria-label="Onderdelen van deze sectie">'+items.map(function(item){
+  return '<button type="button" data-tab="'+item[0]+'" '+(current===item[0]?'class="active" aria-current="page"':'')+
+    ' onclick="setTab(this.dataset.tab)">'+item[1]+'</button>';
+ }).join('')+'</nav>';
+}
+function infoShortcuts(){
+ return '<section class="panel"><h2>Meer informatie</h2>'+tileGrid([
+ ['periodes','clock','Speelperiodes','Wanneer mag iedere ronde gespeeld worden?'],
+ ['prijzen','trophy','Prijzenpot','Bekijk de officiële prijzen en buy-in.']
+ ],'compact')+'</section>';
+}
+function periodsPage(){
+ return roundCalendar()+
+ '<section class="panel"><h2>Belangrijk bij het plannen</h2><p class="readable muted smalltext">De periodes van ronde 3, 4 en 5 mogen elkaar overlappen, maar de daadwerkelijke gespeelde rondes nooit. Een volgende ronde kan pas beginnen wanneer alle wedstrijden van de vorige ronde zijn afgewerkt. Een speeldatum zonder verhinderingen wordt vastgesteld; wijzigingen zijn alleen mogelijk na onderling akkoord en binnen de officiële rondeperiode.</p>'+
+ '<div class="btnbar">'+button('Bekijk speelschema',"setTab('schema')",'alt')+button('Volledig reglement',"setTab('reglement')",'ghost')+'</div></section>';
+}
+function prizesPage(){
+ return prizePanel();
+}
+function rulesPage(){
+ return rulesView()+infoShortcuts();
+}
+function splitPanelAt(view,marker,keepStart,title){
+ const p=view.indexOf(marker);
+ if(p<0)return view;
+ return keepStart?view.slice(0,p)+'</section>':
+  '<section class="panel"><h2>'+esc(title)+'</h2>'+view.slice(p+marker.length);
+}
+function adminPlayersPage(){
+ return splitPanelAt(adminPlayerView(),'<hr class="divider"><h3>Inschrijvingen verwerken (21 november)</h3>',true,'');
+}
+function adminImportPage(){
+ return splitPanelAt(adminPlayerView(),'<hr class="divider"><h3>Inschrijvingen verwerken (21 november)</h3>',false,'CSV inschrijvingen');
+}
+function adminLotteryPage(){
+ const drawn=data.draw.length>0;
+ const byes=data.players.length>1?2**Math.ceil(Math.log2(data.players.length))-data.players.length:0;
+ return '<section class="panel"><div class="sectiontitle"><h2>De officiële loting</h2><span class="pill '+(drawn?'ok':'warn')+'">'+(drawn?'Loting uitgevoerd':'Nog niet geloot')+'</span></div>'+
+  '<p class="panel-intro">Het toernooi gebruikt één vaste knock-outindeling. De loting houdt waar mogelijk rekening met verhinderingen en plaatst lastige ontmoetingen zo laat mogelijk. Iedereen wordt maximaal één keer ingeloot. Na de loting liggen alle routes vast.</p>'+
+  '<div class="quick-metrics"><div class="quick-metric"><b>'+data.players.length+'</b><span>Deelnemers</span></div><div class="quick-metric"><b>'+byes+'</b><span>Vrijlotingen</span></div><div class="quick-metric"><b>'+(drawn?howManyRounds():'—')+'</b><span>Rondes</span></div></div>'+
+  '<div class="admin-lottery-status"><h3>'+(drawn?'Toernooiboom vastgesteld':'Klaar om te loten?')+'</h3><p>'+(drawn?'De loting is vastgelegd. Uitslagen voer je in op de aparte resultatenpagina.':'Controleer vooraf alle deelnemers en hun verhinderingen. Iedere speler moet minimaal één mogelijke speeldag hebben.')+'</p>'+
+  '<div class="btnbar">'+(!drawn?button('Eerste ronde loten','createDraw()',''):'')+
+   button('Bekijk toernooiboom',"setTab('boom')",'alt')+
+   (drawn?button('Uitslagen invoeren',"setTab('beheer-resultaten')",'ghost'):'')+'</div></div>'+
+  drawAvailabilityNotice()+
+  '<p class="admin-subtle">Een dag die niet als verhinderd is geregistreerd, telt als beschikbaar. Controleer daarom alle zeven weekdagen voordat je de loting uitvoert.</p></section>';
+}
+function adminResultsPage(){
+ if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">🏆</div><strong>Er is nog geen loting</strong><p>Voer eerst de officiële loting uit om uitslagen per duel in te kunnen voeren.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
+ const output=adminDrawView();
+ const marker='<div class="adminonly" id="ohcResults">';
+ const p=output.indexOf(marker);
+ if(p<0)return output;
+ const results='<section class="panel"><div id="ohcResults">'+output.slice(p+marker.length);
+ return withRoundFilter(results,'resultaten');
+}
+function adminPlanningPage(){
+ if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">📅</div><strong>Nog geen wedstrijden</strong><p>Maak eerst de loting om speeldata te kunnen vaststellen.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
+ return withRoundFilter(adminScheduleView(),'planning');
+}
+function adminConfigPage(){
+ return splitPanelAt(adminSettingsView(),'<hr class="divider"><h3>Export, back-up en herstellen</h3>',true,'');
+}
+function adminFilesPage(){
+ return splitPanelAt(adminSettingsView(),'<hr class="divider"><h3>Export, back-up en herstellen</h3>',false,'Export, back-up en herstellen');
+}
+function firstUnplayedRound(){
+ const r=bracket();
+ const i=r.findIndex(matches=>matches.some(m=>!m.resolved&&!m.isBye));
+ return i>=0?i:Math.max(0,r.length-1);
+}
+function withRoundFilter(html,key){
+ let count=0;
+ const defaultRound=firstUnplayedRound();
+ const selected=roundSelections[key]===undefined?defaultRound:roundSelections[key];
+ const processed=html.replace(/<div class="roundgroup">/g,function(){
+  const i=count++;
+  return '<div class="roundgroup'+(selected!==-1&&selected!==i?' hidden':'')+'" data-round-group="'+i+'">';
+ });
+ if(count<2)return processed;
+ let controls='<div class="round-filter-bar" aria-label="Filter op ronde"><span class="round-filter-label">TOON RONDE</span>';
+ const btns=[[-1,'Alle'],...Array.from({length:count},(_,i)=>[i,'Ronde '+(i+1)])];
+ controls+=btns.map(v=>'<button type="button" class="round-filter-btn'+(selected===v[0]?' active':'')+
+  '" data-filter-key="'+key+'" data-filter-value="'+v[0]+'" aria-pressed="'+(selected===v[0])+'" onclick="setRoundSelection(this.dataset.filterKey,Number(this.dataset.filterValue))">'+v[1]+'</button>').join('');
+ controls+='</div>';
+ const pos=processed.indexOf('<div class="roundgroup');
+ return processed.slice(0,pos)+controls+processed.slice(pos);
+}
+function setRoundSelection(key,value){
+ roundSelections[key]=value;
+ document.querySelectorAll('[data-round-group]').forEach(function(el){
+  el.classList.toggle('hidden',value!==-1&&Number(el.dataset.roundGroup)!==value);
+ });
+ document.querySelectorAll('.round-filter-btn').forEach(function(el){
+  const active=Number(el.dataset.filterValue)===value;
+  el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));
+ });
+}
+function filterParticipants(value){
+ const query=String(value||'').trim().toLocaleLowerCase('nl');
+ let found=0;
+ document.querySelectorAll('[data-player-name]').forEach(function(tr){
+  const visible=tr.dataset.playerName.includes(query);
+  tr.classList.toggle('hidden',!visible);
+  if(visible)found++;
+ });
+ const empty=$('noPlayerMatches');
+ if(empty)empty.classList.toggle('hidden',found!==0);
+}
+
 function loginScreen(){return `<section class="panel auth-panel"><div class="login-brand"><div class="login-crest" role="img" aria-label="OPTSCH Heads-Up Cup logo"></div><div class="login-yearline"><span class="seasonchip first">2026</span><span class="seasondivider">✦</span><span class="seasonchip last">2027</span></div><h2>Welkom bij de Heads-Up Cup</h2><p class="muted smalltext">Deelnemers, toernooiboom, speelschema en uitslagen zijn uitsluitend zichtbaar voor ingelogde OPTSCH-spelers.</p></div><div class="field"><label for="loginEmail">E-mailadres</label><input id="loginEmail" type="email" autocomplete="username" placeholder="E-mailadres"></div><div class="field"><label for="loginPassword">Wachtwoord</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Wachtwoord" onkeydown="if(event.key===&#39;Enter&#39;)login()"></div><div class="btnbar"><button class="btn" onclick="login()">Inloggen</button></div><p class="muted smalltext">Geen inloggegevens? Vraag de organisatie om toegang.</p></section>`}
-function render(){if(!['overzicht','deelnemers','schema','boom','reglement','beheer'].includes(tab))tab='overzicht';nav();if(loading){$('main').innerHTML='<div class="panel"><h2>OHC laden…</h2><p class="muted">Gegevens ophalen uit de Ranking-database.</p></div>';return}if(loadError){$('main').innerHTML='<div class="panel"><h2>Verbinding mislukt</h2><p class="muted">'+esc(loadError)+'</p><button class="btn" onclick="initialize()">Opnieuw proberen</button></div>';return}if(!authUser){$('main').innerHTML=loginScreen();return;}if(!isAdmin&&tab==='beheer')tab='overzicht';$('main').innerHTML=({overzicht:overview,deelnemers:playersView,schema:scheduleView,boom:bracketView,reglement:rulesView,beheer:adminView}[tab])();if(tab==='boom')requestAnimationFrame(drawBracketConnections)}
+function render(){
+ const routes={
+  overzicht:overview,deelnemers:playersView,schema:function(){return withRoundFilter(scheduleView(),'schema')},
+  boom:bracketView,reglement:rulesPage,periodes:periodsPage,prijzen:prizesPage,
+  beheer:adminView,'beheer-deelnemers':adminPlayersPage,'beheer-import':adminImportPage,
+  'beheer-loting':adminLotteryPage,'beheer-resultaten':adminResultsPage,
+  'beheer-planning':adminPlanningPage,'beheer-instellingen':adminConfigPage,
+  'beheer-bestanden':adminFilesPage
+ };
+ if(!routes[tab])tab='overzicht';
+ if(!isAdmin&&tab.startsWith('beheer'))tab='overzicht';
+ nav();
+ if(loading){$('main').innerHTML='<section class="panel"><h2>OHC laden…</h2><p class="muted">Gegevens ophalen uit de Ranking-database.</p></section>';return}
+ if(loadError){$('main').innerHTML='<section class="panel"><h2>Verbinding mislukt</h2><p class="muted">'+esc(loadError)+'</p><button class="btn" onclick="initialize()">Opnieuw proberen</button></section>';return}
+ if(!authUser){$('main').innerHTML=loginScreen();return}
+ const info=['reglement','periodes','prijzen'].includes(tab);
+ const admin=tab==='beheer'||tab.startsWith('beheer-');
+ $('main').innerHTML=(tab==='overzicht'?'':pageHead(tab))+
+  (info?subNavigation(infoNavigation,tab):admin?subNavigation(adminNavigation,tab):'')+
+  routes[tab]();
+ if(tab==='boom')requestAnimationFrame(drawBracketConnections);
+}
 function selectEdit(id){editPlayer=id;render();$('personformtitle')?.scrollIntoView({behavior:'smooth',block:'center'})}
 function changePlayers(){/* De deelnemerslijst wordt na loting niet ongemerkt gewijzigd. */}
 function savePlayer(){
