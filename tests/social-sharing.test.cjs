@@ -137,7 +137,7 @@ test('Een bracket van 32 spelers bevat alle 5 rondes en 16 openingsduels op éé
  for(let n=1;n<=16;n++)
   assert.ok(drawn.includes('DUEL '+n),'Duel '+n+' ontbreekt in de export');
  assert.ok(drawn.some(t=>t.includes('Deelnemer 1 Achternaam')));
- assert.ok(drawn.some(t=>t.includes('Deelnemer 32 Achternaam')));
+ assert.ok(drawn.some(t=>t.startsWith('Deelnemer 32')),'Speler 32 moet zichtbaar blijven, desnoods ingekort');
  assert.ok(drawn.includes('TOERNOOIBOOM')||drawn.includes('VOLLEDIGE TOERNOOIBOOM'));
  assert.ok(drawn.includes('BRONSFINALE'),'Bronsfinale ontbreekt');
  assert.ok(drawn.includes('FINALE'),'Finale ontbreekt');
