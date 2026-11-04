@@ -1928,8 +1928,67 @@ function saveMatchDate(r,i){
 }
 function clearDate(r,i){delete data.schedule[matchKey(r,i)];save();render();notify('Speeldatum verwijderd.')}
 function updateStatus(v){data.settings.status=v;save();render()}
-function parseCSV(text){let rows=[],row=[],cur='',quote=false;const input=text.replace(/^\uFEFF/,'');for(let i=0;i<input.length;i++){const c=input[i];if(quote){if(c==='"'&&input[i+1]==='"'){cur+='"';i++}else if(c==='"')quote=false;else cur+=c}else if(c==='"')quote=true;else if(c===','){row.push(cur);cur=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&input[i+1]==='\n')i++;row.push(cur);cur='';if(row.some(x=>x.trim()))rows.push(row);row=[]}else cur+=c}if(quote)throw Error('CSV bevat een niet-afgesloten aanhalingsteken.');row.push(cur);if(row.some(x=>x.trim()))rows.push(row);return rows}
-async function importCsv(ev){const f=ev.target.files?.[0];if(!f)return;try{const rows=parseCSV(await f.text());const header=rows.shift()?.map(x=>x.trim().toLowerCase())||[];const nameCol=header.findIndex(x=>x==='naam'||x.startsWith('naam '));const canCol=header.findIndex(x=>x.includes('welke weekdagen')||x.includes('niet spelen'));const answerCol=header.findIndex(x=>x.includes('doe jij mee'));if(nameCol<0)throw Error('Kolom Naam ontbreekt in het CSV-bestand.');let added=0,updated=0,skipped=0;const previousPlayers=structuredClone(data.players);for(const row of rows){const n=(row[nameCol]||'').trim().replace(/\s+/g,' ');if(!n||(answerCol>=0&&!/^ja\b/i.test((row[answerCol]||'').trim()))){skipped++;continue}const blocked=canCol<0?[]:DAYS.filter(d=>(row[canCol]||'').toLocaleLowerCase('nl').includes(d.search)).map(d=>d.id);const old=data.players.find(p=>p.name.toLocaleLowerCase('nl')===n.toLocaleLowerCase('nl'));if(old){if(canCol>=0)old.blocked=blocked;updated++}else if(data.draw.length){skipped++}else{data.players.push({id:safeId(),name:n,blocked});added++}}if(data.players.length>MAX_PLAYERS){data.players=previousPlayers;notify('CSV bevat meer dan 32 deelnemers. De beheerder moet eerst het definitieve deelnemersveld bepalen.');return}const checked=checkDrawCompatibility(data.draw,data.players);if(!checked.valid){data.players=previousPlayers;notify('CSV niet opgeslagen: '+checked.message);return}if(data.draw.length)autoPlanMatches(false);save();render();notify(`${added} toegevoegd, ${updated} bijgewerkt, ${skipped} overgeslagen${data.draw.length?' (loting is actief)':''}.`)}catch(e){notify(`Import mislukt: ${e.message}`)}}
+/* CSV import recognizes normal comma/semicolon exports and the nested
+   semicolon-wrapped CSV produced by certain spreadsheet exports. */
+function csvNameColumn(header){
+ const h=String(header||'').trim().toLocaleLowerCase('nl').replace(/\s+/g,' ');
+ return h==='naam'||h.startsWith('naam ')||h.includes('voor- en achternaam')||
+  h.includes('voor en achternaam')||h.includes('voornaam en achternaam')||
+  h.includes('volledige naam')||h.includes('naam deelnemer')||
+  h.includes('naam speler');
+}
+function parseDelimitedCSV(text,delimiter=','){
+ const rows=[];let row=[],current='',quoted=false;
+ const input=String(text||'').replace(/^\uFEFF/,'');
+ for(let i=0;i<input.length;i++){
+  const ch=input[i];
+  if(quoted){
+   if(ch==='"'&&input[i+1]==='"'){current+='"';i++}
+   else if(ch==='"')quoted=false;
+   else current+=ch;
+  }else if(ch==='"'&&current==='')quoted=true;
+  else if(ch===delimiter){row.push(current);current=''}
+  else if(ch==='\r'||ch==='\n'){
+   if(ch==='\r'&&input[i+1]==='\n')i++;
+   row.push(current);current='';
+   if(row.some(x=>String(x).trim()))rows.push(row);
+   row=[];
+  }else current+=ch;
+ }
+ if(quoted)throw Error('CSV bevat een niet-afgesloten aanhalingsteken.');
+ row.push(current);
+ if(row.some(x=>String(x).trim()))rows.push(row);
+ return rows;
+}
+function parseCSV(text){
+ const comma=parseDelimitedCSV(text,',');
+ if(comma[0]?.some(csvNameColumn))return comma;
+ const semicolon=parseDelimitedCSV(text,';');
+ if(semicolon[0]?.some(csvNameColumn))return semicolon;
+ // Some Google Forms / spreadsheet downloads contain comma-separated
+ // columns inside an outer, semicolon-separated quoted cell. When multiple
+ // weekdays were selected, their answers are spread over subsequent cells.
+ // Reassemble the semicolon cells, then decode the embedded comma CSV.
+ if(semicolon.length&&semicolon[0][0]?.includes(',')){
+  const decode=row=>{
+   const cells=[...row];
+   while(cells.length>1&&cells[cells.length-1]==='')cells.pop();
+   const result=parseDelimitedCSV(cells.join(';'),',');
+   if(result.length!==1)throw Error('Een CSV-regel heeft een ongeldige indeling.');
+   return result[0];
+  };
+  const header=decode(semicolon[0]);
+  if(header.some(csvNameColumn)){
+   const rows=semicolon.map(decode);
+   const length=header.length;
+   if(rows.some((r,i)=>i>0&&r.length!==length))
+    throw Error('Het CSV-bestand bevat een regel met een afwijkend aantal kolommen.');
+   return rows;
+  }
+ }
+ return comma.length>1?comma:semicolon;
+}
+async function importCsv(ev){const f=ev.target.files?.[0];if(!f)return;try{const rows=parseCSV(await f.text());const header=rows.shift()?.map(x=>x.trim().toLowerCase())||[];const nameCol=header.findIndex(csvNameColumn);const canCol=header.findIndex(x=>x.includes('welke weekdagen')||x.includes('niet spelen'));const answerCol=header.findIndex(x=>x.includes('doe jij mee'));if(nameCol<0)throw Error('Geen naamkolom gevonden. Gebruik Naam of Voor- en achternaam.');let added=0,updated=0,skipped=0;const previousPlayers=structuredClone(data.players);for(const row of rows){const n=(row[nameCol]||'').trim().replace(/\s+/g,' ');if(!n||(answerCol>=0&&!/^ja\b/i.test((row[answerCol]||'').trim()))){skipped++;continue}const blocked=canCol<0?[]:DAYS.filter(d=>(row[canCol]||'').toLocaleLowerCase('nl').includes(d.search)).map(d=>d.id);const old=data.players.find(p=>p.name.toLocaleLowerCase('nl')===n.toLocaleLowerCase('nl'));if(old){if(canCol>=0)old.blocked=blocked;updated++}else if(data.draw.length){skipped++}else{data.players.push({id:safeId(),name:n,blocked});added++}}if(data.players.length>MAX_PLAYERS){data.players=previousPlayers;notify('CSV bevat meer dan 32 deelnemers. De beheerder moet eerst het definitieve deelnemersveld bepalen.');return}const checked=checkDrawCompatibility(data.draw,data.players);if(!checked.valid){data.players=previousPlayers;notify('CSV niet opgeslagen: '+checked.message);return}if(data.draw.length)autoPlanMatches(false);save();render();notify(`${added} toegevoegd, ${updated} bijgewerkt, ${skipped} overgeslagen${data.draw.length?' (loting is actief)':''}.`)}catch(e){notify(`Import mislukt: ${e.message}`)}}
 function exportJson(){if(archiveReadonly)return;const blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='OHC-backup.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),3000)}
 function resetAll(){if(!isAdmin||!confirm('Loting, speeldata en uitslagen definitief wissen? De deelnemers blijven behouden.'))return;data.draw=[];data.results={};data.schedule={};data.settings.resultText={};data.settings.status='Inschrijving open';editPlayer=null;save();render();notify('Loting en uitslagen gewist. De vastgestelde speelperiodes blijven behouden.')}
 addEventListener('resize',()=>{if(tab==='boom')requestAnimationFrame(drawBracketConnections)});
