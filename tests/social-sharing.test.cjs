@@ -12,8 +12,11 @@ const calendar=fs.readFileSync(path.join(__dirname,'..','calendar.js'),'utf8');
 assert.ok(inline,'De hoofdapp heeft een script');
 assert.match(html,/share\.js\?v=/);
 
-let drawn=[];
-const makeGradient=()=>({addColorStop(){}});
+let drawn=[],gradients=[];
+const makeGradient=()=>{
+ const stops=[];gradients.push(stops);
+ return {addColorStop(position,color){stops.push({position,color})}};
+};
 const makeContext=()=>({
  fillStyle:'',strokeStyle:'',lineWidth:1,font:'',textAlign:'',textBaseline:'',
  fillRect(){},beginPath(){},moveTo(){},lineTo(){},arcTo(){},closePath(){},fill(){},stroke(){},
@@ -39,7 +42,7 @@ vm.runInContext(inline.replace(/\ninitialize\(\);\s*$/,''),context,{filename:'in
 const run=s=>vm.runInContext('(()=>{'+s+'})()',context);
 
 function seed(count=32){
- drawn=[];
+ drawn=[];gradients=[];
  context.playersFixture=Array.from({length:count},(_,i)=>({
   id:'p'+i,name:'Deelnemer '+(i+1)+' Achternaam',blocked:[]
  }));
@@ -222,4 +225,23 @@ test('De website en alle deelbare posters gebruiken dezelfde nieuwe slagzin',()=
  assert.ok(html.includes('Duelleer. Overwin &amp; Pak die titel!'));
  assert.equal(sharing.split(slogan).length-1,2);
  assert.doesNotMatch(sharing,/WIN JE DUEL\. GA DOOR\. PAK DE TITEL\.|IEDERE WINNAAR EEN STAP DICHTER BIJ DE TITEL/);
+});
+
+
+test('Finale- en bronsfinalekoppen hebben het gevraagde kleurverloop in website en PNG',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','layout.css'),'utf8');
+ assert.match(css,/\.mirrored-bracket \.matchcard\.final-match \.matchid\{\s*background:linear-gradient\(105deg,#e7b45f 0%,#dcbf87 43%,#c3cbd8 100%\)/);
+ assert.match(css,/\.mirrored-bracket \.matchcard\.bronze-match \.matchid\{\s*background:linear-gradient\(105deg,#986037 0%,#785039 43%,#493449 100%\)/);
+ assert.match(css,/\.mirrored-bracket \.matchcard \.matchid\{[^}]*background:#493449/);
+ seed(32);
+ const page=run("return bracketView()");
+ assert.match(page,/class="matchcard final-match"/);
+ assert.match(page,/class="matchcard bronze-match"/);
+ run("ohcShareType='boom';buildOhcSharePoster(shareActiveInfo(),null)");
+ const gold=gradients.find(stops=>stops[0]?.color==='#e7b45f');
+ const bronze=gradients.find(stops=>stops[0]?.color==='#986037');
+ assert.ok(gold,'Goud-naar-zilververloop ontbreekt in de PNG');
+ assert.ok(bronze,'Brons-naar-standaardverloop ontbreekt in de PNG');
+ assert.deepEqual(gold.map(s=>s.color),['#e7b45f','#dcbf87','#c3cbd8']);
+ assert.deepEqual(bronze.map(s=>s.color),['#986037','#785039','#493449']);
 });
