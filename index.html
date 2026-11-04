@@ -33,6 +33,8 @@ const PROJECT_URL='https://lnlaqrljtwrxtfsyotnn.supabase.co';
 const PUBLISHABLE_KEY='sb_publishable_wXilWOoEC4fEBswRNtnWAw_MRQ0AooI';
 let sb=null,authUser=null,isAdmin=false,eventId=null,currentVersion=1;
 let publicState=null,loading=true,loadError=null,mutationToken=0,saveQueue=Promise.resolve();
+let archivesCache=null,archiveRecord=null,archiveLoading=false,archiveError=null;
+let archiveSection='boom',archiveReadonly=false;
 async function fetchPublic(){
  const response=await sb.from('ohc_public_events').select('event_id,state').eq('slug','2026').single();
  if(response.error)throw new Error('Toernooidata ophalen: '+response.error.message);
@@ -371,7 +373,7 @@ function participantNumber(id){const index=data.players.findIndex(p=>p.id===id);
 function name(id,admin=false){if(!id)return 'Nog niet bekend';const p=player(id);return p?p.name:'Onbekend'}
 function safeId(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function notify(msg){const t=$('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.add('hidden'),4200)}
-function setTab(t){if(!authUser)return;if(t.startsWith('beheer')&&!isAdmin)t='overzicht';tab=t;location.hash=t;render();window.scrollTo({top:0,behavior:'instant'})}
+function setTab(t){if(!authUser)return;if(t.startsWith('beheer')&&!isAdmin)t='overzicht';if(t!=='archief')archiveRecord=null;tab=t;location.hash=t;render();window.scrollTo({top:0,behavior:'instant'})}
 function roundLabel(r,n){return 'Ronde '+(r+1)+(r===n-1?(data.draw.length>=4?' · Finale en bronsfinale':' · Finale'):r===n-2?' · Halve finale':r===n-3?' · Kwartfinale':'')}
 function matchKey(r,i){return String(r)+':'+String(i)}
 function bracket(){
@@ -467,7 +469,7 @@ function navGroup(t){
 function nav(){
  const root=$('nav');
  if(!authUser){root.innerHTML='';return}
- const items=[['overzicht','Overzicht'],['schema','Wedstrijden'],['boom','Toernooiboom'],['deelnemers','Deelnemers'],['reglement','Informatie']];
+ const items=[['overzicht','Overzicht'],['schema','Wedstrijden'],['boom','Toernooiboom'],['deelnemers','Deelnemers'],['reglement','Informatie'],['archief','Archief']];
  if(isAdmin)items.push(['beheer','Beheer']);
  const active=navGroup(tab);
  root.innerHTML=items.map(x=>'<button type="button" data-tab="'+x[0]+'" class="'+(active===x[0]?'active':'')+'" '+(active===x[0]?'aria-current="page"':'')+' onclick="setTab(this.dataset.tab)">'+x[1]+'</button>').join('')+
@@ -554,7 +556,7 @@ function scheduleView(){
  if(!b.length)return calendar+'<div class="panel">'+heading('Wedstrijden')+'<div class="empty"><div class="bigicon">📅</div><strong>De loting is nog niet uitgevoerd</strong><p>De officiële speelperiodes liggen vast. Zodra de loting is uitgevoerd, worden alle duels automatisch over de beschikbare dagen verspreid.</p></div></div>';
  return calendar+'<div class="panel">'+heading('Speelschema','<span class="pill blue">'+expectedMatches()+' te spelen duels</span>')+
  '<p class="muted smalltext">Alle duels van een ronde moeten gespeeld zijn voordat de volgende ronde begint. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur, mits alle eerdere speeldagen vaststaan. Bij een conflict staat er een voorlopig voorstel. Verplaatsen kan alleen in onderling overleg, binnen de rondeperiode.</p>'+
- '<div class="btnbar" style="margin-bottom:18px">'+button('Wedstrijden exporteren (CSV)','exportMatchesCsv()','ghost',true)+'</div>'+
+ (archiveReadonly?'':'<div class="btnbar" style="margin-bottom:18px">'+button('Wedstrijden exporteren (CSV)','exportMatchesCsv()','ghost',true)+'</div>')+
  b.map((rr,r)=>'<div class="roundgroup"><div class="grouphead"><h3 class="headingline">'+roundLabel(r,b.length)+'</h3>'+deadlineBadge(r)+'</div>'+
  rr.map(m=>{
  const s=data.schedule[m.id]||{},res=data.settings.resultText[m.id]||'';
@@ -737,9 +739,9 @@ function deadlineBadge(r){const w=getRoundWindows()[r];return w?`<span class="pi
 function rulesView(){const total=data.players.length,byes=total>1?2**Math.ceil(Math.log2(total))-total:0;return `<section class="panel"><div class="sectiontitle"><h2>Toernooireglement</h2><span class="pill ok">Vastgestelde toernooivorm</span></div><div class="steps"><div class="step"><div class="stepnum">ARTIKEL 01</div><h3>Directe uitschakeling</h3><p>Een speler die een duel verliest, is uitgeschakeld. Een winnaar gaat door naar het volgende duel. Er is geen verliezersronde.</p></div><div class="step"><div class="stepnum">ARTIKEL 02</div><h3>Willekeurige loting</h3><p>Deelnemers worden zonder plaatsingslijst ingeloot. Zo nodig zijn er ${byes} vrijlotingen voor het huidige deelnemersaantal.</p></div><div class="step"><div class="stepnum">ARTIKEL 03</div><h3>Eén kampioen</h3><p>De twee overgebleven spelers spelen de finale. De twee verliezende halvefinalisten spelen de bronsfinale: de winnaar wordt derde en de verliezer vierde.</p></div></div><hr class="divider"><h3>Hoe werkt de planning?</h3><p class="smalltext muted">Iedere ronde heeft een eigen toegestane speelperiode. De periodes mogen overlappen, maar de daadwerkelijk ingeplande rondes nooit: eerst worden alle duels van ronde 1 afgewerkt, dan pas begint ronde 2, enzovoort. Een datum zonder beschikbaarheidsconflict wordt automatisch vastgesteld om 20:00 uur zodra alle eerdere rondes vaststaan. Bij ontbreken van gezamenlijke beschikbaarheid is de thuisspeler leidend voor het voorlopige schema; de spelers maken dan onderling een definitieve afspraak. In onderling overleg mogen beide spelers de speeldag binnen die periode en/of de starttijd wijzigen. De organisatie bevestigt zulke afspraken. De uitgesloten decemberdatums blijven verboden.</p>${data.draw.length?`<div class="deadlinegrid">${Array.from({length:howManyRounds()},(_,i)=>`<div class="infoitem"><strong>${roundLabel(i,howManyRounds())}</strong>${deadlineBadge(i)}</div>`).join('')}</div>`:''}</section><section class="panel"><div class="sectiontitle"><h2>Nog vast te stellen</h2><span class="pill warn">Geen definitieve afspraken</span></div><p class="muted smalltext">Deze onderwerpen moeten door de organisatie worden besloten voordat de site als officieel reglement gebruikt kan worden.</p><div class="rulesgrid">${['Eventuele bijkomende kosten','Pokerplatform en speelvariant','Startstack en blindstructuur','Duur en eventuele onderbrekingen per duel','Omgaan met afzeggingen binnen de speelperiode','Regels bij niet verschijnen of technische problemen','Eventuele trofeeën en bijkomende kosten','Aanvullende regels bij een onbespeelbare finale of bronsfinale'].map(x=>`<div class="rulepending"><span class="openbullet">○</span>${x}</div>`).join('')}</div></section>`}
 function saveDeadlines(){notify('De vijf speelperiodes staan vast en kunnen niet worden gewijzigd.')}
 function downloadFile(text,filename,mime){const blob=new Blob([text],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
-function exportMatchesCsv(){const csvrow=(cells)=>cells.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(';');const rows=[csvrow(['Ronde','Duel','Speler 1','Speler 2','Status','Datum','Tijd','Onderling akkoord','Winnaar','Score','Rondedeadline'])];for(const match of allMatches()){const s=data.schedule[match.id]||{};rows.push(csvrow([roundLabel(match.round,howManyRounds()),match.isBronze?'Bronsfinale':match.round===howManyRounds()-1?'Finale':match.index+1,bracketSlotText(match.round,match.index,0,match.a),bracketSlotText(match.round,match.index,1,match.b),matchStatus(match),s.date||'',s.date?(s.time||DEFAULT_MATCH_TIME):'',matchHasAgreement(match,s)?'Ja':'Nee',match.winner?name(match.winner):'',data.settings.resultText[match.id]||'',data.settings.roundDeadlines[match.round]||'']))}downloadFile('\uFEFF'+rows.join('\r\n'),'OHC-speelschema.csv','text/csv;charset=utf-8')}
+function exportMatchesCsv(){if(archiveReadonly)return;const csvrow=(cells)=>cells.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(';');const rows=[csvrow(['Ronde','Duel','Speler 1','Speler 2','Status','Datum','Tijd','Onderling akkoord','Winnaar','Score','Rondedeadline'])];for(const match of allMatches()){const s=data.schedule[match.id]||{};rows.push(csvrow([roundLabel(match.round,howManyRounds()),match.isBronze?'Bronsfinale':match.round===howManyRounds()-1?'Finale':match.index+1,bracketSlotText(match.round,match.index,0,match.a),bracketSlotText(match.round,match.index,1,match.b),matchStatus(match),s.date||'',s.date?(s.time||DEFAULT_MATCH_TIME):'',matchHasAgreement(match,s)?'Ja':'Nee',match.winner?name(match.winner):'',data.settings.resultText[match.id]||'',data.settings.roundDeadlines[match.round]||'']))}downloadFile('\uFEFF'+rows.join('\r\n'),'OHC-speelschema.csv','text/csv;charset=utf-8')}
 async function importBackup(ev){const f=ev.target.files?.[0];if(!f)return;try{const obj=JSON.parse(await f.text());if(!obj||!Array.isArray(obj.players)||!Array.isArray(obj.draw)||typeof obj.results!=='object'||!obj.schedule||typeof obj.schedule!=='object')throw Error('Geen geldige OHC-back-up.');if(obj.players.some(p=>typeof p.id!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(p.id)||typeof p.name!=='string'||p.name.length>100||!Array.isArray(p.blocked)))throw Error('Ongeldige deelnemergegevens.');if(obj.players.length>MAX_PLAYERS)throw Error('De OHC heeft maximaal 32 plaatsen.');if(new Set(obj.players.map(p=>p.id)).size!==obj.players.length)throw Error('Dubbele deelnemers-ID.');if(obj.draw.length&&(obj.draw.length<2||(obj.draw.length&(obj.draw.length-1))!==0||obj.draw.some(x=>x!==null&&!obj.players.some(p=>p.id===x))))throw Error('Ongeldige toernooiloting.');if(obj.draw.length){const valid=checkDrawCompatibility(obj.draw,obj.players);if(!valid.valid)throw Error('Deze back-up schendt de beschikbaarheidsregels: '+valid.message)}if(!confirm('De huidige toernooigegevens vervangen door deze back-up?'))return;data={...structuredClone(DEFAULT),...obj,settings:{...structuredClone(DEFAULT.settings),...obj.settings,roundDeadlines:obj.settings?.roundDeadlines||{},resultText:obj.settings?.resultText||{}}};autoPlanMatches(false);save();render();notify('Back-up hersteld.')}catch(e){notify('Herstellen mislukt: '+e.message)}}
-async function exportBracketPng(){const rounds=bracket();if(!rounds.length){notify('Voer eerst de loting uit.');return}const width=Math.max(960,rounds.length*270+75),rowHeight=92,margin=46,colWidth=245;const height=Math.max(620,rounds[0].length*rowHeight+240);const canvas=document.createElement('canvas');const factor=Math.max(1,Math.min(2,3200/Math.max(width,height)));canvas.width=Math.round(width*factor);canvas.height=Math.round(height*factor);const ctx=canvas.getContext('2d');if(!ctx){notify('Afbeelding exporteren is niet beschikbaar.');return}ctx.scale(factor,factor);ctx.fillStyle='#07101e';ctx.fillRect(0,0,width,height);ctx.fillStyle='#ff8b3e';ctx.font='bold 15px Arial';ctx.fillText('OPTSCH  •  HEADS-UP CUP',margin,44);ctx.fillStyle='#f5f7fb';ctx.font='bold 32px Arial';ctx.fillText('TOERNOOIBOOM',margin,88);ctx.font='13px Arial';ctx.fillStyle='#a6b7cf';ctx.fillText(`${data.players.length} deelnemers  •  directe knock-out  •  ${rounds.length} rondes`,margin,116);const top=165;const clipName=(str,max)=>{let x=str;if(ctx.measureText(x).width<=max)return x;while(x.length>2&&ctx.measureText(x+'…').width>max)x=x.slice(0,-1);return x+'…'};rounds.forEach((matches,r)=>{const x=margin+r*270;ctx.fillStyle='#ffab68';ctx.font='bold 14px Arial';ctx.fillText(roundLabel(r,rounds.length).toUpperCase(),x,147);const spacing=(height-top-70)/matches.length;matches.forEach((m,i)=>{const y=top+(i+.5)*spacing-34;ctx.fillStyle='#16243b';ctx.fillRect(x,y,colWidth,71);if(m.isBronze){ctx.fillStyle='#ffad6b';ctx.font='bold 10px Arial';ctx.fillText('BRONSFINALE',x+5,y-7)}else if(r===rounds.length-1){ctx.fillStyle='#ffad6b';ctx.font='bold 10px Arial';ctx.fillText('FINALE',x+5,y-7)}ctx.strokeStyle='#39506f';ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,colWidth-1,70);[m.a,m.b].forEach((pid,j)=>{const yy=y+20+j*29;if(pid&&pid===m.winner){ctx.fillStyle='#1b4b3c';ctx.fillRect(x+6,yy-15,colWidth-12,24)}ctx.fillStyle=pid&&pid===m.winner?'#9af7bf':'#eff4fd';ctx.font=pid&&pid===m.winner?'bold 13px Arial':'13px Arial';ctx.fillText(clipName(name(pid),colWidth-27),x+13,yy+1)});});});const c=champion();if(c){ctx.fillStyle='#ffb56f';ctx.font='bold 20px Arial';ctx.fillText('🏆 KAMPIOEN: '+name(c),margin,height-29)}else{ctx.fillStyle='#8da2bd';ctx.font='12px Arial';ctx.fillText('OPTSCH Heads-Up Cup • voorlopige toernooiboom',margin,height-29)}canvas.toBlob(blob=>{if(!blob){notify('PNG genereren mislukt.');return}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='OHC-toernooiboom.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),4000)},'image/png')}
+async function exportBracketPng(){if(archiveReadonly)return;const rounds=bracket();if(!rounds.length){notify('Voer eerst de loting uit.');return}const width=Math.max(960,rounds.length*270+75),rowHeight=92,margin=46,colWidth=245;const height=Math.max(620,rounds[0].length*rowHeight+240);const canvas=document.createElement('canvas');const factor=Math.max(1,Math.min(2,3200/Math.max(width,height)));canvas.width=Math.round(width*factor);canvas.height=Math.round(height*factor);const ctx=canvas.getContext('2d');if(!ctx){notify('Afbeelding exporteren is niet beschikbaar.');return}ctx.scale(factor,factor);ctx.fillStyle='#07101e';ctx.fillRect(0,0,width,height);ctx.fillStyle='#ff8b3e';ctx.font='bold 15px Arial';ctx.fillText('OPTSCH  •  HEADS-UP CUP',margin,44);ctx.fillStyle='#f5f7fb';ctx.font='bold 32px Arial';ctx.fillText('TOERNOOIBOOM',margin,88);ctx.font='13px Arial';ctx.fillStyle='#a6b7cf';ctx.fillText(`${data.players.length} deelnemers  •  directe knock-out  •  ${rounds.length} rondes`,margin,116);const top=165;const clipName=(str,max)=>{let x=str;if(ctx.measureText(x).width<=max)return x;while(x.length>2&&ctx.measureText(x+'…').width>max)x=x.slice(0,-1);return x+'…'};rounds.forEach((matches,r)=>{const x=margin+r*270;ctx.fillStyle='#ffab68';ctx.font='bold 14px Arial';ctx.fillText(roundLabel(r,rounds.length).toUpperCase(),x,147);const spacing=(height-top-70)/matches.length;matches.forEach((m,i)=>{const y=top+(i+.5)*spacing-34;ctx.fillStyle='#16243b';ctx.fillRect(x,y,colWidth,71);if(m.isBronze){ctx.fillStyle='#ffad6b';ctx.font='bold 10px Arial';ctx.fillText('BRONSFINALE',x+5,y-7)}else if(r===rounds.length-1){ctx.fillStyle='#ffad6b';ctx.font='bold 10px Arial';ctx.fillText('FINALE',x+5,y-7)}ctx.strokeStyle='#39506f';ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,colWidth-1,70);[m.a,m.b].forEach((pid,j)=>{const yy=y+20+j*29;if(pid&&pid===m.winner){ctx.fillStyle='#1b4b3c';ctx.fillRect(x+6,yy-15,colWidth-12,24)}ctx.fillStyle=pid&&pid===m.winner?'#9af7bf':'#eff4fd';ctx.font=pid&&pid===m.winner?'bold 13px Arial':'13px Arial';ctx.fillText(clipName(name(pid),colWidth-27),x+13,yy+1)});});});const c=champion();if(c){ctx.fillStyle='#ffb56f';ctx.font='bold 20px Arial';ctx.fillText('🏆 KAMPIOEN: '+name(c),margin,height-29)}else{ctx.fillStyle='#8da2bd';ctx.font='12px Arial';ctx.fillText('OPTSCH Heads-Up Cup • voorlopige toernooiboom',margin,height-29)}canvas.toBlob(blob=>{if(!blob){notify('PNG genereren mislukt.');return}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='OHC-toernooiboom.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),4000)},'image/png')}
 
 const roundSelections={};
 const infoNavigation=[
@@ -764,7 +766,8 @@ const pageInfo={
  'beheer-resultaten':['Uitslagen invoeren','Kies een ronde, noteer de score en selecteer de winnaar.','ORGANISATIE'],
  'beheer-planning':['Wedstrijden plannen','Bevestig speeldata, pas voorstellen aan en controleer conflicten.','ORGANISATIE'],
  'beheer-instellingen':['Toernooi-instellingen','Status, spelvorm en vaste speelperiodes.','ORGANISATIE'],
- 'beheer-bestanden':['Bestanden en back-ups','Exporteer resultaten en herstel zo nodig een back-up.','ORGANISATIE']
+ 'beheer-bestanden':['Bestanden en back-ups','Exporteer, reset of archiveer het actieve toernooi.','ORGANISATIE'],
+ archief:['Toernooiarchief','Alle afgesloten OHC-edities, veilig bewaard.','HISTORIE']
 };
 function tileGrid(items,extraClass){
  return '<div class="launch-grid '+(extraClass||'')+'">'+items.map(function(item){
@@ -1317,6 +1320,96 @@ function filterParticipants(value){
  if(empty)empty.classList.toggle('hidden',found!==0);
 }
 
+
+function archiveDate(iso){
+ const value=new Date(iso);
+ return Number.isNaN(value.getTime())?'Onbekende datum':
+  value.toLocaleDateString('nl-NL',{year:'numeric',month:'long',day:'numeric',timeZone:'Europe/Amsterdam'});
+}
+async function fetchArchives(force=false){
+ if(!authUser||archiveLoading)return;
+ if(archivesCache!==null&&!force)return;
+ archiveLoading=true;archiveError=null;
+ try{
+  const response=await sb.from('ohc_archive_public')
+   .select('id,title,archived_at')
+   .order('archived_at',{ascending:false}).limit(100);
+  if(response.error)throw response.error;
+  archivesCache=response.data||[];
+ }catch(error){archiveError=String(error.message||error)}
+ finally{archiveLoading=false;if(tab==='archief')render()}
+}
+async function openArchive(id){
+ if(!authUser||!(/^[a-f0-9-]{36}$/i.test(id)))return;
+ const response=await sb.from('ohc_archive_public')
+  .select('id,title,archived_at,state').eq('id',id).single();
+ if(response.error){notify('Archief openen mislukt: '+response.error.message);return}
+ archiveRecord=response.data;
+ archiveSection='boom';
+ tab='archief';location.hash='archief';
+ render();
+ window.scrollTo({top:0,behavior:'instant'});
+}
+function closeArchive(){
+ archiveRecord=null;archiveSection='boom';
+ render();
+ window.scrollTo({top:0,behavior:'instant'});
+}
+function setArchiveSection(section){
+ if(!['boom','schema','deelnemers','periodes','prijzen'].includes(section))return;
+ archiveSection=section;
+ render();
+ window.scrollTo({top:0,behavior:'instant'});
+}
+function archivedReadOnlyView(section){
+ if(!archiveRecord)return '';
+ const priorData=data,priorAdmin=isAdmin,priorReadonly=archiveReadonly;
+ try{
+  data=normalizeState(archiveRecord.state);
+  isAdmin=false;
+  archiveReadonly=true;
+  const views={
+   boom:bracketView,
+   schema:scheduleView,
+   deelnemers:playersView,
+   periodes:roundCalendar,
+   prijzen:prizePanel
+  };
+  return views[section]();
+ }finally{data=priorData;isAdmin=priorAdmin;archiveReadonly=priorReadonly}
+}
+function archiveView(){
+ if(!archiveRecord){
+  if(archivesCache===null&&!archiveLoading&&!archiveError)void fetchArchives();
+  if(archiveLoading||archivesCache===null&&!archiveError)
+   return '<section class="panel"><h2>Archief laden</h2><p class="muted">Eerdere toernooien ophalen…</p></section>';
+  if(archiveError)
+   return '<section class="panel"><h2>Archief niet beschikbaar</h2><p class="muted">'+esc(archiveError)+'</p>'+
+    '<button type="button" class="btn" onclick="archiveError=null;fetchArchives(true)">Opnieuw proberen</button></section>';
+  if(archivesCache.length===0)
+   return '<section class="panel"><div class="empty"><div class="bigicon">📁</div><strong>Het archief is nog leeg</strong>'+
+   '<p>Wanneer de organisatie een toernooi archiveert, verschijnt de volledige afgesloten editie hier.</p></div></section>';
+  return '<section class="panel"><div class="sectiontitle"><h2>Afgesloten toernooien</h2><span class="pill blue">'+archivesCache.length+' edities</span></div>'+
+   '<p class="panel-intro">Deze toernooien zijn bewaard voor de historie. De deelnemers, uitslagen, speeldata en toernooiboom zijn alleen te lezen.</p>'+
+   '<div class="archive-list">'+archivesCache.map(a=>
+    '<div class="archive-item"><div><strong>'+esc(a.title)+'</strong><span class="tag">Gearchiveerd op '+esc(archiveDate(a.archived_at))+'</span></div>'+
+    '<button type="button" class="btn alt small" onclick="openArchive(\''+esc(a.id)+'\')">Bekijk archief</button></div>'
+   ).join('')+'</div></section>';
+ }
+ const selected=archiveSection;
+ const tabs=[
+  ['boom','Toernooiboom'],['schema','Wedstrijden'],['deelnemers','Deelnemers'],
+  ['periodes','Speelperiodes'],['prijzen','Prijzen']
+ ];
+ return '<section class="archive-intro"><div><span class="eyebrow">ALLEEN LEZEN • GEARCHIVEERD</span>'+
+ '<h2>'+esc(archiveRecord.title)+'</h2><p>Gearchiveerd op '+esc(archiveDate(archiveRecord.archived_at))+
+ '. Dit is een opgeslagen versie van het toernooi. Alle wijzigingen zijn uitgeschakeld.</p></div>'+
+ '<button type="button" class="btn ghost small" onclick="closeArchive()">Terug naar archiefoverzicht</button></section>'+
+ '<div class="page-subnav archive-subnav" aria-label="Archiefonderdelen">'+tabs.map(([id,label])=>
+ '<button type="button" class="'+(selected===id?'active':'')+'" onclick="setArchiveSection(\''+id+'\')">'+label+'</button>'
+ ).join('')+'</div>'+archivedReadOnlyView(selected);
+}
+
 function loginScreen(){return `<section class="panel auth-panel"><div class="login-brand"><div class="login-crest" role="img" aria-label="OPTSCH Heads-Up Cup logo"></div><div class="login-yearline"><span class="seasonchip first">2026</span><span class="seasondivider">✦</span><span class="seasonchip last">2027</span></div><h2>Welkom bij de Heads-Up Cup</h2><p class="muted smalltext">Deelnemers, toernooiboom, speelschema en uitslagen zijn uitsluitend zichtbaar voor ingelogde OPTSCH-spelers.</p></div><div class="field"><label for="loginEmail">E-mailadres</label><input id="loginEmail" type="email" autocomplete="username" placeholder="E-mailadres"></div><div class="field"><label for="loginPassword">Wachtwoord</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Wachtwoord" onkeydown="if(event.key===&#39;Enter&#39;)login()"></div><div class="btnbar"><button class="btn" onclick="login()">Inloggen</button></div><p class="muted smalltext">Geen inloggegevens? Vraag de organisatie om toegang.</p></section>`}
 function render(){
  const routes={
@@ -1325,7 +1418,7 @@ function render(){
   beheer:adminView,'beheer-deelnemers':adminPlayersPage,'beheer-import':adminImportPage,
   'beheer-loting':adminLotteryPage,'beheer-resultaten':adminResultsPage,
   'beheer-planning':adminPlanningPage,'beheer-instellingen':adminConfigPage,
-  'beheer-bestanden':adminFilesPage
+  'beheer-bestanden':adminFilesPage,archief:archiveView
  };
  if(!routes[tab])tab='overzicht';
  if(!isAdmin&&tab.startsWith('beheer'))tab='overzicht';
@@ -1338,7 +1431,7 @@ function render(){
  $('main').innerHTML=(tab==='overzicht'?'':pageHead(tab))+
   (info?subNavigation(infoNavigation,tab):admin?subNavigation(adminNavigation,tab):'')+
   routes[tab]();
- if(tab==='boom')requestAnimationFrame(drawBracketConnections);
+ if(tab==='boom'||(tab==='archief'&&archiveRecord&&archiveSection==='boom'))requestAnimationFrame(drawBracketConnections);
 }
 function selectEdit(id){editPlayer=id;render();$('personformtitle')?.scrollIntoView({behavior:'smooth',block:'center'})}
 function changePlayers(){/* De deelnemerslijst wordt na loting niet ongemerkt gewijzigd. */}
@@ -1649,7 +1742,7 @@ function clearDate(r,i){delete data.schedule[matchKey(r,i)];save();render();noti
 function updateStatus(v){data.settings.status=v;save();render()}
 function parseCSV(text){let rows=[],row=[],cur='',quote=false;const input=text.replace(/^\uFEFF/,'');for(let i=0;i<input.length;i++){const c=input[i];if(quote){if(c==='"'&&input[i+1]==='"'){cur+='"';i++}else if(c==='"')quote=false;else cur+=c}else if(c==='"')quote=true;else if(c===','){row.push(cur);cur=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&input[i+1]==='\n')i++;row.push(cur);cur='';if(row.some(x=>x.trim()))rows.push(row);row=[]}else cur+=c}if(quote)throw Error('CSV bevat een niet-afgesloten aanhalingsteken.');row.push(cur);if(row.some(x=>x.trim()))rows.push(row);return rows}
 async function importCsv(ev){const f=ev.target.files?.[0];if(!f)return;try{const rows=parseCSV(await f.text());const header=rows.shift()?.map(x=>x.trim().toLowerCase())||[];const nameCol=header.findIndex(x=>x==='naam'||x.startsWith('naam '));const canCol=header.findIndex(x=>x.includes('welke weekdagen')||x.includes('niet spelen'));const answerCol=header.findIndex(x=>x.includes('doe jij mee'));if(nameCol<0)throw Error('Kolom Naam ontbreekt in het CSV-bestand.');let added=0,updated=0,skipped=0;const previousPlayers=structuredClone(data.players);for(const row of rows){const n=(row[nameCol]||'').trim().replace(/\s+/g,' ');if(!n||(answerCol>=0&&!/^ja\b/i.test((row[answerCol]||'').trim()))){skipped++;continue}const blocked=canCol<0?[]:DAYS.filter(d=>(row[canCol]||'').toLocaleLowerCase('nl').includes(d.search)).map(d=>d.id);const old=data.players.find(p=>p.name.toLocaleLowerCase('nl')===n.toLocaleLowerCase('nl'));if(old){if(canCol>=0)old.blocked=blocked;updated++}else if(data.draw.length){skipped++}else{data.players.push({id:safeId(),name:n,blocked});added++}}if(data.players.length>MAX_PLAYERS){data.players=previousPlayers;notify('CSV bevat meer dan 32 deelnemers. De beheerder moet eerst het definitieve deelnemersveld bepalen.');return}const checked=checkDrawCompatibility(data.draw,data.players);if(!checked.valid){data.players=previousPlayers;notify('CSV niet opgeslagen: '+checked.message);return}if(data.draw.length)autoPlanMatches(false);save();render();notify(`${added} toegevoegd, ${updated} bijgewerkt, ${skipped} overgeslagen${data.draw.length?' (loting is actief)':''}.`)}catch(e){notify(`Import mislukt: ${e.message}`)}}
-function exportJson(){const blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='OHC-backup.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),3000)}
+function exportJson(){if(archiveReadonly)return;const blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='OHC-backup.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),3000)}
 function resetAll(){if(!isAdmin||!confirm('Loting, speeldata en uitslagen definitief wissen? De deelnemers blijven behouden.'))return;data.draw=[];data.results={};data.schedule={};data.settings.resultText={};data.settings.status='Inschrijving open';editPlayer=null;save();render();notify('Loting en uitslagen gewist. De vastgestelde speelperiodes blijven behouden.')}
 addEventListener('resize',()=>{if(tab==='boom')requestAnimationFrame(drawBracketConnections)});
 addEventListener('hashchange',()=>{const next=location.hash.slice(1);if(next!==tab){tab=next;render()}});
