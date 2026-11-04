@@ -166,3 +166,10 @@ test('Deelbare boom behoudt de zichtbare chronologische duelnummering',()=>{
  assert.ok(drawn.includes('DUEL 2'));
  assert.ok(drawn.some(t=>t==='Deelnemer 1 Achternaam'));
 });
+
+test('De website en alle deelbare posters gebruiken dezelfde nieuwe slagzin',()=>{
+ const slogan='Duelleer. Overwin & Pak die titel!';
+ assert.ok(html.includes('Duelleer. Overwin &amp; Pak die titel!'));
+ assert.equal(sharing.split(slogan).length-1,2);
+ assert.doesNotMatch(sharing,/WIN JE DUEL\. GA DOOR\. PAK DE TITEL\.|IEDERE WINNAAR EEN STAP DICHTER BIJ DE TITEL/);
+});
