@@ -800,6 +800,228 @@ function adminPlayersPage(){
 function adminImportPage(){
  return splitPanelAt(adminPlayerView(),'<hr class="divider"><h3>Inschrijvingen verwerken (21 november)</h3>',false,'CSV inschrijvingen');
 }
+
+/* Handmatige wissels van eerste-ronde-plaatsen. Alleen beheerders;
+   nooit een nieuwe loting voor latere rondes. */
+function firstRoundIsComplete(){
+ const matches=bracket()[0]||[];
+ return matches.length>0&&matches.every(m=>m.resolved);
+}
+function swapMatchSignature(m){
+ return [m?.a,m?.b].filter(Boolean).sort().join('|');
+}
+function swapDirectConflicts(slots){
+ const result=[];
+ const allowed=new Set(roundDays(0).map(d=>new Date(d+'T12:00:00').getDay()));
+ for(let i=0;i<slots.length;i+=2){
+  const a=slots[i],b=slots[i+1];
+  if(!a||!b)continue;
+  const common=DAYS.some(day=>allowed.has(day.id)&&
+   preferredDayIds(a).includes(day.id)&&preferredDayIds(b).includes(day.id));
+  if(!common)result.push({id:[a,b].sort().join('|'),index:i/2,a,b});
+ }
+ return result;
+}
+function swapPotentialConflicts(slots){
+ const result=new Map();
+ for(let i=0;i<slots.length;i++){
+  if(!slots[i])continue;
+  for(let j=i+1;j<slots.length;j++){
+   if(!slots[j]||hasCommonPlayday(slots[i],slots[j]))continue;
+   const id=[slots[i],slots[j]].sort().join('|');
+   result.set(id,{round:Math.floor(Math.log2(i^j)),a:slots[i],b:slots[j]});
+  }
+ }
+ return result;
+}
+function analyzeFirstRoundSwap(from,to){
+ if(!isAdmin||!data.draw.length)return {error:'Er is geen loting om aan te passen.'};
+ if(firstRoundIsComplete())return {error:'De eerste ronde is volledig afgerond. De loting is vergrendeld.'};
+ const a=Number(from),b=Number(to),length=data.draw.length;
+ if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a>=length||b>=length||a===b)
+  return {error:'Kies twee verschillende plaatsen in de eerste ronde.'};
+ if(data.draw[a]===data.draw[b])return {error:'Deze twee plaatsen bevatten dezelfde waarde.'};
+ const oldSlots=data.draw.slice(),newSlots=oldSlots.slice();
+ [newSlots[a],newSlots[b]]=[newSlots[b],newSlots[a]];
+ const structure=checkDrawCompatibility(newSlots);
+ if(!structure.valid)return {error:structure.message};
+ const oldMatches=bracket();
+ const directOld=swapDirectConflicts(oldSlots),directNew=swapDirectConflicts(newSlots);
+ const directSet=new Set(directOld.map(x=>x.id));
+ const addedDirect=directNew.filter(x=>!directSet.has(x.id));
+ const potentialOld=swapPotentialConflicts(oldSlots),potentialNew=swapPotentialConflicts(newSlots);
+ const earlier=[...potentialNew].filter(([id,next])=>{
+  const old=potentialOld.get(id);
+  return old&&next.round<old.round;
+ }).map(([,entry])=>entry);
+ const olderState=data;
+ const changedFixtures=[],erasedResults=[],erasedDates=[],erasedConfirmations=[];
+ let plan=null,projected=null,unsafeConfirmed=[];
+ try{
+  data=structuredClone(olderState);
+  data.draw=newSlots;
+  // Move from the earliest round outward, so participants in later rounds
+  // are recalculated AFTER invalid results have been removed.
+  for(let round=0;round<oldMatches.length;round++){
+   const oldRound=oldMatches[round]||[];
+   for(const previous of oldRound){
+    const now=bracket()[round]?.[previous.index];
+    if(!now)continue;
+    if(swapMatchSignature(previous)!==swapMatchSignature(now)){
+     changedFixtures.push(previous.id);
+     if(data.results[previous.id]){
+      erasedResults.push(previous.id);
+      delete data.results[previous.id];
+     }
+     if(data.settings.resultText[previous.id])delete data.settings.resultText[previous.id];
+     if(data.schedule[previous.id]?.date){
+      erasedDates.push(previous.id);
+      if(data.schedule[previous.id].provisional===false)
+       erasedConfirmations.push(previous.id);
+      delete data.schedule[previous.id];
+     }
+    }else if(previous.a!==now.a||previous.b!==now.b){
+     // Same two opponents, merely reversing paper home/away:
+     // retain a played result and existing dates/agreements.
+     const schedule=data.schedule[previous.id];
+     if(schedule?.mutualAgreement===true&&now.a&&now.b)
+      schedule.agreedPlayers=[now.a,now.b];
+    }
+   }
+  }
+  plan=autoPlanMatches(false);
+  // A previously confirmed FUTURE match can be based on the old set
+  // of possible participants. Flag that loss of universal availability.
+  const rounds=bracket(),memo=new Map();
+  for(const matches of rounds)for(const m of matches){
+   const scheduled=data.schedule[m.id];
+   if(!scheduled?.date||scheduled.provisional!==false||m.isBye||m.round===0)continue;
+   const possibles=possibleFixturePlayers(m,rounds,memo);
+   const evaluation=fixtureAvailability(m,scheduled.date,possibles);
+   if(!evaluation.universal&&!matchHasAgreement(m,scheduled)&&!(m.resolved&&m.winner))
+    unsafeConfirmed.push(m.id);
+  }
+  data.settings.status=Object.keys(data.results).length?'Toernooi bezig':'Loting uitgevoerd';
+  if(tournamentComplete())data.settings.status='Toernooi afgerond';
+  projected=structuredClone(data);
+ }finally{
+  data=olderState;
+ }
+ const modifications=oldMatches[0].map((m,i)=>{
+  const oldSig=swapMatchSignature(m);
+  const nextA=newSlots[i*2],nextB=newSlots[i*2+1];
+  const newSig=[nextA,nextB].filter(Boolean).sort().join('|');
+  const different=(oldSlots[i*2]!==nextA||oldSlots[i*2+1]!==nextB);
+  return different?{index:i,oldA:oldSlots[i*2],oldB:oldSlots[i*2+1],newA:nextA,newB:nextB,opponentChange:oldSig!==newSig}:null;
+ }).filter(Boolean);
+ return {
+  from:a,to:b,draw:newSlots,state:projected,modifications,
+  directOld,directNew,addedDirect,earlier,
+  erasedResults,erasedDates,erasedConfirmations,unsafeConfirmed,
+  plan,blocked:!!plan?.conflicts?.length,
+  changeCount:changedFixtures.length
+ };
+}
+function swapPairText(a,b){
+ return esc(a?name(a,true):'Vrijloting')+' <span class="vs">VS</span> '+
+  esc(b?name(b,true):'Vrijloting');
+}
+function previewFirstRoundSwap(){
+ const target=$('roundOneSwapPreview');if(!target)return;
+ const from=$('swapFrom')?.value,to=$('swapTo')?.value;
+ if(from===''||to===''){target.innerHTML='<p class="muted smalltext">Selecteer twee plaatsen om de gevolgen te bekijken.</p>';return}
+ let preview;
+ try{preview=analyzeFirstRoundSwap(from,to)}
+ catch(e){target.innerHTML='<div class="notice orange">De wisseling kon niet worden gecontroleerd: '+esc(e.message)+'</div>';return}
+ if(preview.error){target.innerHTML='<div class="notice orange">'+esc(preview.error)+'</div>';return}
+ let message='<div class="swap-preview"><h3>Voorbeeld van de nieuwe indeling</h3><div class="rows">'+
+  preview.modifications.map(x=>'<div class="swap-preview-row"><strong>Duel '+(x.index+1)+'</strong>'+
+   '<div class="smalltext muted">Was: '+swapPairText(x.oldA,x.oldB)+'</div>'+
+   '<div class="smalltext">Wordt: '+swapPairText(x.newA,x.newB)+'</div></div>').join('')+
+  '</div><hr class="divider">';
+ const n=preview.directNew.length,old=preview.directOld.length;
+ message+='<div class="swap-risk-row"><strong>Geen gezamenlijke speeldag in ronde 1:</strong> '+
+  old+' → '+n+(n>old?' <span class="pill warn">+'+(n-old)+' extra</span>':n<old?' <span class="pill ok">'+(old-n)+' minder</span>':' <span class="pill ok">Ongewijzigd</span>')+'</div>';
+ if(preview.addedDirect.length)
+  message+='<div class="notice orange"><strong>Nieuwe conflicten:</strong><ul>'+
+   preview.addedDirect.map(x=>'<li>Duel '+(x.index+1)+': '+esc(name(x.a,true))+' – '+esc(name(x.b,true))+
+    ' hebben geen gezamenlijke toegestane speeldag.</li>').join('')+'</ul></div>';
+ if(preview.earlier.length){
+  message+='<div class="notice orange"><strong>Let op:</strong> '+preview.earlier.length+
+   ' potentiële ontmoetingen tussen spelers zonder gemeenschappelijke weekdag verschuiven naar een eerdere ronde.'+
+   '<ul>'+preview.earlier.slice(0,6).map(x=>'<li>'+esc(name(x.a,true))+' / '+esc(name(x.b,true))+
+    ': mogelijk vanaf ronde '+(x.round+1)+'</li>').join('')+
+   (preview.earlier.length>6?'<li>En nog '+(preview.earlier.length-6)+' andere.</li>':'')+'</ul></div>';
+ }
+ if(preview.erasedResults.length)
+  message+='<div class="notice orange"><strong>Uitslagen worden gewist:</strong> '+
+   preview.erasedResults.map(x=>'R'+(Number(x.split(':')[0])+1)+' duel '+(Number(x.split(':')[1])+1)).join(', ')+
+   '. De deelnemers van die duels veranderen; ook hun afhankelijke resultaten vervallen.</div>';
+ if(preview.erasedDates.length)
+  message+='<div class="notice orange"><strong>Planning verandert:</strong> '+preview.erasedDates.length+
+   ' bestaande speeldatum(s) worden opnieuw berekend, waarvan '+
+   preview.erasedConfirmations.length+' eerder definitief vastgesteld.'+
+   ' Informeer betrokken spelers en leg gewijzigde afspraken opnieuw vast.</div>';
+ if(preview.unsafeConfirmed.length)
+  message+='<div class="notice orange"><strong>Controleren:</strong> '+
+   preview.unsafeConfirmed.length+
+   ' bevestigde speeldatum(s) in een latere ronde zijn mogelijk niet meer geschikt voor alle nieuwe potentiële tegenstanders.</div>';
+ if(preview.plan?.agreementNeeded?.length||preview.plan?.missing?.length)
+  message+='<p class="muted smalltext">Na herberekening: '+preview.plan.agreementNeeded.length+
+   ' duel(s) vragen onderling overleg en '+preview.plan.missing.length+
+   ' duel(s) hebben nog geen passende speeldatum.</p>';
+ if(preview.blocked){
+  message+='<div class="notice orange"><strong>Wisselen nog niet mogelijk:</strong> de herberekende planning botst met vastgestelde speeldagen of de rondevolgorde. Pas die afspraken eerst aan.<ul>'+
+   preview.plan.conflicts.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+ }else{
+  message+='<div class="btnbar" style="margin-top:14px"><button type="button" class="btn" onclick="applyFirstRoundSwap()">Deze wisseling bevestigen</button></div>';
+ }
+ target.innerHTML=message+'</div>';
+}
+async function applyFirstRoundSwap(){
+ const from=$('swapFrom')?.value,to=$('swapTo')?.value;
+ let preview;
+ try{preview=analyzeFirstRoundSwap(from,to)}
+ catch(e){notify('Wisselen mislukt: '+e.message);return}
+ if(preview.error||preview.blocked){notify(preview.error||'De planning blokkeert deze wisseling.');return}
+ const extra=preview.directNew.length-preview.directOld.length;
+ const clauses=[
+  'De volgende twee eerste-rondeplaatsen verwisselen?',
+  esc(name(data.draw[preview.from],true))+' ↔ '+esc(name(data.draw[preview.to],true)),
+  'Conflicten zonder gezamenlijke speeldag in ronde 1: '+preview.directOld.length+' → '+preview.directNew.length+
+   (extra>0?' (+'+extra+' EXTRA)':''),
+  'Lastige potentiële ontmoetingen die eerder kunnen plaatsvinden: '+preview.earlier.length,
+  'Uitslagen die vervallen: '+preview.erasedResults.length,
+  'Bestaande speeldata die opnieuw worden berekend: '+preview.erasedDates.length+
+    ' (waarvan '+preview.erasedConfirmations.length+' definitief).'
+ ];
+ if(!confirm(clauses.join('\n')+'\n\nDeze wijziging wordt zichtbaar voor alle ingelogde spelers. Doorgaan?'))return;
+ // State version is checked by the existing optimistic-locking RPC.
+ data=preview.state;
+ const saved=await save();
+ render();
+ if(saved)notify('De eerste-ronde-indeling is gewijzigd; planning en vervolgrondes zijn gecontroleerd.');
+}
+function firstRoundSwapPanel(){
+ if(!data.draw.length)return '';
+ const matches=bracket()[0]||[];
+ const real=matches.filter(m=>!m.isBye).length,finished=matches.filter(m=>!m.isBye&&m.resolved).length;
+ if(firstRoundIsComplete())
+  return '<section class="panel"><div class="sectiontitle"><h2>Handmatige wisselingen</h2><span class="pill warn">Vergrendeld</span></div>'+
+   '<p class="muted smalltext">Alle duels van de eerste ronde zijn afgewerkt. De indeling kan niet meer worden gewijzigd.</p></section>';
+ const options=data.draw.map((id,i)=>
+  '<option value="'+i+'">Duel '+(Math.floor(i/2)+1)+' · '+(i%2?'Speler B':'Speler A')+
+  ' · '+esc(id?name(id,true):'Vrijloting')+'</option>').join('');
+ return '<section class="panel" id="roundOneSwap"><div class="sectiontitle"><h2>Eerste ronde aanpassen</h2>'+
+  '<span class="pill blue">'+finished+' / '+real+' duels gespeeld</span></div>'+
+  '<p class="panel-intro">Wissel twee plaatsen in de eerste ronde, eventueel ook met een vrijloting. Dit kan totdat alle eerste-ronde-duels zijn afgewerkt. De vervolgrondes behouden hun vaste routes. Bestaande uitslagen en afspraken die door een wissel ongeldig worden, moeten opnieuw worden vastgesteld.</p>'+
+  '<div class="formgrid"><div class="field"><label for="swapFrom">Eerste plaats</label><select id="swapFrom" onchange="previewFirstRoundSwap()"><option value="">Kies een speler of vrijloting</option>'+
+  options+'</select></div><div class="field"><label for="swapTo">Tweede plaats</label><select id="swapTo" onchange="previewFirstRoundSwap()"><option value="">Kies een speler of vrijloting</option>'+
+  options+'</select></div></div>'+
+  '<div id="roundOneSwapPreview" aria-live="polite"><p class="muted smalltext">Kies twee plaatsen. Je ziet vooraf de nieuwe duels, beschikbaarheidsconflicten en eventuele gevolgen voor uitslagen en planning.</p></div>'+
+  '</section>';
+}
+
 function adminLotteryPage(){
  const drawn=data.draw.length>0;
  const byes=data.players.length>1?2**Math.ceil(Math.log2(data.players.length))-data.players.length:0;
@@ -810,8 +1032,8 @@ function adminLotteryPage(){
   '<div class="btnbar">'+(!drawn?button('Eerste ronde loten','createDraw()',''):'')+
    button('Bekijk toernooiboom',"setTab('boom')",'alt')+
    (drawn?button('Uitslagen invoeren',"setTab('beheer-resultaten')",'ghost'):'')+'</div></div>'+
-  drawAvailabilityNotice()+
-  '<p class="admin-subtle">Een dag die niet als verhinderd is geregistreerd, telt als beschikbaar. Controleer daarom alle zeven weekdagen voordat je de loting uitvoert.</p></section>';
+  drawAvailabilityNotice()+firstRoundSwapPanel()+
+  '<p class="admin-subtle"Een dag die niet als verhinderd is geregistreerd, telt als beschikbaar. Controleer daarom alle zeven weekdagen voordat je de loting uitvoert.</p></section>';
 }
 function adminResultsPage(){
  if(!data.draw.length)return '<section class="panel"><div class="empty"><div class="bigicon">🏆</div><strong>Er is nog geen loting</strong><p>Voer eerst de officiële loting uit om uitslagen per duel in te kunnen voeren.</p>'+button('Naar loting',"setTab('beheer-loting')",'')+'</div></section>';
