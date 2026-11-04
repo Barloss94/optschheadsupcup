@@ -987,7 +987,7 @@ async function applyFirstRoundSwap(){
  const extra=preview.directNew.length-preview.directOld.length;
  const clauses=[
   'De volgende twee eerste-rondeplaatsen verwisselen?',
-  esc(name(data.draw[preview.from],true))+' ↔ '+esc(name(data.draw[preview.to],true)),
+  (data.draw[preview.from]?name(data.draw[preview.from],true):'Vrijloting')+' ↔ '+(data.draw[preview.to]?name(data.draw[preview.to],true):'Vrijloting'),
   'Conflicten zonder gezamenlijke speeldag in ronde 1: '+preview.directOld.length+' → '+preview.directNew.length+
    (extra>0?' (+'+extra+' EXTRA)':''),
   'Lastige potentiële ontmoetingen die eerder kunnen plaatsvinden: '+preview.earlier.length,
