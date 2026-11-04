@@ -733,8 +733,48 @@ function bracketMirrorLayout(rounds,{cardHeight=156,pitch=178,top=30,bronzeGap=2
   centerColumn:last,centerY:middle,cardHeight};
 }
 
+/* De grootste zichtbare tekst bepaalt de breedte van alle webkaarten.
+   Geen vaste 236px meer: ook langere namen en winnaarverwijzingen blijven leesbaar. */
+function bracketCardWidth(rounds){
+ let ctx=null;
+ try{ctx=typeof document?.createElement==='function'?
+  document.createElement('canvas')?.getContext?.('2d'):null}catch(_){}
+ const width=(value,size,weight=700)=>{
+  const str=String(value??'');
+  if(ctx){ctx.font=weight+' '+size+'px Inter,Arial,sans-serif';
+   return ctx.measureText(str).width}
+  return Array.from(str).reduce((sum,c)=>sum+
+   size*(/[ilI1.,:;!|]/.test(c)?.27:/[MW@#%]/.test(c)?.85:.56),0);
+ };
+ let longest=0;
+ const consider=(v,size,weight=700,extra=0)=>{
+  longest=Math.max(longest,width(v,size,weight)+extra);
+ };
+ for(let r=0;r<rounds.length;r++){
+  const count=rounds.length;
+  for(const m of rounds[r]){
+   const label=(m.isBronze?'🥉 Bronsfinale':r===count-1?'🏆 Finale':displayDuelLabel(m,rounds))+
+    (m.isBye?' · Vrijloting':'');
+   consider(label,10,850,24);
+   for(let slot=0;slot<2;slot++){
+    const id=slot===0?m.a:m.b;
+    consider(bracketSlotText(r,m.index,slot,id),12,id&&id===m.winner?850:700,39);
+   }
+   const info=m.isBye?'Automatisch door wegens vrijloting':m.resolved?
+    'Uitslag verwerkt':data.schedule[m.id]?.date?
+    prettyDate(data.schedule[m.id].date):'Nog te spelen';
+   consider(info,10,700,4);
+   consider(bracketRouteText(r,m.index,count),10,700,6);
+  }
+ }
+ consider('🏆 Finale en bronsfinale',12,900,4);
+ // 24px buitenpadding + meetmarge voor CSS-letterspatiëring en iconen.
+ return Math.max(145,Math.ceil(longest+30));
+}
+
 function bracketView(){
  const rounds=bracket(),mirror=bracketMirrorLayout(rounds);
+ const cardWidth=bracketCardWidth(rounds);
  function card(m,r){
   const label=m.isBronze?'🥉 Bronsfinale':r===rounds.length-1?'🏆 Finale':displayDuelLabel(m,rounds);
   const p=mirror.positions[r][m.index];
@@ -770,7 +810,7 @@ function bracketView(){
   '<p class="smalltext muted">De linker- en rechterhelft van de loting spelen naar het midden. De finale staat centraal, met de bronsfinale eronder. Volg de gouden lijnen om te zien welke winnaars naar elkaar doorschuiven; de gestippelde lijnen geven de route naar de bronsfinale aan. De oorspronkelijke loting en vaste routes blijven ongewijzigd.</p></details>'+
   (rounds.length?
    '<p class="muted smalltext bracket-guide">← Linkerhelft · Finale en bronsfinale in het midden · Rechterhelft →</p>'+
-   '<div class="bracketscroll" id="ohcBracketScroll"><div class="bracket mirrored-bracket" id="ohcBracket" style="--mirrored-height:'+mirror.height+'px;--mirrored-columns:'+mirror.columns+'">'+
+   '<div class="bracketscroll" id="ohcBracketScroll"><div class="bracket mirrored-bracket" id="ohcBracket" style="--mirrored-height:'+mirror.height+'px;--mirrored-columns:'+mirror.columns+';--card-width:'+cardWidth+'px">'+
    '<svg id="ohcBracketLines" class="bracketwires" aria-hidden="true"></svg>'+
    columns.join('')+'</div></div>':
    '<div class="empty"><div class="bigicon">🏆</div><strong>De bracket is nog niet geloot</strong><p>De beheerder loot de deelnemers na sluiting van de inschrijving. Vanaf dat moment zijn alle routes naar de finale vastgelegd.</p>'+(isAdmin?button('Naar beheer',"setTab('beheer')",'alt',true):'')+'</div>'
