@@ -69,9 +69,9 @@ function shareView(){
   '<button type="button" class="btn" onclick="downloadSharePoster()" '+(!haveData?'disabled':'')+'>📸 Download als PNG</button>'+
   '<button type="button" class="btn alt" onclick="sharePosterNative()" '+(!haveData?'disabled':'')+'>Deel afbeelding (WhatsApp e.a.)</button>'+
   '</div>'+
-  '<p class="muted smalltext share-advice">De afbeelding bevat volledige spelersnamen. Deel deze alleen in groepen waarvoor de informatie bedoeld is. Op een telefoon kun je WhatsApp kiezen vanuit het deelmenu; op andere apparaten kun je het PNG-bestand versturen.</p>'+
+  '<p class="muted smalltext share-advice">'+(ohcShareType==='boom'?'De complete toernooiboom is een liggende afbeelding. Op je telefoon kun je horizontaal door het voorbeeld scrollen. ':'')+'De afbeelding bevat volledige spelersnamen. Deel deze alleen in groepen waarvoor de informatie bedoeld is. Op een telefoon kun je WhatsApp kiezen vanuit het deelmenu; op andere apparaten kun je het PNG-bestand versturen.</p>'+
   '<div class="share-preview-section"><div class="share-preview-head"><h3>Voorbeeld</h3><span class="tag">'+(ohcShareType==='boom'?'LIGGEND • HOGE RESOLUTIE':'1080 PX • HOGE RESOLUTIE')+'</span></div>'+
-  '<div class="share-poster-preview" id="ohcSharePosterContainer">'+
+  '<div class="share-poster-preview'+(ohcShareType==='boom'?' bracket-poster-preview':'')+'" id="ohcSharePosterContainer">'+
   (haveData?'<canvas id="ohcSharePreview" aria-label="Voorbeeld van deelbare OHC-poster" role="img"></canvas>':
    '<div class="empty"><div class="bigicon">♠</div><strong>Nog geen voorbeeld beschikbaar</strong></div>')+'</div>'+
   '<div id="ohcShareStatus" class="smalltext muted" aria-live="polite"></div></div></section>';
@@ -128,7 +128,7 @@ function shareStatus(text){
 function shareFileLabel(info){
  const prefix=(data.settings?.title||'OHC').toLowerCase().normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,35)||'ohc';
- return prefix+'-'+info.type+(info.round===null?'':'-ronde-'+(info.round+1))+(info.month?'-'+info.month:'')+'.png';
+ return prefix+'-'+(info.type==='boom'?'toernooiboom':info.type)+(info.round===null?'':'-ronde-'+(info.round+1))+(info.month?'-'+info.month:'')+'.png';
 }
 function shareContextKey(info){
  return JSON.stringify({type:info.type,round:info.round,month:info.month||null,
