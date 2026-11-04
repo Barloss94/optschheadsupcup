@@ -8,6 +8,7 @@ const vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 const inline=(html.match(/<script>\s*([\s\S]*?)<\/script>/)||[])[1];
 const sharing=fs.readFileSync(path.join(__dirname,'..','share.js'),'utf8');
+const calendar=fs.readFileSync(path.join(__dirname,'..','calendar.js'),'utf8');
 assert.ok(inline,'De hoofdapp heeft een script');
 assert.match(html,/share\.js\?v=/);
 
@@ -32,8 +33,9 @@ const context=vm.createContext({
    }
   }
 });
-vm.runInContext(inline.replace(/\ninitialize\(\);\s*$/,''),context,{filename:'index.inline.js'});
+vm.runInContext(calendar,context,{filename:'calendar.js'});
 vm.runInContext(sharing,context,{filename:'share.js'});
+vm.runInContext(inline.replace(/\ninitialize\(\);\s*$/,''),context,{filename:'index.inline.js'});
 const run=s=>vm.runInContext('(()=>{'+s+'})()',context);
 
 function seed(count=32){
