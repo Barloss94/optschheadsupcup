@@ -390,6 +390,31 @@
  gap:5px;
  justify-content:center;
 }
+
+/* Kopverlopen van de centrale finales; gewone duels houden hun aubergine kop. */
+.mirrored-bracket .matchcard .matchid{
+ display:flex;
+ align-items:center;
+ min-height:29px;
+ padding:5px 9px;
+ border-radius:8px;
+ background:#493449;
+ color:#f5dbad;
+ font-size:10px;
+ font-weight:850;
+ letter-spacing:.35px;
+ line-height:1.25;
+}
+.mirrored-bracket .matchcard.final-match .matchid{
+ background:linear-gradient(105deg,#e7b45f 0%,#dcbf87 43%,#c3cbd8 100%);
+ color:#24192a;
+ text-shadow:none;
+}
+.mirrored-bracket .matchcard.bronze-match .matchid{
+ background:linear-gradient(105deg,#986037 0%,#785039 43%,#493449 100%);
+ color:#fff0d9;
+ text-shadow:none;
+}
 .mirrored-bracket .matchcard .slot{min-height:28px;padding:5px 8px}
 .mirrored-bracket .matchcard .matchdetails{font-size:10px;margin-top:1px}
 .mirrored-bracket .mirrored-column.center .bracketround{
