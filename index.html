@@ -1109,7 +1109,7 @@ function collectRoundWindows(){
   const first=isoWeekMonday(firstWeek),last=isoWeekMonday(lastWeek);
   if(!first||!last){problems.push('Ronde '+(i+1)+': vul een geldige eerste en laatste ISO-week in.');continue}
   if(first.start>last.end){problems.push('Ronde '+(i+1)+': de eindweek ligt voor de beginweek.');continue}
-  const count=1+Math.round((Date.parse(last.end+'T00:00:00Z')-Date.parse(first.start+'T00:00:00Z'))/604800000);
+  const count=1+Math.floor((Date.parse(last.end+'T00:00:00Z')-Date.parse(first.start+'T00:00:00Z'))/604800000);
   if(count>14){problems.push('Ronde '+(i+1)+': maximaal 14 weken per speelperiode.');continue}
   if(lastStart&&(first.start<lastStart||last.end<lastEnd))
    problems.push('Ronde '+(i+1)+': de speelperiodes moeten per ronde chronologisch doorlopen.');
@@ -1139,8 +1139,8 @@ function roundWeekEditor(){
   const w=existing[i];
   const start=w?weekValueFromDate(w.start):'',end=w?weekValueFromDate(w.end):'';
   return '<div class="week-editor-row"><div class="week-editor-number"><b>Ronde '+(i+1)+'</b>'+(i===4?'<span class="tag">Finale en brons</span>':'')+'</div>'+
-   '<div class="field"><label for="ohcWeekFrom'+i+'">Vanaf week</label><input type="week" id="ohcWeekFrom'+i+'" min="2020-W01" max="2100-W52" value="'+esc(start)+'"></div>'+
-   '<div class="field"><label for="ohcWeekUntil'+i+'">Tot en met week</label><input type="week" id="ohcWeekUntil'+i+'" min="2020-W01" max="2100-W52" value="'+esc(end)+'"></div>'+
+   '<div class="field"><label for="ohcWeekFrom'+i+'">Vanaf week</label><input type="week" id="ohcWeekFrom'+i+'" min="2020-W01" max="2100-W53" value="'+esc(start)+'"></div>'+
+   '<div class="field"><label for="ohcWeekUntil'+i+'">Tot en met week</label><input type="week" id="ohcWeekUntil'+i+'" min="2020-W01" max="2100-W53" value="'+esc(end)+'"></div>'+
    '<div class="field"><label for="ohcWeekExcluded'+i+'">Uitgesloten datums (optioneel)</label><input type="text" id="ohcWeekExcluded'+i+'" placeholder="2027-01-01, 2027-01-02" value="'+esc(w?.exclusions?.join(', ')||'')+'"></div>'+
    '</div>';
  }).join('')+'</div>'+
@@ -1205,8 +1205,8 @@ async function saveGeneralSettings(){
  const title=($('ohcEventTitle')?.value||'').trim();
  if(!title||title.length>100){notify('Voer een toernooinaam van maximaal 100 tekens in.');return}
  const raw=$('ohcRegistrationClose')?.value||'';
- const deadline=raw?new Date(raw).toISOString():null;
  if(raw&&Number.isNaN(Date.parse(raw))){notify('Vul een geldige inschrijfdeadline in.');return}
+ const deadline=raw?new Date(raw).toISOString():null;
  const newStatus=$('eventStatus')?.value;
  const old=structuredClone(data.settings);
  data.settings.title=title;
