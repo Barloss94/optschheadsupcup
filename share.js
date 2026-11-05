@@ -9,7 +9,7 @@ const OHC_SHARE_TYPES={
  schema:{label:'Speelschema',title:'SPEELSCHEMA'},
  uitslagen:{label:'Uitslagen',title:'UITSLAGEN'},
  deelnemers:{label:'Deelnemersoverzicht',title:'DEELNEMERS'},
- prijzen:{label:'Prijzen en buy-in',title:'PRIJZENPOT'},
+ prijzen:{label:'Prijzenoverzicht',title:'PRIJZENPOT'},
  kalender:{label:'Speelkalender per maand',title:'SPEELKALENDER'},
  'kalender-volledig':{label:'Volledige speelagenda',title:'COMPLETE SPEELKALENDER'}
 };
@@ -278,8 +278,6 @@ function sharePrizesPoster(ctx){
   shareText(ctx,label,x+21,y+41,w-40,C.purple,21,900);
   shareText(ctx,euros(info.payouts[i]),x+21,y+113,w-40,C.white,39,900);
  });
- shareText(ctx,'BUY-IN '+euros(BUY_IN_CENTS)+' • ORGANISATIEKOSTEN '+euros(FIXED_COSTS_CENTS),
-  90,1255,890,C.muted,21,800);
  if(!exact)shareText(ctx,'Bij minder dan 17 spelers is deze verdeling nog niet vastgesteld.',
   90,1294,890,C.warning,18,700);
 }
