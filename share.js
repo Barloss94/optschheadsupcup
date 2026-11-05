@@ -100,7 +100,7 @@ function shareActiveInfo(){
   if(!data.players.length)return null;
   return {type,matches:[],round:null,label:'Deelnemersoverzicht'};
  }
- if(type==='prijzen')return {type,matches:[],round:null,label:'Buy-in en prijzenpot'};
+ if(type==='prijzen')return {type,matches:[],round:null,label:'Prijzenoverzicht'};
  if(type==='kalender'||type==='kalender-volledig'){
   const all=ohcCalendarEntries();
   if(!all.length)return null;
