@@ -58,7 +58,7 @@ test('De deelpagina toont exporttypes en rondekeuze zoals OSC',()=>{
  assert.match(markup,/Speelschema/);
  assert.match(markup,/Uitslagen/);
  assert.match(markup,/Deelnemersoverzicht/);
- assert.match(markup,/Prijzen en buy-in/);
+ assert.match(markup,/Prijzenoverzicht/);
  assert.match(markup,/ohcShareRound/);
  assert.match(markup,/Download als PNG/);
  assert.match(markup,/Deel afbeelding/);
@@ -94,11 +94,15 @@ test('Deelnemersposter toont alle ingeschreven namen',()=>{
  assert.ok(page.h>=2880);
  assert.ok(drawn.some(x=>x.includes('Deelnemer 32 Achternaam')));
 });
-test('Prijzenposter maakt een overzicht volgens huidige prijsberekening',()=>{
+test('Prijzenposter toont prijzen zonder buy-in en organisatiekosten',()=>{
  seed(32);
  run("ohcShareType='prijzen';buildOhcSharePoster(shareActiveInfo(),null)");
  assert.ok(drawn.some(x=>x.includes('PRIJZENPOT')));
  assert.ok(drawn.some(x=>x.includes('€')));
+ assert.ok(drawn.includes('1E PRIJS')&&drawn.includes('GEDEELD 5E'));
+ assert.ok(!drawn.some(x=>/BUY-IN|ORGANISATIEKOSTEN/i.test(x)));
+ const prices=run("return projectedPrizes(data.players.length)");
+ assert.ok(drawn.includes(new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(prices.netPrizeCents/100)));
 });
 test('Zonder inloggen kan geen gedeelde poster worden geopend',()=>{
  seed(4);
